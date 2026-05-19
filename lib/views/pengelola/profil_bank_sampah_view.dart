@@ -9,6 +9,7 @@ import '../../controllers/auth_controller.dart';
 import '../../core/services/session_service.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/services/supabase_service.dart';
 
 class ProfilBankSampahView extends StatelessWidget {
   const ProfilBankSampahView({super.key});
@@ -152,7 +153,7 @@ class ProfilBankSampahView extends StatelessWidget {
                   _InfoRow(
                     icon: Icons.email_outlined,
                     label: 'Email',
-                    value: profil.authUserId,
+                    value: SupabaseService.currentUser?.email ?? '-',
                   ),
                   if (profil.noHp != null) ...[
                     const SizedBox(height: 10),

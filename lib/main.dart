@@ -6,6 +6,7 @@ import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'app/themes/app_theme.dart';
 import 'core/constants/supabase_constants.dart';
+import 'core/services/session_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
@@ -18,6 +19,8 @@ Future<void> main() async {
   final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? 'placeholder-key';
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+
+  await Get.putAsync(() async => SessionService());
   runApp(const BisaApp());
 }
 

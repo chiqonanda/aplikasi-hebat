@@ -1,28 +1,51 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/services/session_service.dart';
 import '../../core/constants/supabase_constants.dart';
+import '../../core/utils/format_helper.dart';
 import '../../models/pengelolaan_sampah_model.dart';
 import '../../models/kategori_model.dart';
 import '../../app/routes/app_routes.dart';
 
 class HistoriController extends GetxController {
+  final searchController = TextEditingController();
+  final searchQuery = ''.obs;
+
   final listHistori = <PengelolaanSampahModel>[].obs;
-  final listKategori = <KategoriModel>[].obs;
+  final listKategoriFilter = <KategoriModel>[].obs;
   final isLoading = false.obs;
 
   // Filter
-  final selectedKategoriId = Rx<String?>(null);
-  final selectedTanggalMulai = Rx<DateTime?>(null);
-  final selectedTanggalAkhir = Rx<DateTime?>(null);
-  final searchQuery = ''.obs;
+  final filterKategoriId = ''.obs;
+  final filterTanggalMulai = Rx<DateTime?>(null);
+  final filterTanggalAkhir = Rx<DateTime?>(null);
+
+  // Getter: apakah ada filter aktif
+  bool get isFilterActive =>
+      filterKategoriId.value.isNotEmpty ||
+      filterTanggalMulai.value != null ||
+      filterTanggalAkhir.value != null;
+
+  // Getter: total nilai semua histori yang ditampilkan
+  double get totalNilai =>
+      listHistori.fold(0.0, (sum, e) => sum + (e.totalHarga ?? 0.0));
 
   @override
   void onInit() {
     super.onInit();
     fetchHistori();
     _fetchKategori();
+  }
+
+  void onSearch(String value) {
+    searchQuery.value = value;
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
   }
 
   Future<void> fetchHistori() async {
@@ -41,30 +64,42 @@ class HistoriController extends GetxController {
           ''')
           .eq('bank_sampah_id', bankSampahId);
 
-      // Filter kategori
-      if (selectedKategoriId.value != null) {
-        query = query.eq('kategori_id', selectedKategoriId.value!);
+      if (filterKategoriId.value.isNotEmpty) {
+        query = query.eq('kategori_id', filterKategoriId.value);
       }
 
-      // Filter tanggal
-      if (selectedTanggalMulai.value != null) {
+      if (filterTanggalMulai.value != null) {
         query = query.gte(
           'tanggal_pengelolaan',
-          selectedTanggalMulai.value!.toIso8601String().split('T').first,
+          filterTanggalMulai.value!.toIso8601String().split('T').first,
         );
       }
-      if (selectedTanggalAkhir.value != null) {
+
+      if (filterTanggalAkhir.value != null) {
         query = query.lte(
           'tanggal_pengelolaan',
-          selectedTanggalAkhir.value!.toIso8601String().split('T').first,
+          filterTanggalAkhir.value!.toIso8601String().split('T').first,
         );
       }
 
-      final data = await query.order('tanggal_pengelolaan', ascending: false);
+      final data =
+          await query.order('tanggal_pengelolaan', ascending: false);
 
-      listHistori.value = (data as List)
+      var list = (data as List)
           .map((e) => PengelolaanSampahModel.fromJson(e))
           .toList();
+
+      // Filter search query di client side
+      if (searchQuery.value.isNotEmpty) {
+        final q = searchQuery.value.toLowerCase();
+        list = list.where((item) {
+          return item.namaItem.toLowerCase().contains(q) ||
+              item.breadcrumb.toLowerCase().contains(q) ||
+              (item.catatan?.toLowerCase().contains(q) ?? false);
+        }).toList();
+      }
+
+      listHistori.value = list;
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat histori.');
     } finally {
@@ -73,56 +108,85 @@ class HistoriController extends GetxController {
   }
 
   Future<void> _fetchKategori() async {
-    final data = await SupabaseService.client
-        .from(SupabaseConstants.tableKategoriSampah)
-        .select()
-        .eq('is_active', true)
-        .order('nama');
-    listKategori.value =
-        (data as List).map((e) => KategoriModel.fromJson(e)).toList();
+    try {
+      final data = await SupabaseService.client
+          .from(SupabaseConstants.tableKategoriSampah)
+          .select()
+          .eq('is_active', true)
+          .order('nama');
+      listKategoriFilter.value =
+          (data as List).map((e) => KategoriModel.fromJson(e)).toList();
+    } catch (_) {}
   }
 
-  List<PengelolaanSampahModel> get filteredHistori {
-    if (searchQuery.value.isEmpty) return listHistori;
-    final q = searchQuery.value.toLowerCase();
-    return listHistori.where((item) {
-      return item.namaItem.toLowerCase().contains(q) ||
-          item.breadcrumb.toLowerCase().contains(q) ||
-          (item.catatan?.toLowerCase().contains(q) ?? false);
-    }).toList();
+  Future<void> pickTanggalMulai(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: filterTanggalMulai.value ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) filterTanggalMulai.value = picked;
   }
 
-  void setKategoriFilter(String? id) {
-    selectedKategoriId.value = id;
-    fetchHistori();
+  Future<void> pickTanggalAkhir(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: filterTanggalAkhir.value ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) filterTanggalAkhir.value = picked;
   }
 
-  void setTanggalFilter(DateTime? mulai, DateTime? akhir) {
-    selectedTanggalMulai.value = mulai;
-    selectedTanggalAkhir.value = akhir;
+  void applyFilter() {
     fetchHistori();
   }
 
   void resetFilter() {
-    selectedKategoriId.value = null;
-    selectedTanggalMulai.value = null;
-    selectedTanggalAkhir.value = null;
+    filterKategoriId.value = '';
+    filterTanggalMulai.value = null;
+    filterTanggalAkhir.value = null;
+    searchController.clear();
     searchQuery.value = '';
     fetchHistori();
   }
 
-  void goToEdit(PengelolaanSampahModel data) async {
+  // Dipanggil dari card histori — navigate ke input_sampah dengan mode edit
+  Future<void> editItem(PengelolaanSampahModel data) async {
     final result = await Get.toNamed(AppRoutes.inputSampah, arguments: data);
     if (result == true) fetchHistori();
   }
 
-  Future<void> hapus(String id) async {
+  // Dipanggil dari card histori — hapus data
+  Future<void> deleteItem(PengelolaanSampahModel data) async {
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Hapus Data'),
+        content: const Text('Yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
     try {
       await SupabaseService.client
           .from(SupabaseConstants.tablePengelolaanSampah)
           .delete()
-          .eq('id', id);
-      listHistori.removeWhere((e) => e.id == id);
+          .eq('id', data.id);
+      listHistori.removeWhere((e) => e.id == data.id);
       Get.snackbar('Berhasil', 'Data berhasil dihapus.');
     } catch (e) {
       Get.snackbar('Gagal', 'Data gagal dihapus.');
@@ -130,4 +194,10 @@ class HistoriController extends GetxController {
   }
 
   Future<void> refresh() => fetchHistori();
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
+  }
 }

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/constants/supabase_constants.dart';
 import '../../models/bank_sampah_model.dart';
+import '../../models/profile_model.dart';
 import '../../app/routes/app_routes.dart';
 
 class BankSampahController extends GetxController {
@@ -12,8 +13,12 @@ class BankSampahController extends GetxController {
   final alamatController = TextEditingController();
   final rtController = TextEditingController();
   final rwController = TextEditingController();
+  final searchController = TextEditingController();
 
   final listBankSampah = <BankSampahModel>[].obs;
+  final listPengelolaTerhubung = <ProfileModel>[].obs;
+  final searchQuery = ''.obs;
+
   final isLoading = false.obs;
   final isSaving = false.obs;
   final isAktif = true.obs;
@@ -21,22 +26,31 @@ class BankSampahController extends GetxController {
   BankSampahModel? editData;
   bool get isEditMode => editData != null;
 
+  // Getter list yang sudah difilter berdasarkan search
+  List<BankSampahModel> get listBankFiltered {
+    if (searchQuery.value.isEmpty) return listBankSampah;
+    final q = searchQuery.value.toLowerCase();
+    return listBankSampah.where((b) {
+      return b.nama.toLowerCase().contains(q) ||
+          (b.alamat?.toLowerCase().contains(q) ?? false) ||
+          (b.rt?.contains(q) ?? false) ||
+          (b.rw?.contains(q) ?? false);
+    }).toList();
+  }
+
   @override
   void onInit() {
     super.onInit();
-    if (Get.arguments != null && Get.arguments is BankSampahModel) {
-      editData = Get.arguments as BankSampahModel;
-      _populateForm();
-    }
     fetchBankSampah();
   }
 
-  void _populateForm() {
-    namaController.text = editData!.nama;
-    alamatController.text = editData!.alamat ?? '';
-    rtController.text = editData!.rt ?? '';
-    rwController.text = editData!.rw ?? '';
-    isAktif.value = editData!.isActive;
+  void onSearch(String value) {
+    searchQuery.value = value;
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
   }
 
   Future<void> fetchBankSampah() async {
@@ -55,6 +69,47 @@ class BankSampahController extends GetxController {
     }
   }
 
+  Future<void> _fetchPengelolaTerhubung(String bankSampahId) async {
+    try {
+      final data = await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaBankSampah)
+          .select('profile_id, profiles(*)')
+          .eq('bank_sampah_id', bankSampahId);
+
+      listPengelolaTerhubung.value = (data as List)
+          .map((e) => ProfileModel.fromJson(e['profiles'] as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      listPengelolaTerhubung.clear();
+    }
+  }
+
+  // Dipanggil dari list view saat tombol edit ditekan
+  void initEdit(BankSampahModel data) {
+    editData = data;
+    _populateForm();
+    _fetchPengelolaTerhubung(data.id);
+  }
+
+  void _populateForm() {
+    namaController.text = editData!.nama;
+    alamatController.text = editData!.alamat ?? '';
+    rtController.text = editData!.rt ?? '';
+    rwController.text = editData!.rw ?? '';
+    isAktif.value = editData!.isActive;
+  }
+
+  void resetForm() {
+    editData = null;
+    listPengelolaTerhubung.clear();
+    formKey.currentState?.reset();
+    namaController.clear();
+    alamatController.clear();
+    rtController.clear();
+    rwController.clear();
+    isAktif.value = true;
+  }
+
   void goToForm({BankSampahModel? data}) =>
       Get.toNamed(AppRoutes.formBankSampah, arguments: data);
 
@@ -68,8 +123,12 @@ class BankSampahController extends GetxController {
         'alamat': alamatController.text.trim().isEmpty
             ? null
             : alamatController.text.trim(),
-        'rt': rtController.text.trim().isEmpty ? null : rtController.text.trim(),
-        'rw': rwController.text.trim().isEmpty ? null : rwController.text.trim(),
+        'rt': rtController.text.trim().isEmpty
+            ? null
+            : rtController.text.trim(),
+        'rw': rwController.text.trim().isEmpty
+            ? null
+            : rwController.text.trim(),
         'is_active': isAktif.value,
       };
 
@@ -87,6 +146,8 @@ class BankSampahController extends GetxController {
         Get.back(result: true);
         Get.snackbar('Berhasil', 'Bank sampah berhasil ditambahkan.');
       }
+
+      await fetchBankSampah();
     } catch (e) {
       Get.snackbar('Gagal', 'Data gagal disimpan.');
     } finally {
@@ -94,13 +155,33 @@ class BankSampahController extends GetxController {
     }
   }
 
-  Future<void> hapus(String id) async {
+  Future<void> deleteBank(BankSampahModel bank) async {
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Hapus Bank Sampah'),
+        content: Text(
+            'Yakin ingin menghapus "${bank.nama}"? Semua data terkait akan ikut terhapus.'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child:
+                const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
     try {
       await SupabaseService.client
           .from(SupabaseConstants.tableBankSampah)
           .delete()
-          .eq('id', id);
-      listBankSampah.removeWhere((e) => e.id == id);
+          .eq('id', bank.id);
+      listBankSampah.removeWhere((e) => e.id == bank.id);
       Get.snackbar('Berhasil', 'Bank sampah berhasil dihapus.');
     } catch (e) {
       Get.snackbar('Gagal', 'Bank sampah gagal dihapus.');
@@ -118,12 +199,28 @@ class BankSampahController extends GetxController {
     }
   }
 
+  Future<void> lepaskanPengelola(ProfileModel pengelola) async {
+    if (editData == null) return;
+    try {
+      await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaBankSampah)
+          .delete()
+          .eq('bank_sampah_id', editData!.id)
+          .eq('profile_id', pengelola.id);
+      listPengelolaTerhubung.removeWhere((p) => p.id == pengelola.id);
+      Get.snackbar('Berhasil', 'Pengelola berhasil dilepas.');
+    } catch (e) {
+      Get.snackbar('Gagal', 'Gagal melepas pengelola.');
+    }
+  }
+
   @override
   void onClose() {
     namaController.dispose();
     alamatController.dispose();
     rtController.dispose();
     rwController.dispose();
+    searchController.dispose();
     super.onClose();
   }
 }

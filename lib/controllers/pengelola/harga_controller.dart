@@ -14,43 +14,61 @@ class HargaController extends GetxController {
   final formKey = GlobalKey<FormState>();
   final hargaController = TextEditingController();
 
+  // Data list
   final listHarga = <HargaSampahModel>[].obs;
   final listKategori = <KategoriModel>[].obs;
   final listSubKategori = <SubKategoriModel>[].obs;
-  final listJenis = <JenisSampahModel>[].obs;
+  final listJenisSampah = <JenisSampahModel>[].obs;
   final listSatuan = <SatuanModel>[].obs;
 
-  final selectedKategori = Rx<KategoriModel?>(null);
-  final selectedSubKategori = Rx<SubKategoriModel?>(null);
-  final selectedJenis = Rx<JenisSampahModel?>(null);
-  final selectedSatuan = Rx<SatuanModel?>(null);
+  // State dropdown — pakai String ID agar mudah di-bind ke view
+  final selectedKategoriId = ''.obs;
+  final selectedSubKategoriId = ''.obs;
+  final selectedJenisId = ''.obs;
+  final selectedSatuanId = ''.obs;
 
+  // Loading state
   final isLoading = false.obs;
   final isSaving = false.obs;
 
+  // Edit mode
+  HargaSampahModel? _editData;
+  bool get isEditMode => _editData != null;
+
   String get bankSampahId => SessionService.to.activeBankSampahId;
+
+  // Harga dikelompokkan per nama kategori — untuk tampilan list di view
+  Map<String, List<HargaSampahModel>> get hargaPerKategori {
+    final Map<String, List<HargaSampahModel>> result = {};
+    for (final h in listHarga) {
+      final key = h.kategori?.nama ?? 'Tanpa Kategori';
+      result.putIfAbsent(key, () => []).add(h);
+    }
+    return result;
+  }
 
   @override
   void onInit() {
     super.onInit();
     fetchAll();
-    ever(selectedKategori, (_) => _onKategoriChanged());
-    ever(selectedSubKategori, (_) => _onSubKategoriChanged());
+    ever(selectedKategoriId, (_) => _onKategoriChanged());
+    ever(selectedSubKategoriId, (_) => _onSubKategoriChanged());
   }
 
   Future<void> fetchAll() async {
     isLoading.value = true;
     try {
-      await Future.wait([_fetchHarga(), _fetchKategori(), _fetchSatuan()]);
+      await Future.wait([fetchHarga(), _fetchKategori(), _fetchSatuan()]);
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _fetchHarga() async {
+  Future<void> fetchHarga() async {
     final data = await SupabaseService.client
         .from(SupabaseConstants.tableHargaSampah)
-        .select('*, kategori_sampah(*), sub_kategori_sampah(*), jenis_sampah(*), satuan(*)')
+        .select(
+            '*, kategori_sampah(*), sub_kategori_sampah(*), jenis_sampah(*), satuan(*)')
         .eq('bank_sampah_id', bankSampahId)
         .order('updated_at', ascending: false);
     listHarga.value =
@@ -78,14 +96,14 @@ class HargaController extends GetxController {
         (data as List).map((e) => SubKategoriModel.fromJson(e)).toList();
   }
 
-  Future<void> _fetchJenis(String subKategoriId) async {
+  Future<void> _fetchJenisSampah(String subKategoriId) async {
     final data = await SupabaseService.client
         .from(SupabaseConstants.tableJenisSampah)
         .select()
         .eq('sub_kategori_id', subKategoriId)
         .eq('is_active', true)
         .order('nama');
-    listJenis.value =
+    listJenisSampah.value =
         (data as List).map((e) => JenisSampahModel.fromJson(e)).toList();
   }
 
@@ -99,41 +117,68 @@ class HargaController extends GetxController {
   }
 
   void _onKategoriChanged() {
-    selectedSubKategori.value = null;
-    selectedJenis.value = null;
+    selectedSubKategoriId.value = '';
+    selectedJenisId.value = '';
     listSubKategori.clear();
-    listJenis.clear();
-    if (selectedKategori.value != null) {
-      _fetchSubKategori(selectedKategori.value!.id);
+    listJenisSampah.clear();
+    if (selectedKategoriId.value.isNotEmpty) {
+      _fetchSubKategori(selectedKategoriId.value);
     }
   }
 
   void _onSubKategoriChanged() {
-    selectedJenis.value = null;
-    listJenis.clear();
-    if (selectedSubKategori.value != null) {
-      _fetchJenis(selectedSubKategori.value!.id);
+    selectedJenisId.value = '';
+    listJenisSampah.clear();
+    if (selectedSubKategoriId.value.isNotEmpty) {
+      _fetchJenisSampah(selectedSubKategoriId.value);
     }
+  }
+
+  void onKategoriChanged(String? id) {
+    selectedKategoriId.value = id ?? '';
+  }
+
+  void onSubKategoriChanged(String? id) {
+    selectedSubKategoriId.value = id ?? '';
   }
 
   void resetForm() {
     formKey.currentState?.reset();
     hargaController.clear();
-    selectedKategori.value = null;
-    selectedSubKategori.value = null;
-    selectedJenis.value = null;
-    selectedSatuan.value = null;
+    selectedKategoriId.value = '';
+    selectedSubKategoriId.value = '';
+    selectedJenisId.value = '';
+    selectedSatuanId.value = '';
     listSubKategori.clear();
-    listJenis.clear();
+    listJenisSampah.clear();
+    _editData = null;
   }
 
-  Future<void> simpanHarga() async {
+  void initEdit(HargaSampahModel data) {
+    _editData = data;
+    hargaController.text = data.hargaPerSatuan.toString();
+    selectedKategoriId.value = data.kategoriId ?? '';
+    selectedSubKategoriId.value = data.subKategoriId ?? '';
+    selectedJenisId.value = data.jenisSampahId ?? '';
+    selectedSatuanId.value = data.satuanId;
+
+    // Muat dropdown turunan
+    if (data.kategoriId != null) {
+      _fetchSubKategori(data.kategoriId!).then((_) {
+        if (data.subKategoriId != null) {
+          _fetchJenisSampah(data.subKategoriId!);
+        }
+      });
+    }
+  }
+
+  Future<void> simpan() async {
     if (!formKey.currentState!.validate()) return;
-    if (selectedKategori.value == null) {
+    if (selectedKategoriId.value.isEmpty) {
       Get.snackbar('Validasi', 'Minimal pilih kategori.');
       return;
     }
-    if (selectedSatuan.value == null) {
+    if (selectedSatuanId.value.isEmpty) {
       Get.snackbar('Validasi', 'Satuan wajib dipilih.');
       return;
     }
@@ -142,21 +187,30 @@ class HargaController extends GetxController {
     try {
       final payload = {
         'bank_sampah_id': bankSampahId,
-        'kategori_id': selectedKategori.value?.id,
-        'sub_kategori_id': selectedSubKategori.value?.id,
-        'jenis_sampah_id': selectedJenis.value?.id,
+        'kategori_id': selectedKategoriId.value,
+        'sub_kategori_id':
+            selectedSubKategoriId.value.isEmpty ? null : selectedSubKategoriId.value,
+        'jenis_sampah_id':
+            selectedJenisId.value.isEmpty ? null : selectedJenisId.value,
         'harga_per_satuan': double.parse(hargaController.text.trim()),
-        'satuan_id': selectedSatuan.value!.id,
+        'satuan_id': selectedSatuanId.value,
       };
 
-      // Upsert: update kalau sudah ada, insert kalau belum
-      await SupabaseService.client
-          .from(SupabaseConstants.tableHargaSampah)
-          .upsert(payload, onConflict: 'bank_sampah_id,kategori_id,sub_kategori_id,jenis_sampah_id');
+      if (isEditMode) {
+        await SupabaseService.client
+            .from(SupabaseConstants.tableHargaSampah)
+            .update(payload)
+            .eq('id', _editData!.id);
+        Get.snackbar('Berhasil', 'Harga berhasil diperbarui.');
+      } else {
+        await SupabaseService.client
+            .from(SupabaseConstants.tableHargaSampah)
+            .insert(payload);
+        Get.snackbar('Berhasil', 'Harga berhasil ditambahkan.');
+      }
 
-      await _fetchHarga();
+      await fetchHarga();
       resetForm();
-      Get.snackbar('Berhasil', 'Harga berhasil disimpan.');
     } catch (e) {
       Get.snackbar('Gagal', 'Harga gagal disimpan.');
     } finally {
@@ -164,13 +218,31 @@ class HargaController extends GetxController {
     }
   }
 
-  Future<void> hapusHarga(String id) async {
+  Future<void> deleteHarga(HargaSampahModel data) async {
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Hapus Harga'),
+        content: Text('Hapus harga untuk "${data.namaItem}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
     try {
       await SupabaseService.client
           .from(SupabaseConstants.tableHargaSampah)
           .delete()
-          .eq('id', id);
-      listHarga.removeWhere((e) => e.id == id);
+          .eq('id', data.id);
+      listHarga.removeWhere((e) => e.id == data.id);
       Get.snackbar('Berhasil', 'Harga berhasil dihapus.');
     } catch (e) {
       Get.snackbar('Gagal', 'Harga gagal dihapus.');

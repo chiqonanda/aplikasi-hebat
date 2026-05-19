@@ -18,22 +18,27 @@ class InputSampahController extends GetxController {
   // Text controllers
   final jumlahController = TextEditingController();
   final catatanController = TextEditingController();
+  final tanggalController = TextEditingController();
 
-  // State dropdown
+  // Data list
   final listKategori = <KategoriModel>[].obs;
   final listSubKategori = <SubKategoriModel>[].obs;
-  final listJenis = <JenisSampahModel>[].obs;
+  final listJenisSampah = <JenisSampahModel>[].obs;
   final listSatuan = <SatuanModel>[].obs;
 
-  final selectedKategori = Rx<KategoriModel?>(null);
-  final selectedSubKategori = Rx<SubKategoriModel?>(null);
-  final selectedJenis = Rx<JenisSampahModel?>(null);
-  final selectedSatuan = Rx<SatuanModel?>(null);
+  // State dropdown — pakai String ID agar konsisten dengan view
+  final selectedKategoriId = ''.obs;
+  final selectedSubKategoriId = ''.obs;
+  final selectedJenisId = ''.obs;
+  final selectedSatuanId = ''.obs;
+
+  // Tanggal
   final selectedTanggal = Rx<DateTime?>(DateTime.now());
 
-  // Harga otomatis dari tabel harga_sampah
-  final hargaDitemukan = Rx<HargaSampahModel?>(null);
+  // Harga snapshot otomatis dari tabel harga_sampah
+  final hargaSnapshot = Rx<HargaSampahModel?>(null);
 
+  // Loading state
   final isLoading = false.obs;
   final isSaving = false.obs;
 
@@ -48,9 +53,9 @@ class InputSampahController extends GetxController {
     _fetchMasterData();
 
     // Listener cascade dropdown
-    ever(selectedKategori, (_) => _onKategoriChanged());
-    ever(selectedSubKategori, (_) => _onSubKategoriChanged());
-    ever(selectedJenis, (_) => _onJenisChanged());
+    ever(selectedKategoriId, (_) => _onKategoriChanged());
+    ever(selectedSubKategoriId, (_) => _onSubKategoriChanged());
+    ever(selectedJenisId, (_) => _onJenisChanged());
   }
 
   void _checkEditMode() {
@@ -63,8 +68,6 @@ class InputSampahController extends GetxController {
     isLoading.value = true;
     try {
       await Future.wait([_fetchKategori(), _fetchSatuan()]);
-
-      // Isi form jika edit mode
       if (isEditMode) _populateEditData();
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat data master.');
@@ -79,9 +82,8 @@ class InputSampahController extends GetxController {
         .select()
         .eq('is_active', true)
         .order('nama');
-    listKategori.value = (data as List)
-        .map((e) => KategoriModel.fromJson(e))
-        .toList();
+    listKategori.value =
+        (data as List).map((e) => KategoriModel.fromJson(e)).toList();
   }
 
   Future<void> _fetchSubKategori(String kategoriId) async {
@@ -91,21 +93,19 @@ class InputSampahController extends GetxController {
         .eq('kategori_id', kategoriId)
         .eq('is_active', true)
         .order('nama');
-    listSubKategori.value = (data as List)
-        .map((e) => SubKategoriModel.fromJson(e))
-        .toList();
+    listSubKategori.value =
+        (data as List).map((e) => SubKategoriModel.fromJson(e)).toList();
   }
 
-  Future<void> _fetchJenis(String subKategoriId) async {
+  Future<void> _fetchJenisSampah(String subKategoriId) async {
     final data = await SupabaseService.client
         .from(SupabaseConstants.tableJenisSampah)
         .select('*, satuan(*)')
         .eq('sub_kategori_id', subKategoriId)
         .eq('is_active', true)
         .order('nama');
-    listJenis.value = (data as List)
-        .map((e) => JenisSampahModel.fromJson(e))
-        .toList();
+    listJenisSampah.value =
+        (data as List).map((e) => JenisSampahModel.fromJson(e)).toList();
   }
 
   Future<void> _fetchSatuan() async {
@@ -113,58 +113,54 @@ class InputSampahController extends GetxController {
         .from(SupabaseConstants.tableSatuan)
         .select()
         .order('nama');
-    listSatuan.value = (data as List)
-        .map((e) => SatuanModel.fromJson(e))
-        .toList();
+    listSatuan.value =
+        (data as List).map((e) => SatuanModel.fromJson(e)).toList();
   }
 
   Future<void> _fetchHargaOtomatis() async {
     final bankSampahId = SessionService.to.activeBankSampahId;
-    hargaDitemukan.value = null;
+    hargaSnapshot.value = null;
 
     try {
-      // Cari harga dari yang paling spesifik ke paling umum
       dynamic data;
 
-      if (selectedJenis.value != null) {
+      // Cari dari yang paling spesifik ke paling umum
+      if (selectedJenisId.value.isNotEmpty) {
         data = await SupabaseService.client
             .from(SupabaseConstants.tableHargaSampah)
             .select('*, satuan(*)')
             .eq('bank_sampah_id', bankSampahId)
-            .eq('jenis_sampah_id', selectedJenis.value!.id)
+            .eq('jenis_sampah_id', selectedJenisId.value)
             .maybeSingle();
       }
 
-      data ??= selectedSubKategori.value != null
-          ? await SupabaseService.client
-                .from(SupabaseConstants.tableHargaSampah)
-                .select('*, satuan(*)')
-                .eq('bank_sampah_id', bankSampahId)
-                .eq('sub_kategori_id', selectedSubKategori.value!.id)
-                .isFilter('jenis_sampah_id', null)
-                .maybeSingle()
-          : null;
+      if (data == null && selectedSubKategoriId.value.isNotEmpty) {
+        data = await SupabaseService.client
+            .from(SupabaseConstants.tableHargaSampah)
+            .select('*, satuan(*)')
+            .eq('bank_sampah_id', bankSampahId)
+            .eq('sub_kategori_id', selectedSubKategoriId.value)
+            .isFilter('jenis_sampah_id', null)
+            .maybeSingle();
+      }
 
-      data ??= selectedKategori.value != null
-          ? await SupabaseService.client
-                .from(SupabaseConstants.tableHargaSampah)
-                .select('*, satuan(*)')
-                .eq('bank_sampah_id', bankSampahId)
-                .eq('kategori_id', selectedKategori.value!.id)
-                // Ganti .is_ menjadi .isFilter
-                .isFilter('sub_kategori_id', null)
-                .isFilter('jenis_sampah_id', null)
-                .maybeSingle()
-          : null;
+      if (data == null && selectedKategoriId.value.isNotEmpty) {
+        data = await SupabaseService.client
+            .from(SupabaseConstants.tableHargaSampah)
+            .select('*, satuan(*)')
+            .eq('bank_sampah_id', bankSampahId)
+            .eq('kategori_id', selectedKategoriId.value)
+            .isFilter('sub_kategori_id', null)
+            .isFilter('jenis_sampah_id', null)
+            .maybeSingle();
+      }
 
       if (data != null) {
-        hargaDitemukan.value = HargaSampahModel.fromJson(data);
-        // Auto-set satuan dari harga
-        if (hargaDitemukan.value?.satuan != null) {
-          final satuanMatch = listSatuan.firstWhereOrNull(
-            (s) => s.id == hargaDitemukan.value!.satuanId,
-          );
-          if (satuanMatch != null) selectedSatuan.value = satuanMatch;
+        hargaSnapshot.value = HargaSampahModel.fromJson(data);
+        // Auto-set satuan dari harga jika belum dipilih
+        if (hargaSnapshot.value?.satuanId != null &&
+            selectedSatuanId.value.isEmpty) {
+          selectedSatuanId.value = hargaSnapshot.value!.satuanId;
         }
       }
     } catch (_) {
@@ -173,51 +169,77 @@ class InputSampahController extends GetxController {
   }
 
   void _onKategoriChanged() {
-    selectedSubKategori.value = null;
-    selectedJenis.value = null;
+    selectedSubKategoriId.value = '';
+    selectedJenisId.value = '';
     listSubKategori.clear();
-    listJenis.clear();
-    hargaDitemukan.value = null;
+    listJenisSampah.clear();
+    hargaSnapshot.value = null;
 
-    if (selectedKategori.value != null) {
-      _fetchSubKategori(selectedKategori.value!.id);
+    if (selectedKategoriId.value.isNotEmpty) {
+      _fetchSubKategori(selectedKategoriId.value);
       _fetchHargaOtomatis();
     }
   }
 
   void _onSubKategoriChanged() {
-    selectedJenis.value = null;
-    listJenis.clear();
+    selectedJenisId.value = '';
+    listJenisSampah.clear();
 
-    if (selectedSubKategori.value != null) {
-      _fetchJenis(selectedSubKategori.value!.id);
-      _fetchHargaOtomatis();
-    } else {
-      _fetchHargaOtomatis();
-    }
-  }
-
-  void _onJenisChanged() {
-    // Auto-set satuan default dari jenis
-    if (selectedJenis.value?.satuanDefault != null) {
-      final satuanMatch = listSatuan.firstWhereOrNull(
-        (s) => s.id == selectedJenis.value!.satuanDefaultId,
-      );
-      if (satuanMatch != null) selectedSatuan.value = satuanMatch;
+    if (selectedSubKategoriId.value.isNotEmpty) {
+      _fetchJenisSampah(selectedSubKategoriId.value);
     }
     _fetchHargaOtomatis();
   }
 
+  void _onJenisChanged() {
+    // Auto-set satuan default dari jenis sampah yang dipilih
+    if (selectedJenisId.value.isNotEmpty) {
+      final jenis = listJenisSampah.firstWhereOrNull(
+        (j) => j.id == selectedJenisId.value,
+      );
+      if (jenis?.satuanDefaultId != null && selectedSatuanId.value.isEmpty) {
+        selectedSatuanId.value = jenis!.satuanDefaultId!;
+      }
+    }
+    _fetchHargaOtomatis();
+  }
+
+  // Callback untuk dropdown view
+  void onKategoriChanged(String? id) {
+    selectedKategoriId.value = id ?? '';
+  }
+
+  void onSubKategoriChanged(String? id) {
+    selectedSubKategoriId.value = id ?? '';
+  }
+
+  void onJenisChanged(String? id) {
+    selectedJenisId.value = id ?? '';
+  }
+
   void _populateEditData() {
     final d = editData!;
+
     selectedTanggal.value = d.tanggalPengelolaan;
+    tanggalController.text =
+        FormatHelper.date(d.tanggalPengelolaan);
     jumlahController.text = d.jumlah.toString();
     catatanController.text = d.catatan ?? '';
+    selectedSatuanId.value = d.satuanId;
 
-    if (d.kategori != null) {
-      selectedKategori.value = listKategori.firstWhereOrNull(
-        (k) => k.id == d.kategoriId,
-      );
+    // Set kategori, lalu muat sub-kategori & jenis secara berantai
+    if (d.kategoriId.isNotEmpty) {
+      selectedKategoriId.value = d.kategoriId;
+      _fetchSubKategori(d.kategoriId).then((_) {
+        if (d.subKategoriId != null) {
+          selectedSubKategoriId.value = d.subKategoriId!;
+          _fetchJenisSampah(d.subKategoriId!).then((_) {
+            if (d.jenisSampahId != null) {
+              selectedJenisId.value = d.jenisSampahId!;
+            }
+          });
+        }
+      });
     }
   }
 
@@ -228,16 +250,24 @@ class InputSampahController extends GetxController {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
-    if (picked != null) selectedTanggal.value = picked;
+    if (picked != null) {
+      selectedTanggal.value = picked;
+      tanggalController.text = FormatHelper.date(picked);
+    }
+  }
+
+  void clearTanggal() {
+    selectedTanggal.value = null;
+    tanggalController.clear();
   }
 
   Future<void> simpan() async {
     if (!formKey.currentState!.validate()) return;
-    if (selectedKategori.value == null) {
+    if (selectedKategoriId.value.isEmpty) {
       Get.snackbar('Validasi', 'Kategori wajib dipilih.');
       return;
     }
-    if (selectedSatuan.value == null) {
+    if (selectedSatuanId.value.isEmpty) {
       Get.snackbar('Validasi', 'Satuan wajib dipilih.');
       return;
     }
@@ -251,13 +281,18 @@ class InputSampahController extends GetxController {
       final payload = {
         'bank_sampah_id': SessionService.to.activeBankSampahId,
         'profile_id': SessionService.to.profile.value!.id,
-        'kategori_id': selectedKategori.value!.id,
-        'sub_kategori_id': selectedSubKategori.value?.id,
-        'jenis_sampah_id': selectedJenis.value?.id,
-        'jumlah': double.parse(jumlahController.text.trim()),
-        'satuan_id': selectedSatuan.value!.id,
-        'harga_per_satuan': hargaDitemukan.value?.hargaPerSatuan,
-        'tanggal_pengelolaan': FormatHelper.dateToInput(selectedTanggal.value!),
+        'kategori_id': selectedKategoriId.value,
+        'sub_kategori_id': selectedSubKategoriId.value.isEmpty
+            ? null
+            : selectedSubKategoriId.value,
+        'jenis_sampah_id':
+            selectedJenisId.value.isEmpty ? null : selectedJenisId.value,
+        'jumlah': double.parse(
+            jumlahController.text.trim().replaceAll(',', '.')),
+        'satuan_id': selectedSatuanId.value,
+        'harga_per_satuan': hargaSnapshot.value?.hargaPerSatuan,
+        'tanggal_pengelolaan':
+            FormatHelper.dateToInput(selectedTanggal.value!),
         'catatan': catatanController.text.trim().isEmpty
             ? null
             : catatanController.text.trim(),
@@ -288,6 +323,7 @@ class InputSampahController extends GetxController {
   void onClose() {
     jumlahController.dispose();
     catatanController.dispose();
+    tanggalController.dispose();
     super.onClose();
   }
 }

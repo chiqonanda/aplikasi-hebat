@@ -16,7 +16,8 @@ enum JenisLaporan {
 class LaporanController extends GetxController {
   final listBankSampah = <BankSampahModel>[].obs;
   final selectedBankSampah = Rx<BankSampahModel?>(null);
-  final selectedJenisLaporan = Rx<JenisLaporan>(JenisLaporan.rekapTransaksi);
+  final selectedJenisLaporan =
+      Rx<JenisLaporan>(JenisLaporan.rekapTransaksi);
   final selectedTanggalMulai = Rx<DateTime?>(null);
   final selectedTanggalAkhir = Rx<DateTime?>(null);
 
@@ -53,13 +54,16 @@ class LaporanController extends GetxController {
           .order('nama');
       listBankSampah.value =
           (data as List).map((e) => BankSampahModel.fromJson(e)).toList();
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal memuat daftar bank sampah.');
     } finally {
       isLoading.value = false;
     }
   }
 
   bool get isValid =>
-      selectedTanggalMulai.value != null && selectedTanggalAkhir.value != null;
+      selectedTanggalMulai.value != null &&
+      selectedTanggalAkhir.value != null;
 
   Future<List<PengelolaanSampahModel>> _fetchDataLaporan() async {
     var query = SupabaseService.client
@@ -83,10 +87,12 @@ class LaporanController extends GetxController {
         );
 
     if (selectedBankSampah.value != null) {
-      query = query.eq('bank_sampah_id', selectedBankSampah.value!.id);
+      query =
+          query.eq('bank_sampah_id', selectedBankSampah.value!.id);
     }
 
-    final data = await query.order('tanggal_pengelolaan', ascending: true);
+    final data =
+        await query.order('tanggal_pengelolaan', ascending: true);
     return (data as List)
         .map((e) => PengelolaanSampahModel.fromJson(e))
         .toList();
@@ -94,7 +100,8 @@ class LaporanController extends GetxController {
 
   Future<void> previewLaporan() async {
     if (!isValid) {
-      Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');
+      Get.snackbar(
+          'Validasi', 'Tentukan periode laporan terlebih dahulu.');
       return;
     }
     isGenerating.value = true;
@@ -112,12 +119,10 @@ class LaporanController extends GetxController {
     if (!isValid) return;
     isGenerating.value = true;
     try {
+      // ignore: unused_local_variable
       final data = await _fetchDataLaporan();
-      // Export Excel menggunakan package xlsx
-      // Implementasi detail di view/service terpisah
-      // karena butuh platform channel untuk save file
+      // TODO: implementasi export menggunakan package excel + path_provider + share_plus
       Get.snackbar('Info', 'Fitur export Excel akan segera tersedia.');
-      _ = data; // suppress unused warning
     } catch (e) {
       Get.snackbar('Gagal', 'Export gagal.');
     } finally {
@@ -129,9 +134,10 @@ class LaporanController extends GetxController {
     if (!isValid) return;
     isGenerating.value = true;
     try {
+      // ignore: unused_local_variable
       final data = await _fetchDataLaporan();
+      // TODO: implementasi export menggunakan package csv + path_provider + share_plus
       Get.snackbar('Info', 'Fitur export CSV akan segera tersedia.');
-      _ = data;
     } catch (e) {
       Get.snackbar('Gagal', 'Export gagal.');
     } finally {

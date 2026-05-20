@@ -73,6 +73,7 @@ class MonitoringController extends GetxController {
 
   void selectBank(BankSampahModel bank) {
     selectedBankSampah.value = bank;
+    fetchDetailBankSampah(bank.id);
   }
 
   Future<void> fetchMonitoring() async {
@@ -162,7 +163,7 @@ class MonitoringController extends GetxController {
             tipe_sampah(*),
             jenis_sampah(*, tipe_sampah(*)),
             satuan(*),
-            profiles(nama_lengkap)
+            profiles(*)
           ''')
           .eq('bank_sampah_id', bankSampahId)
           .gte('tanggal_pengelolaan',

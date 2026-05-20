@@ -75,7 +75,7 @@ class LaporanController extends GetxController {
           jenis_sampah(*, tipe_sampah(*)),
           satuan(*),
           bank_sampah(nama, rt, rw),
-          profiles(nama_lengkap)
+          profiles(*)
         ''')
         .gte(
           'tanggal_pengelolaan',

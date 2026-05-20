@@ -5,6 +5,7 @@ import '../../core/constants/supabase_constants.dart';
 import '../../core/services/session_service.dart';
 import '../../models/bank_sampah_model.dart';
 import '../../app/routes/app_routes.dart';
+import 'monitoring_controller.dart';
 
 class DashboardKelurahanController extends GetxController {
   final isLoading = false.obs;
@@ -135,8 +136,12 @@ class DashboardKelurahanController extends GetxController {
       Get.toNamed(AppRoutes.manajemenPengelola);
   void goToLaporan() => Get.toNamed(AppRoutes.generatorLaporan);
   void goToProfil() => Get.toNamed(AppRoutes.profilKelurahan);
-  void goToDetailBankSampah(BankSampahModel b) =>
-      Get.toNamed(AppRoutes.detailBankSampah, arguments: b);
+  void goToDetailBankSampah(BankSampahModel b) {
+    if (Get.isRegistered<MonitoringController>()) {
+      Get.find<MonitoringController>().selectBank(b);
+    }
+    Get.toNamed(AppRoutes.detailBankSampah, arguments: b);
+  }
 
   Future<void> refresh() => fetchDashboardData();
 }

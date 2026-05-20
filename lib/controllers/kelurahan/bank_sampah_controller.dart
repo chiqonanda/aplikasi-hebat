@@ -23,6 +23,9 @@ class BankSampahController extends GetxController {
   final isSaving = false.obs;
   final isAktif = true.obs;
 
+  // Cakupan RT terpilih (multi-select)
+  final selectedRts = <String>[].obs;
+
   final editData = Rx<BankSampahModel?>(null);
   bool get isEditMode => editData.value != null;
 
@@ -100,6 +103,17 @@ class BankSampahController extends GetxController {
     rtController.text = editData.value!.rt ?? '';
     rwController.text = editData.value!.rw ?? '';
     isAktif.value = editData.value!.isActive;
+
+    // Populate selectedRts
+    if (editData.value!.rt != null && editData.value!.rt!.isNotEmpty) {
+      selectedRts.value = editData.value!.rt!
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else {
+      selectedRts.clear();
+    }
   }
 
   void resetForm() {
@@ -110,6 +124,7 @@ class BankSampahController extends GetxController {
     alamatController.clear();
     rtController.clear();
     rwController.clear();
+    selectedRts.clear();
     isAktif.value = true;
   }
 
@@ -126,9 +141,9 @@ class BankSampahController extends GetxController {
         'alamat': alamatController.text.trim().isEmpty
             ? null
             : alamatController.text.trim(),
-        'rt': rtController.text.trim().isEmpty
+        'rt': selectedRts.isEmpty
             ? null
-            : rtController.text.trim(),
+            : selectedRts.join(', '),
         'rw': rwController.text.trim().isEmpty
             ? null
             : rwController.text.trim(),

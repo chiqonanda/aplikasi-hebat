@@ -1,10 +1,20 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:get/get.dart';
+import 'package:excel/excel.dart';
+import 'package:csv/csv.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/constants/supabase_constants.dart';
 import '../../core/utils/format_helper.dart';
 import '../../models/bank_sampah_model.dart';
+import '../../models/kategori_model.dart';
+import '../../models/sub_kategori_model.dart';
+import '../../models/tipe_sampah_model.dart';
+import '../../models/jenis_sampah_model.dart';
 import '../../models/pengelolaan_sampah_model.dart';
+
 
 enum JenisLaporan {
   ringkasanMonitoring,
@@ -13,7 +23,14 @@ enum JenisLaporan {
   aktivitasBankSampah,
 }
 
+
 class LaporanController extends GetxController {
+
+  // Tambah di bagian atas variabel controller
+  final listAllKategori = <KategoriModel>[].obs;
+  final listAllSubKategori = <SubKategoriModel>[].obs;
+  final listAllJenisSampah = <JenisSampahModel>[].obs;
+  final listAllTipeSampah = <TipeSampahModel>[].obs;
   final listBankSampah = <BankSampahModel>[].obs;
   final selectedBankSampah = Rx<BankSampahModel?>(null);
   final selectedJenisLaporan =
@@ -35,15 +52,15 @@ class LaporanController extends GetxController {
     JenisLaporan.aktivitasBankSampah: 'Aktivitas Bank Sampah',
   };
 
-  @override
-  void onInit() {
-    super.onInit();
-    _fetchBankSampah();
-    // Default periode: bulan ini
-    final now = DateTime.now();
-    selectedTanggalMulai.value = DateTime(now.year, now.month, 1);
-    selectedTanggalAkhir.value = DateTime(now.year, now.month + 1, 0);
-  }
+@override
+void onInit() {
+  super.onInit();
+  _fetchBankSampah();
+  _fetchMasterData(); // tambah ini
+  final now = DateTime.now();
+  selectedTanggalMulai.value = DateTime(now.year, now.month, 1);
+  selectedTanggalAkhir.value = DateTime(now.year, now.month + 1, 0);
+}
 
   Future<void> _fetchBankSampah() async {
     isLoading.value = true;
@@ -61,6 +78,48 @@ class LaporanController extends GetxController {
     }
   }
 
+  Future<void> _fetchMasterData() async {
+  try {
+    final resKategori = await SupabaseService.client
+        .from(SupabaseConstants.tableKategoriSampah)
+        .select()
+        .eq('is_active', true)
+        .order('urutan');
+    listAllKategori.value = (resKategori as List)
+        .map((e) => KategoriModel.fromJson(e))
+        .toList();
+
+    final resSubKategori = await SupabaseService.client
+        .from(SupabaseConstants.tableSubKategoriSampah)
+        .select()
+        .eq('is_active', true)
+        .order('urutan');
+    listAllSubKategori.value = (resSubKategori as List)
+        .map((e) => SubKategoriModel.fromJson(e))
+        .toList();
+
+    final resTipe = await SupabaseService.client
+        .from(SupabaseConstants.tableTipeSampah)
+        .select()
+        .eq('is_active', true)
+        .order('urutan');
+    listAllTipeSampah.value = (resTipe as List)
+        .map((e) => TipeSampahModel.fromJson(e))
+        .toList();
+
+    final resJenis = await SupabaseService.client
+        .from(SupabaseConstants.tableJenisSampah)
+        .select()
+        .eq('is_active', true)
+        .order('urutan');
+    listAllJenisSampah.value = (resJenis as List)
+        .map((e) => JenisSampahModel.fromJson(e))
+        .toList();
+  } catch (e) {
+    Get.snackbar('Error', 'Gagal memuat master data: $e');
+  }
+}
+
   bool get isValid =>
       selectedTanggalMulai.value != null &&
       selectedTanggalAkhir.value != null;
@@ -72,9 +131,10 @@ class LaporanController extends GetxController {
           *,
           kategori_sampah(*),
           sub_kategori_sampah(*),
+          tipe_sampah(*),
           jenis_sampah(*, tipe_sampah(*)),
           satuan(*),
-          bank_sampah(nama, rt, rw),
+          bank_sampah(*),
           profiles(*)
         ''')
         .gte(
@@ -109,37 +169,567 @@ class LaporanController extends GetxController {
       previewData.value = await _fetchDataLaporan();
       hasPreview.value = true;
     } catch (e) {
-      Get.snackbar('Error', 'Gagal memuat data laporan.');
+      Get.snackbar('Error', 'Gagal memuat data laporan: $e');
     } finally {
       isGenerating.value = false;
     }
   }
 
-  Future<void> exportExcel() async {
-    if (!isValid) return;
-    isGenerating.value = true;
-    try {
-      // ignore: unused_local_variable
-      final data = await _fetchDataLaporan();
-      // TODO: implementasi export menggunakan package excel + path_provider + share_plus
-      Get.snackbar('Info', 'Fitur export Excel akan segera tersedia.');
-    } catch (e) {
-      Get.snackbar('Gagal', 'Export gagal.');
-    } finally {
-      isGenerating.value = false;
+Future<void> exportExcel() async {
+  if (!isValid) {
+    Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');
+    return;
+  }
+  isGenerating.value = true;
+  try {
+    // Fetch master data kalau belum ada
+    if (listAllKategori.isEmpty) await _fetchMasterData();
+
+    List<PengelolaanSampahModel> data = previewData;
+    if (data.isEmpty) data = await _fetchDataLaporan();
+
+    final List<BankSampahModel> bankKolom = selectedBankSampah.value != null
+        ? [selectedBankSampah.value!]
+        : listBankSampah;
+
+    var excelFile = Excel.createExcel();
+    if (excelFile.sheets.containsKey('Sheet1')) {
+      excelFile.delete('Sheet1');
+    }
+
+    final mulai = selectedTanggalMulai.value!;
+    final akhir = selectedTanggalAkhir.value!;
+    final selisihHari = akhir.difference(mulai).inDays;
+
+    if (selisihHari <= 31) {
+      final label =
+          '${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
+      final sheet = excelFile[label.length > 31 ? 'Laporan' : label];
+      _buildSheet(sheet, label, data, bankKolom);
+    } else {
+      // Kelompokkan per bulan, urutkan
+      final Map<String, List<PengelolaanSampahModel>> perBulan = {};
+      for (final item in data) {
+        final tgl = item.tanggalPengelolaan;
+        if (tgl == null) continue;
+        final key =
+            '${_namaBulan(tgl.month).toUpperCase()} ${tgl.year}';
+        perBulan.putIfAbsent(key, () => []);
+        perBulan[key]!.add(item);
+      }
+      for (final entry in perBulan.entries) {
+        final sheet = excelFile[entry.key];
+        _buildSheet(sheet, entry.key, entry.value, bankKolom);
+      }
+    }
+
+    final bytes = excelFile.save();
+    if (bytes == null) throw Exception('Gagal membuat byte data Excel.');
+
+    final startStr =
+        FormatHelper.dateToInput(mulai).replaceAll('-', '');
+    final endStr =
+        FormatHelper.dateToInput(akhir).replaceAll('-', '');
+    final fileName = 'laporan_sampah_$startStr-$endStr.xlsx';
+    final shareText =
+        'Laporan Bank Sampah ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
+
+    await Share.shareXFiles(
+      [
+        XFile.fromData(
+          Uint8List.fromList(bytes),
+          name: fileName,
+          mimeType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+      ],
+      text: shareText,
+    );
+    Get.snackbar(
+        'Sukses', 'Laporan Excel berhasil diexport dan siap dibagikan.');
+  } catch (e) {
+    Get.snackbar('Gagal', 'Export Excel gagal: $e');
+  } finally {
+    isGenerating.value = false;
+  }
+}
+
+void _buildSheet(
+  Sheet sheet,
+  String labelPeriode,
+  List<PengelolaanSampahModel> data,
+  List<BankSampahModel> bankKolom,
+) {
+  // ── Pivot: jenis_sampah_id → bank_sampah_id → jumlah ───────
+  final Map<String, Map<String, double>> pivot = {};
+  for (final item in data) {
+    final jId = item.jenisSampah?.id;
+    if (jId == null) continue;
+    final bId = item.bankSampah?.id ?? '';
+    pivot.putIfAbsent(jId, () => {});
+    pivot[jId]![bId] = (pivot[jId]![bId] ?? 0) + item.jumlah;
+  }
+
+  // ── Helper style ────────────────────────────────────────────
+  CellStyle _styleHeader() => CellStyle(
+        bold: true,
+        horizontalAlign: HorizontalAlign.Center,
+        verticalAlign: VerticalAlign.Center,
+        backgroundColorHex: ExcelColor.fromHexString('#D9D9D9'),
+        leftBorder: Border(borderStyle: BorderStyle.Thin),
+        rightBorder: Border(borderStyle: BorderStyle.Thin),
+        topBorder: Border(borderStyle: BorderStyle.Thin),
+        bottomBorder: Border(borderStyle: BorderStyle.Thin),
+      );
+
+  CellStyle _styleGroup() => CellStyle(
+        bold: true,
+        leftBorder: Border(borderStyle: BorderStyle.Thin),
+        rightBorder: Border(borderStyle: BorderStyle.Thin),
+        topBorder: Border(borderStyle: BorderStyle.Thin),
+        bottomBorder: Border(borderStyle: BorderStyle.Thin),
+      );
+
+  CellStyle _styleData() => CellStyle(
+        leftBorder: Border(borderStyle: BorderStyle.Thin),
+        rightBorder: Border(borderStyle: BorderStyle.Thin),
+        topBorder: Border(borderStyle: BorderStyle.Thin),
+        bottomBorder: Border(borderStyle: BorderStyle.Thin),
+      );
+
+  CellStyle _styleNumber() => CellStyle(
+        horizontalAlign: HorizontalAlign.Center,
+        leftBorder: Border(borderStyle: BorderStyle.Thin),
+        rightBorder: Border(borderStyle: BorderStyle.Thin),
+        topBorder: Border(borderStyle: BorderStyle.Thin),
+        bottomBorder: Border(borderStyle: BorderStyle.Thin),
+      );
+
+  void _setRowStyle(Sheet s, int rowIdx, int totalCols, CellStyle style) {
+    for (int c = 0; c < totalCols; c++) {
+      s.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: rowIdx))
+          .cellStyle = style;
     }
   }
+
+  final totalCols = bankKolom.length + 3; // NO + JENIS SAMPAH + bank... + TOTAL
+  int rowIdx = 0;
+
+  // ── Baris 1: Judul ──────────────────────────────────────────
+  final cellJudul = sheet.cell(
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIdx));
+  cellJudul.value = TextCellValue('LAPORAN SAMPAH KELURAHAN');
+  cellJudul.cellStyle = CellStyle(bold: true);
+  rowIdx++;
+
+  // ── Baris 2: Periode ────────────────────────────────────────
+  final cellPeriode = sheet.cell(
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIdx));
+  cellPeriode.value = TextCellValue('PERIODE : $labelPeriode');
+  rowIdx++;
+
+  rowIdx++; // baris kosong
+
+  // ── Baris Header Kolom ──────────────────────────────────────
+  final headerRow = rowIdx;
+  sheet
+      .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: headerRow))
+      .value = TextCellValue('NO');
+  sheet
+      .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: headerRow))
+      .value = TextCellValue('JENIS SAMPAH');
+  for (int i = 0; i < bankKolom.length; i++) {
+    sheet
+        .cell(CellIndex.indexByColumnRow(
+            columnIndex: i + 2, rowIndex: headerRow))
+        .value = TextCellValue(bankKolom[i].nama);
+  }
+  sheet
+      .cell(CellIndex.indexByColumnRow(
+          columnIndex: bankKolom.length + 2, rowIndex: headerRow))
+      .value = TextCellValue('TOTAL');
+  _setRowStyle(sheet, headerRow, totalCols, _styleHeader());
+  rowIdx++;
+
+  // ── Tulis data per hierarki ─────────────────────────────────
+  final Map<String, double> totalKategori = {};
+
+  for (final kat in listAllKategori) {
+    // Baris Kategori (bold, background)
+    final katRow = rowIdx;
+    sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: katRow))
+        .value = TextCellValue('');
+    sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: katRow))
+        .value = TextCellValue(kat.nama.toUpperCase());
+    for (int c = 2; c < totalCols; c++) {
+      sheet
+          .cell(CellIndex.indexByColumnRow(
+              columnIndex: c, rowIndex: katRow))
+          .value = TextCellValue('');
+    }
+    _setRowStyle(sheet, katRow, totalCols, _styleGroup());
+    rowIdx++;
+
+    // Sub kategori yang ada di kategori ini
+    final subList = listAllSubKategori
+        .where((s) => s.kategoriId == kat.id)
+        .toList();
+
+    if (subList.isNotEmpty) {
+      // Kategori AN ORGANIK: ada sub kategori
+      for (final sub in subList) {
+        // Baris Sub Kategori
+        final subRow = rowIdx;
+        sheet
+            .cell(CellIndex.indexByColumnRow(
+                columnIndex: 0, rowIndex: subRow))
+            .value = TextCellValue('');
+        sheet
+            .cell(CellIndex.indexByColumnRow(
+                columnIndex: 1, rowIndex: subRow))
+            .value = TextCellValue(sub.nama.toUpperCase());
+        for (int c = 2; c < totalCols; c++) {
+          sheet
+              .cell(CellIndex.indexByColumnRow(
+                  columnIndex: c, rowIndex: subRow))
+              .value = TextCellValue('');
+        }
+        _setRowStyle(sheet, subRow, totalCols, _styleGroup());
+        rowIdx++;
+
+        // Tipe yang ada di sub kategori ini
+        final tipeList = listAllTipeSampah
+            .where((t) => t.subKategoriId == sub.id)
+            .toList();
+
+        if (tipeList.isNotEmpty) {
+          // Ada tipe (misal Plastik: PET, PP, Hope, ABS)
+          for (final tipe in tipeList) {
+            // Baris Tipe
+            final tipeRow = rowIdx;
+            sheet
+                .cell(CellIndex.indexByColumnRow(
+                    columnIndex: 0, rowIndex: tipeRow))
+                .value = TextCellValue('');
+            sheet
+                .cell(CellIndex.indexByColumnRow(
+                    columnIndex: 1, rowIndex: tipeRow))
+                .value = TextCellValue(tipe.nama);
+            for (int c = 2; c < totalCols; c++) {
+              sheet
+                  .cell(CellIndex.indexByColumnRow(
+                      columnIndex: c, rowIndex: tipeRow))
+                  .value = TextCellValue('');
+            }
+            _setRowStyle(sheet, tipeRow, totalCols, _styleGroup());
+            rowIdx++;
+
+            // Jenis di tipe ini
+            final jenisList = listAllJenisSampah
+                .where((j) =>
+                    j.subKategoriId == sub.id && j.tipeId == tipe.id)
+                .toList();
+
+            int noUrut = 1;
+            for (final jenis in jenisList) {
+              final baris = rowIdx;
+              sheet
+                  .cell(CellIndex.indexByColumnRow(
+                      columnIndex: 0, rowIndex: baris))
+                  .value = TextCellValue('$noUrut');
+              sheet
+                  .cell(CellIndex.indexByColumnRow(
+                      columnIndex: 1, rowIndex: baris))
+                  .value = TextCellValue(jenis.nama);
+
+              double rowTotal = 0;
+              for (int i = 0; i < bankKolom.length; i++) {
+                final jumlah =
+                    pivot[jenis.id]?[bankKolom[i].id] ?? 0.0;
+                rowTotal += jumlah;
+                final cell = sheet.cell(CellIndex.indexByColumnRow(
+                    columnIndex: i + 2, rowIndex: baris));
+                cell.value = jumlah > 0
+                    ? TextCellValue(FormatHelper.number(jumlah))
+                    : TextCellValue('');
+                cell.cellStyle = _styleNumber();
+              }
+              final totalCell = sheet.cell(CellIndex.indexByColumnRow(
+                  columnIndex: bankKolom.length + 2, rowIndex: baris));
+              totalCell.value = rowTotal > 0
+                  ? TextCellValue(FormatHelper.number(rowTotal))
+                  : TextCellValue('');
+              totalCell.cellStyle = _styleNumber();
+
+              sheet
+                  .cell(CellIndex.indexByColumnRow(
+                      columnIndex: 0, rowIndex: baris))
+                  .cellStyle = _styleNumber();
+              sheet
+                  .cell(CellIndex.indexByColumnRow(
+                      columnIndex: 1, rowIndex: baris))
+                  .cellStyle = _styleData();
+
+              totalKategori[kat.id] =
+                  (totalKategori[kat.id] ?? 0) + rowTotal;
+              noUrut++;
+              rowIdx++;
+            }
+          }
+        } else {
+          // Tidak ada tipe (misal Kertas, Logam, Kaca)
+          final jenisList = listAllJenisSampah
+              .where((j) => j.subKategoriId == sub.id)
+              .toList();
+
+          int noUrut = 1;
+          for (final jenis in jenisList) {
+            final baris = rowIdx;
+            sheet
+                .cell(CellIndex.indexByColumnRow(
+                    columnIndex: 0, rowIndex: baris))
+                .value = TextCellValue('$noUrut');
+            sheet
+                .cell(CellIndex.indexByColumnRow(
+                    columnIndex: 1, rowIndex: baris))
+                .value = TextCellValue(jenis.nama);
+
+            double rowTotal = 0;
+            for (int i = 0; i < bankKolom.length; i++) {
+              final jumlah =
+                  pivot[jenis.id]?[bankKolom[i].id] ?? 0.0;
+              rowTotal += jumlah;
+              final cell = sheet.cell(CellIndex.indexByColumnRow(
+                  columnIndex: i + 2, rowIndex: baris));
+              cell.value = jumlah > 0
+                  ? TextCellValue(FormatHelper.number(jumlah))
+                  : TextCellValue('');
+              cell.cellStyle = _styleNumber();
+            }
+            final totalCell = sheet.cell(CellIndex.indexByColumnRow(
+                columnIndex: bankKolom.length + 2, rowIndex: baris));
+            totalCell.value = rowTotal > 0
+                ? TextCellValue(FormatHelper.number(rowTotal))
+                : TextCellValue('');
+            totalCell.cellStyle = _styleNumber();
+
+            sheet
+                .cell(CellIndex.indexByColumnRow(
+                    columnIndex: 0, rowIndex: baris))
+                .cellStyle = _styleNumber();
+            sheet
+                .cell(CellIndex.indexByColumnRow(
+                    columnIndex: 1, rowIndex: baris))
+                .cellStyle = _styleData();
+
+            totalKategori[kat.id] =
+                (totalKategori[kat.id] ?? 0) + rowTotal;
+            noUrut++;
+            rowIdx++;
+          }
+        }
+      }
+    } else {
+      // Tidak ada sub kategori (Organik, Minyak Jelantah, dll)
+      // Jenis langsung di bawah kategori via kategori_id
+      final jenisList = listAllJenisSampah
+          .where((j) => j.kategoriId == kat.id)
+          .toList();
+
+      int noUrut = 1;
+      for (final jenis in jenisList) {
+        final baris = rowIdx;
+        sheet
+            .cell(CellIndex.indexByColumnRow(
+                columnIndex: 0, rowIndex: baris))
+            .value = TextCellValue('$noUrut');
+        sheet
+            .cell(CellIndex.indexByColumnRow(
+                columnIndex: 1, rowIndex: baris))
+            .value = TextCellValue(jenis.nama);
+
+        double rowTotal = 0;
+        for (int i = 0; i < bankKolom.length; i++) {
+          final jumlah = pivot[jenis.id]?[bankKolom[i].id] ?? 0.0;
+          rowTotal += jumlah;
+          final cell = sheet.cell(CellIndex.indexByColumnRow(
+              columnIndex: i + 2, rowIndex: baris));
+          cell.value = jumlah > 0
+              ? TextCellValue(FormatHelper.number(jumlah))
+              : TextCellValue('');
+          cell.cellStyle = _styleNumber();
+        }
+        final totalCell = sheet.cell(CellIndex.indexByColumnRow(
+            columnIndex: bankKolom.length + 2, rowIndex: baris));
+        totalCell.value = rowTotal > 0
+            ? TextCellValue(FormatHelper.number(rowTotal))
+            : TextCellValue('');
+        totalCell.cellStyle = _styleNumber();
+
+        sheet
+            .cell(CellIndex.indexByColumnRow(
+                columnIndex: 0, rowIndex: baris))
+            .cellStyle = _styleNumber();
+        sheet
+            .cell(CellIndex.indexByColumnRow(
+                columnIndex: 1, rowIndex: baris))
+            .cellStyle = _styleData();
+
+        totalKategori[kat.id] =
+            (totalKategori[kat.id] ?? 0) + rowTotal;
+        noUrut++;
+        rowIdx++;
+      }
+    }
+  }
+
+  // ── Baris kosong ────────────────────────────────────────────
+  rowIdx++;
+
+  // ── Baris JUMLAH per kategori ───────────────────────────────
+  final judulTotalRow = rowIdx;
+  sheet
+      .cell(CellIndex.indexByColumnRow(
+          columnIndex: 0, rowIndex: judulTotalRow))
+      .value = TextCellValue('');
+  sheet
+      .cell(CellIndex.indexByColumnRow(
+          columnIndex: 1, rowIndex: judulTotalRow))
+      .value = TextCellValue('JUMLAH');
+  _setRowStyle(sheet, judulTotalRow, totalCols, _styleGroup());
+  rowIdx++;
+
+  for (final kat in listAllKategori) {
+    final totalRow = rowIdx;
+    sheet
+        .cell(CellIndex.indexByColumnRow(
+            columnIndex: 0, rowIndex: totalRow))
+        .value = TextCellValue('');
+    sheet
+        .cell(CellIndex.indexByColumnRow(
+            columnIndex: 1, rowIndex: totalRow))
+        .value = TextCellValue(kat.nama);
+    for (int c = 2; c < totalCols - 1; c++) {
+      sheet
+          .cell(CellIndex.indexByColumnRow(
+              columnIndex: c, rowIndex: totalRow))
+          .value = TextCellValue('');
+    }
+    final val = totalKategori[kat.id] ?? 0;
+    sheet
+        .cell(CellIndex.indexByColumnRow(
+            columnIndex: totalCols - 1, rowIndex: totalRow))
+        .value = val > 0
+        ? TextCellValue(FormatHelper.number(val))
+        : TextCellValue('');
+    _setRowStyle(sheet, totalRow, totalCols, _styleData());
+    rowIdx++;
+  }
+
+  // ── Grand Total ─────────────────────────────────────────────
+  final grandTotal =
+      totalKategori.values.fold(0.0, (sum, v) => sum + v);
+  final grandRow = rowIdx;
+  sheet
+      .cell(CellIndex.indexByColumnRow(
+          columnIndex: 0, rowIndex: grandRow))
+      .value = TextCellValue('');
+  sheet
+      .cell(CellIndex.indexByColumnRow(
+          columnIndex: 1, rowIndex: grandRow))
+      .value = TextCellValue('GRAND TOTAL');
+  for (int c = 2; c < totalCols - 1; c++) {
+    sheet
+        .cell(CellIndex.indexByColumnRow(
+            columnIndex: c, rowIndex: grandRow))
+        .value = TextCellValue('');
+  }
+  sheet
+      .cell(CellIndex.indexByColumnRow(
+          columnIndex: totalCols - 1, rowIndex: grandRow))
+      .value = grandTotal > 0
+      ? TextCellValue(FormatHelper.number(grandTotal))
+      : TextCellValue('');
+  _setRowStyle(sheet, grandRow, totalCols, _styleGroup());
+}
+
+String _namaBulan(int bulan) {
+  const bulanList = [
+    '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  return bulanList[bulan];
+}  
+
 
   Future<void> exportCsv() async {
-    if (!isValid) return;
+    if (!isValid) {
+      Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');
+      return;
+    }
     isGenerating.value = true;
     try {
-      // ignore: unused_local_variable
-      final data = await _fetchDataLaporan();
-      // TODO: implementasi export menggunakan package csv + path_provider + share_plus
-      Get.snackbar('Info', 'Fitur export CSV akan segera tersedia.');
+      List<PengelolaanSampahModel> data = previewData;
+      if (data.isEmpty) {
+        data = await _fetchDataLaporan();
+      }
+      if (data.isEmpty) {
+        Get.snackbar('Info', 'Tidak ada data transaksi untuk diexport.');
+        return;
+      }
+
+      final csvData = <List<dynamic>>[];
+      csvData.add([
+        'No',
+        'Tanggal',
+        'Bank Sampah',
+        'Item',
+        'Kategori',
+        'Jumlah',
+        'Satuan',
+        'Harga/Satuan',
+        'Total Harga',
+        'Pengelola',
+        'Catatan'
+      ]);
+
+      for (var i = 0; i < data.length; i++) {
+        final item = data[i];
+        csvData.add([
+          (i + 1).toString(),
+          FormatHelper.date(item.tanggalPengelolaan),
+          item.bankSampah?.nama ?? '-',
+          item.namaItem,
+          item.kategori?.nama ?? '-',
+          FormatHelper.number(item.jumlah),
+          item.satuan?.singkatan ?? '-',
+          FormatHelper.currency(item.hargaPerSatuan),
+          FormatHelper.currency(item.totalHarga),
+          item.profile?.namaLengkap ?? '-',
+          item.catatan ?? '-',
+        ]);
+      }
+
+      final csvString = const ListToCsvConverter().convert(csvData);
+      final csvWithBom = '\uFEFF$csvString';
+
+      final startStr = FormatHelper.dateToInput(selectedTanggalMulai.value!).replaceAll('-', '');
+      final endStr = FormatHelper.dateToInput(selectedTanggalAkhir.value!).replaceAll('-', '');
+      final fileName = 'laporan_${selectedJenisLaporan.value.name}_$startStr$endStr.csv';
+
+      final namaJenisLaporan = jenisLaporanOptions[selectedJenisLaporan.value] ?? '';
+        final periode = "${FormatHelper.date(selectedTanggalMulai.value)} - ${FormatHelper.date(selectedTanggalAkhir.value)}";
+        final shareText = "Laporan Bank Sampah - $namaJenisLaporan $periode";
+
+        await Share.shareXFiles(
+          [XFile.fromData(Uint8List.fromList(utf8.encode(csvWithBom)), name: fileName, mimeType: 'text/csv')],
+          text: shareText,
+        );
+      Get.snackbar('Sukses', 'Laporan CSV berhasil diexport dan siap dibagikan.');
     } catch (e) {
-      Get.snackbar('Gagal', 'Export gagal.');
+      Get.snackbar('Gagal', 'Export CSV gagal: $e');
     } finally {
       isGenerating.value = false;
     }

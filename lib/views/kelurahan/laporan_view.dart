@@ -356,7 +356,7 @@ class _DatePickerField extends StatelessWidget {
           context: context,
           initialDate: value ?? DateTime.now(),
           firstDate: DateTime(2020),
-          lastDate: DateTime.now(),
+          lastDate: DateTime(DateTime.now().year + 5),
           builder: (ctx, child) => Theme(
             data: Theme.of(ctx).copyWith(
               colorScheme: const ColorScheme.light(primary: AppColors.primary),

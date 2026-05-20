@@ -188,7 +188,25 @@ class PengelolaController extends GetxController {
         debugPrint('Edge Function tolak error: $e');
       }
 
-      // Fallback: Hapus langsung dari database jika Edge Function gagal
+      // Fallback: Coba hapus via PostgreSQL RPC jika Edge Function gagal/tidak aktif
+      if (!deletedViaFunction) {
+        try {
+          final rpcResponse = await SupabaseService.client.rpc(
+            'delete_pengelola_account',
+            params: {
+              'p_auth_user_id': authUserId,
+              'p_profile_id': profileId,
+            },
+          );
+          if (rpcResponse != null && rpcResponse is Map && rpcResponse['status'] == 'success') {
+            deletedViaFunction = true;
+          }
+        } catch (rpcErr) {
+          debugPrint('RPC delete-pengelola error: $rpcErr');
+        }
+      }
+
+      // Fallback 2: Hapus langsung dari database public schema saja jika RPC & Edge Function gagal
       if (!deletedViaFunction) {
         // Hapus relasi jika ada (opsional tapi aman)
         await SupabaseService.client
@@ -223,23 +241,58 @@ class PengelolaController extends GetxController {
 
     isSaving.value = true;
     try {
-      final response = await SupabaseService.client.functions.invoke(
-        'create-pengelola',
-        body: {
-          'email': emailController.text.trim(),
-          'password': passwordController.text,
-          'nama_lengkap': namaController.text.trim(),
-          'no_hp': noHpController.text.trim().isEmpty
-              ? null
-              : noHpController.text.trim(),
-          'bank_sampah_ids': selectedBankSampahIds.toList(),
-        },
-      );
+      bool createdViaFunction = false;
+      try {
+        final response = await SupabaseService.client.functions.invoke(
+          'create-pengelola',
+          body: {
+            'email': emailController.text.trim(),
+            'password': passwordController.text,
+            'nama_lengkap': namaController.text.trim(),
+            'no_hp': noHpController.text.trim().isEmpty
+                ? null
+                : noHpController.text.trim(),
+            'bank_sampah_ids': selectedBankSampahIds.toList(),
+          },
+        );
 
-      if (response.status != 200) {
-        final msg = response.data?['error'] ?? 'Gagal membuat akun pengelola.';
-        Get.snackbar('Gagal', msg);
-        return;
+        if (response.status == 200) {
+          createdViaFunction = true;
+        } else {
+          final errorMsg = (response.data is Map)
+              ? (response.data['error'] ?? response.data['message'])
+              : response.data?.toString();
+          debugPrint('Edge Function tambah gagal: ${errorMsg ?? response.status}');
+        }
+      } catch (e) {
+        debugPrint('Edge Function tambah error: $e');
+      }
+
+      // Fallback: Panggil PostgreSQL RPC jika Edge Function tidak dapat dijangkau
+      if (!createdViaFunction) {
+        debugPrint('Mencoba membuat akun pengelola via RPC...');
+        final rpcResponse = await SupabaseService.client.rpc(
+          'create_pengelola_account',
+          params: {
+            'p_email': emailController.text.trim(),
+            'p_password': passwordController.text,
+            'p_nama_lengkap': namaController.text.trim(),
+            'p_no_hp': noHpController.text.trim().isEmpty
+                ? null
+                : noHpController.text.trim(),
+            'p_bank_sampah_ids': selectedBankSampahIds.toList(),
+          },
+        );
+
+        if (rpcResponse != null && rpcResponse is Map) {
+          if (rpcResponse['status'] == 'success') {
+            createdViaFunction = true;
+          } else {
+            throw Exception(rpcResponse['message'] ?? 'Gagal membuat akun via RPC');
+          }
+        } else {
+          throw Exception('Gagal membuat akun via RPC: respon tidak valid');
+        }
       }
 
       await _fetchPengelola();
@@ -322,7 +375,25 @@ class PengelolaController extends GetxController {
         debugPrint('Edge Function hapus error: $e');
       }
 
-      // Fallback: Hapus langsung dari database jika Edge Function gagal
+      // Fallback: Coba hapus via PostgreSQL RPC jika Edge Function gagal/tidak aktif
+      if (!deletedViaFunction) {
+        try {
+          final rpcResponse = await SupabaseService.client.rpc(
+            'delete_pengelola_account',
+            params: {
+              'p_auth_user_id': authUserId,
+              'p_profile_id': profileId,
+            },
+          );
+          if (rpcResponse != null && rpcResponse is Map && rpcResponse['status'] == 'success') {
+            deletedViaFunction = true;
+          }
+        } catch (rpcErr) {
+          debugPrint('RPC delete-pengelola error: $rpcErr');
+        }
+      }
+
+      // Fallback 2: Hapus langsung dari database public schema saja jika RPC & Edge Function gagal
       if (!deletedViaFunction) {
         // Hapus relasi di pengelola_bank_sampah
         await SupabaseService.client

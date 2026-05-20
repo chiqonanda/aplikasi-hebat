@@ -517,7 +517,6 @@ class _RtSelectionSheetState extends State<_RtSelectionSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // ✅ FIX: Bungkus ElevatedButton dengan SizedBox agar width tidak infinite
                   SizedBox(
                     width: 90,
                     child: ElevatedButton(
@@ -541,9 +540,6 @@ class _RtSelectionSheetState extends State<_RtSelectionSheet> {
             ),
             const SizedBox(height: 8),
 
-            // ── Grid RT — FIX: Expanded mengisi sisa ruang ──
-            // Expanded memberi bounded height ke SingleChildScrollView
-            // sehingga tidak ada lagi "RenderBox was not laid out"
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -602,7 +598,6 @@ class _RtSelectionSheetState extends State<_RtSelectionSheet> {
               ),
             ),
 
-            // ── Tombol Selesai (fixed di bawah) ──────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               child: SizedBox(

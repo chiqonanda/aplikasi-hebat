@@ -200,8 +200,6 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                       children: [
                         const Text(
                           'BISA',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
@@ -211,8 +209,6 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                         ),
                         Text(
                           'Dashboard Kelurahan',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withOpacity(0.65),
@@ -242,8 +238,6 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
               // ── Greeting ─────────────────────────────────────────────────
               Text(
                 'Selamat Datang  👋',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
                   color: _blue200.withOpacity(0.85),
@@ -253,8 +247,6 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
               const SizedBox(height: 6),
               Text(
                 controller.penggunaNama,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
@@ -297,7 +289,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
           ),
         ),
 
-        // Decorative circles
+        // Decorative circles — IgnorePointer agar tidak block tap pada tombol
         Positioned(
           top: -30,
           right: -20,
@@ -415,7 +407,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
     );
   }
 
-  // ── Menu Grid ────────────────────────────────────────────────────────────
+// ── Menu Grid ────────────────────────────────────────────────────────────
   Widget _buildMenuGrid() {
     final menus = [
       _MenuItem(
@@ -441,7 +433,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
       ),
       _MenuItem(
         icon: Icons.category_outlined,
-        label: 'Master Sampah',
+        label: 'Jenis Sampah',
         color: const Color(0xFF6A1B9A),
         bgColor: const Color(0xFFF3E5F5),
         onTap: () => Get.toNamed(AppRoutes.masterSampah),
@@ -491,15 +483,30 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
             ),
           ],
         ),
+
         const SizedBox(height: 16),
-        GridView.count(
-          crossAxisCount: 3,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.82,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: menus.map((m) => _MenuCard(item: m)).toList(),
+
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final itemWidth = (constraints.maxWidth - 24) / 3;
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: menus.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+
+                // ✅ FIX OVERFLOW
+                mainAxisExtent: itemWidth + 12,
+              ),
+              itemBuilder: (context, index) {
+                return _MenuCard(item: menus[index]);
+              },
+            );
+          },
         ),
       ],
     );
@@ -706,7 +713,10 @@ class _MenuCard extends StatelessWidget {
     return GestureDetector(
       onTap: item.onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        padding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 8,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -725,26 +735,39 @@ class _MenuCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: item.bgColor,
-                borderRadius: BorderRadius.circular(16),
+            Flexible(
+              flex: 4,
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: item.bgColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  item.icon,
+                  color: item.color,
+                  size: 26,
+                ),
               ),
-              child: Icon(item.icon, color: item.color, size: 28),
             ),
+
             const SizedBox(height: 10),
-            Text(
-              item.label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0A2540),
-                height: 1.3,
+
+            Flexible(
+              flex: 2,
+              child: Text(
+                item.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0A2540),
+                  height: 1.25,
+                ),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
             ),
           ],
         ),

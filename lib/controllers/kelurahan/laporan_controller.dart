@@ -665,73 +665,245 @@ String _namaBulan(int bulan) {
 
 
   Future<void> exportCsv() async {
-    if (!isValid) {
-      Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');
+  if (!isValid) {
+    Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');
+    return;
+  }
+  isGenerating.value = true;
+  try {
+    if (listAllKategori.isEmpty) await _fetchMasterData();
+
+    List<PengelolaanSampahModel> data = previewData;
+    if (data.isEmpty) data = await _fetchDataLaporan();
+
+    if (data.isEmpty) {
+      Get.snackbar('Info', 'Tidak ada data transaksi untuk diexport.');
       return;
     }
-    isGenerating.value = true;
-    try {
-      List<PengelolaanSampahModel> data = previewData;
-      if (data.isEmpty) {
-        data = await _fetchDataLaporan();
+
+    final mulai = selectedTanggalMulai.value!;
+    final akhir = selectedTanggalAkhir.value!;
+    final selisihHari = akhir.difference(mulai).inDays;
+    final isMultiBulan = selisihHari > 31;
+
+    final List<BankSampahModel> bankKolom = selectedBankSampah.value != null
+        ? [selectedBankSampah.value!]
+        : listBankSampah;
+
+    // ── Pivot: bulan? → jenis_id → bank_id → jumlah ──────────
+    // Untuk single bulan, key bulan = '' (tidak dipakai)
+    final Map<String, Map<String, Map<String, double>>> pivot = {};
+    for (final item in data) {
+  final jId = item.jenisSampah?.id;
+    if (jId == null) continue;
+    final tgl = item.tanggalPengelolaan;
+    if (isMultiBulan && tgl == null) continue;
+    final bId = item.bankSampah?.id ?? '';
+    final bulanKey = (isMultiBulan && tgl != null)
+        ? '${_namaBulan(tgl.month).toUpperCase()} ${tgl.year}'
+        : '';
+
+  // Pakai variabel lokal agar analyzer tahu nilainya non-null
+  final pivotBulan = pivot.putIfAbsent(bulanKey, () => {});
+  final pivotJenis = pivotBulan.putIfAbsent(jId, () => {});
+  pivotJenis[bId] = (pivotJenis[bId] ?? 0) + item.jumlah;
+}
+
+// Urutkan bulan
+final List<String> bulanKeys = isMultiBulan
+    ? pivot.keys.toList()
+    : [''];
+
+    final csvData = <List<dynamic>>[];
+
+    // ── Header ────────────────────────────────────────────────
+    final header = <dynamic>[];
+    if (isMultiBulan) header.add('BULAN');
+    header.add('NO');
+    header.add('JENIS SAMPAH');
+    for (final b in bankKolom) header.add(b.nama);
+    header.add('TOTAL');
+    csvData.add(header);
+
+    // ── Judul & Periode (baris info di atas header) ───────────
+    // Sisipkan di index 0 setelah header dibuat
+    final judulRow = <dynamic>[];
+    if (isMultiBulan) judulRow.add('');
+    judulRow.addAll(['LAPORAN SAMPAH KELURAHAN', ...List.filled(bankKolom.length + 1, '')]);
+    
+    final periodeRow = <dynamic>[];
+    if (isMultiBulan) periodeRow.add('');
+    periodeRow.addAll([
+      'PERIODE : ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}',
+      ...List.filled(bankKolom.length + 1, '')
+    ]);
+
+    // Insert di depan
+    csvData.insert(0, periodeRow);
+    csvData.insert(0, judulRow);
+    csvData.insert(1, []); // baris kosong setelah judul
+
+    // ── Data per bulan ────────────────────────────────────────
+    for (final bulanKey in bulanKeys) {
+      final pivotBulan = pivot[bulanKey] ?? {};
+      final Map<String, double> totalKategori = {};
+
+      if (isMultiBulan) {
+        // Baris label bulan
+        csvData.add([bulanKey, ...List.filled(bankKolom.length + 2, '')]);
       }
-      if (data.isEmpty) {
-        Get.snackbar('Info', 'Tidak ada data transaksi untuk diexport.');
-        return;
+
+      for (final kat in listAllKategori) {
+        // Baris kategori
+        final katRow = <dynamic>[];
+        if (isMultiBulan) katRow.add('');
+        katRow.addAll(['', kat.nama.toUpperCase(), ...List.filled(bankKolom.length + 1, '')]);
+        csvData.add(katRow);
+
+        final subList = listAllSubKategori.where((s) => s.kategoriId == kat.id).toList();
+
+        if (subList.isNotEmpty) {
+          for (final sub in subList) {
+            // Baris sub kategori
+            final subRow = <dynamic>[];
+            if (isMultiBulan) subRow.add('');
+            subRow.addAll(['', '  ${sub.nama.toUpperCase()}', ...List.filled(bankKolom.length + 1, '')]);
+            csvData.add(subRow);
+
+            final tipeList = listAllTipeSampah.where((t) => t.subKategoriId == sub.id).toList();
+
+            if (tipeList.isNotEmpty) {
+              for (final tipe in tipeList) {
+                // Baris tipe
+                final tipeRow = <dynamic>[];
+                if (isMultiBulan) tipeRow.add('');
+                tipeRow.addAll(['', '    ${tipe.nama}', ...List.filled(bankKolom.length + 1, '')]);
+                csvData.add(tipeRow);
+
+                final jenisList = listAllJenisSampah
+                    .where((j) => j.subKategoriId == sub.id && j.tipeId == tipe.id)
+                    .toList();
+
+                int no = 1;
+                for (final jenis in jenisList) {
+                  double rowTotal = 0;
+                  final row = <dynamic>[];
+                  if (isMultiBulan) row.add('');
+                  row.add('$no');
+                  row.add('      ${jenis.nama}');
+                  for (final b in bankKolom) {
+                    final jumlah = pivotBulan[jenis.id]?[b.id] ?? 0.0;
+                    rowTotal += jumlah;
+                    row.add(jumlah > 0 ? FormatHelper.number(jumlah) : '');
+                  }
+                  row.add(rowTotal > 0 ? FormatHelper.number(rowTotal) : '');
+                  csvData.add(row);
+                  totalKategori[kat.id] = (totalKategori[kat.id] ?? 0) + rowTotal;
+                  no++;
+                }
+              }
+            } else {
+              final jenisList = listAllJenisSampah
+                  .where((j) => j.subKategoriId == sub.id)
+                  .toList();
+
+              int no = 1;
+              for (final jenis in jenisList) {
+                double rowTotal = 0;
+                final row = <dynamic>[];
+                if (isMultiBulan) row.add('');
+                row.add('$no');
+                row.add('    ${jenis.nama}');
+                for (final b in bankKolom) {
+                  final jumlah = pivotBulan[jenis.id]?[b.id] ?? 0.0;
+                  rowTotal += jumlah;
+                  row.add(jumlah > 0 ? FormatHelper.number(jumlah) : '');
+                }
+                row.add(rowTotal > 0 ? FormatHelper.number(rowTotal) : '');
+                csvData.add(row);
+                totalKategori[kat.id] = (totalKategori[kat.id] ?? 0) + rowTotal;
+                no++;
+              }
+            }
+          }
+        } else {
+          // Jenis langsung di bawah kategori
+          final jenisList = listAllJenisSampah
+              .where((j) => j.kategoriId == kat.id)
+              .toList();
+
+          int no = 1;
+          for (final jenis in jenisList) {
+            double rowTotal = 0;
+            final row = <dynamic>[];
+            if (isMultiBulan) row.add('');
+            row.add('$no');
+            row.add('  ${jenis.nama}');
+            for (final b in bankKolom) {
+              final jumlah = pivotBulan[jenis.id]?[b.id] ?? 0.0;
+              rowTotal += jumlah;
+              row.add(jumlah > 0 ? FormatHelper.number(jumlah) : '');
+            }
+            row.add(rowTotal > 0 ? FormatHelper.number(rowTotal) : '');
+            csvData.add(row);
+            totalKategori[kat.id] = (totalKategori[kat.id] ?? 0) + rowTotal;
+            no++;
+          }
+        }
       }
 
-      final csvData = <List<dynamic>>[];
-      csvData.add([
-        'No',
-        'Tanggal',
-        'Bank Sampah',
-        'Item',
-        'Kategori',
-        'Jumlah',
-        'Satuan',
-        'Harga/Satuan',
-        'Total Harga',
-        'Pengelola',
-        'Catatan'
-      ]);
+      // ── Baris kosong antar bulan ────────────────────────────
+      csvData.add([]);
 
-      for (var i = 0; i < data.length; i++) {
-        final item = data[i];
-        csvData.add([
-          (i + 1).toString(),
-          FormatHelper.date(item.tanggalPengelolaan),
-          item.bankSampah?.nama ?? '-',
-          item.namaItem,
-          item.kategori?.nama ?? '-',
-          FormatHelper.number(item.jumlah),
-          item.satuan?.singkatan ?? '-',
-          FormatHelper.currency(item.hargaPerSatuan),
-          FormatHelper.currency(item.totalHarga),
-          item.profile?.namaLengkap ?? '-',
-          item.catatan ?? '-',
-        ]);
+      // ── Jumlah per kategori ─────────────────────────────────
+      final jumlahLabelRow = <dynamic>[];
+      if (isMultiBulan) jumlahLabelRow.add('');
+      jumlahLabelRow.addAll(['', 'JUMLAH', ...List.filled(bankKolom.length + 1, '')]);
+      csvData.add(jumlahLabelRow);
+
+      for (final kat in listAllKategori) {
+        final val = totalKategori[kat.id] ?? 0;
+        final totRow = <dynamic>[];
+        if (isMultiBulan) totRow.add('');
+        totRow.add('');
+        totRow.add(kat.nama);
+        totRow.addAll(List.filled(bankKolom.length, ''));
+        totRow.add(val > 0 ? FormatHelper.number(val) : '');
+        csvData.add(totRow);
       }
 
-      final csvString = const ListToCsvConverter().convert(csvData);
-      final csvWithBom = '\uFEFF$csvString';
+      // Grand total per bulan
+      final grandTotal = totalKategori.values.fold(0.0, (s, v) => s + v);
+      final grandRow = <dynamic>[];
+      if (isMultiBulan) grandRow.add('');
+      grandRow.add('');
+      grandRow.add('GRAND TOTAL');
+      grandRow.addAll(List.filled(bankKolom.length, ''));
+      grandRow.add(grandTotal > 0 ? FormatHelper.number(grandTotal) : '');
+      csvData.add(grandRow);
 
-      final startStr = FormatHelper.dateToInput(selectedTanggalMulai.value!).replaceAll('-', '');
-      final endStr = FormatHelper.dateToInput(selectedTanggalAkhir.value!).replaceAll('-', '');
-      final fileName = 'laporan_${selectedJenisLaporan.value.name}_$startStr$endStr.csv';
-
-      final namaJenisLaporan = jenisLaporanOptions[selectedJenisLaporan.value] ?? '';
-        final periode = "${FormatHelper.date(selectedTanggalMulai.value)} - ${FormatHelper.date(selectedTanggalAkhir.value)}";
-        final shareText = "Laporan Bank Sampah - $namaJenisLaporan $periode";
-
-        await Share.shareXFiles(
-          [XFile.fromData(Uint8List.fromList(utf8.encode(csvWithBom)), name: fileName, mimeType: 'text/csv')],
-          text: shareText,
-        );
-      Get.snackbar('Sukses', 'Laporan CSV berhasil diexport dan siap dibagikan.');
-    } catch (e) {
-      Get.snackbar('Gagal', 'Export CSV gagal: $e');
-    } finally {
-      isGenerating.value = false;
+      // Baris kosong pemisah antar bulan
+      if (isMultiBulan) csvData.add([]);
     }
+
+    final csvString = const ListToCsvConverter().convert(csvData);
+    final csvWithBom = '\uFEFF$csvString';
+
+    final startStr = FormatHelper.dateToInput(mulai).replaceAll('-', '');
+    final endStr = FormatHelper.dateToInput(akhir).replaceAll('-', '');
+    final fileName = 'laporan_sampah_$startStr-$endStr.csv';
+    final shareText =
+        'Laporan Bank Sampah ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
+
+    await Share.shareXFiles(
+      [XFile.fromData(Uint8List.fromList(utf8.encode(csvWithBom)), name: fileName, mimeType: 'text/csv')],
+      text: shareText,
+    );
+    Get.snackbar('Sukses', 'Laporan CSV berhasil diexport dan siap dibagikan.');
+  } catch (e) {
+    Get.snackbar('Gagal', 'Export CSV gagal: $e');
+  } finally {
+    isGenerating.value = false;
   }
+}
 }

@@ -11,123 +11,310 @@ import '../../models/sub_kategori_model.dart';
 import '../../models/tipe_sampah_model.dart';
 import '../../models/satuan_model.dart';
 
+// ── Warna Utama (selaras dengan DashboardKelurahanView) ───────────────────────
+const _blue900 = Color(0xFF0A2540);
+const _blue800 = Color(0xFF0D3461);
+const _blue600 = Color(0xFF1565C0);
+const _blue500 = Color(0xFF1E88E5);
+const _blue400 = Color(0xFF42A5F5);
+const _blue200 = Color(0xFFBBDEFB);
+const _blue50  = Color(0xFFE3F2FD);
+const _bg      = Color(0xFFF0F6FF);
+const _purple  = Color(0xFF6A1B9A);
+const _purpleBg = Color(0xFFF3E5F5);
+
 class MasterSampahView extends GetView<MasterSampahController> {
   const MasterSampahView({super.key});
 
-  // Tab: 0=Kategori, 1=Sub Kategori, 2=Tipe, 3=Jenis, 4=Satuan
-  static const _tabs = ['Kategori', 'Sub Kategori', 'Tipe', 'Jenis', 'Satuan'];
+  static const _tabs = [
+    _TabInfo('Kategori',    Icons.category_outlined,        _blue600,  _blue50),
+    _TabInfo('Sub Kategori',Icons.layers_outlined,           Color(0xFF00838F), Color(0xFFE0F7FA)),
+    _TabInfo('Tipe',        Icons.style_outlined,            Color(0xFF283593), Color(0xFFE8EAF6)),
+    _TabInfo('Jenis',       Icons.eco_outlined,              Color(0xFF00695C), Color(0xFFE0F2F1)),
+    _TabInfo('Satuan',      Icons.straighten_rounded,        _purple,   _purpleBg),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Master Data Sampah'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Get.back(),
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            _buildHeader(),
+            // ── Tab Scroll ──────────────────────────────────────────────────
+            _buildTabBar(),
+            // ── Body ────────────────────────────────────────────────────────
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: _blue500,
+                      strokeWidth: 2.5,
+                    ),
+                  );
+                }
+                return switch (controller.activeTab.value) {
+                  0 => _KategoriTab(controller: controller),
+                  1 => _SubKategoriTab(controller: controller),
+                  2 => _TipeTab(controller: controller),
+                  3 => _JenisTab(controller: controller),
+                  4 => _SatuanTab(controller: controller),
+                  _ => const SizedBox.shrink(),
+                };
+              }),
+            ),
+          ],
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Obx(
-            () => SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: Row(
-                children: List.generate(
-                  _tabs.length,
-                  (i) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _TabChip(
-                      label: _tabs[i],
-                      isActive: controller.activeTab.value == i,
-                      onTap: () => controller.activeTab.value = i,
+      ),
+    );
+  }
+
+  // ── Header ─────────────────────────────────────────────────────────────────
+  Widget _buildHeader() {
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [_blue900, _blue800, Color(0xFF1040A0)],
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top bar: back + title
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Jenis Sampah',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        Text(
+                          'Kelola kategori, jenis & satuan',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.65),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+        // Decorative circles
+        Positioned(
+          top: -30,
+          right: -20,
+          child: Container(
+            width: 150,
+            height: 150,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.04),
             ),
           ),
         ),
+        Positioned(
+          top: 30,
+          right: 50,
+          child: Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _blue400.withOpacity(0.08),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderBadge(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.22), width: 1.2),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) return const LoadingWidget();
-        return switch (controller.activeTab.value) {
-          0 => _KategoriTab(controller: controller),
-          1 => _SubKategoriTab(controller: controller),
-          2 => _TipeTab(controller: controller),      // ← BARU
-          3 => _JenisTab(controller: controller),
-          4 => _SatuanTab(controller: controller),
-          _ => const SizedBox.shrink(),
-        };
-      }),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: _blue200.withOpacity(0.9)),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Tab Bar ────────────────────────────────────────────────────────────────
+  Widget _buildTabBar() {
+    return Container(
+      color: _bg,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Obx(
+        () => SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(_tabs.length, (i) {
+              final tab = _tabs[i];
+              final isActive = controller.activeTab.value == i;
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: GestureDetector(
+                  onTap: () => controller.activeTab.value = i,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: isActive
+                          ? const LinearGradient(
+                              colors: [_blue600, _blue500],
+                            )
+                          : null,
+                      color: isActive ? null : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isActive
+                            ? _blue500
+                            : const Color(0xFFE3F2FD),
+                        width: 1.5,
+                      ),
+                      boxShadow: isActive
+                          ? [
+                              BoxShadow(
+                                color: _blue500.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ]
+                          : [
+                              BoxShadow(
+                                color: _blue900.withOpacity(0.06),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              )
+                            ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          tab.icon,
+                          size: 16,
+                          color: isActive ? Colors.white : tab.color,
+                        ),
+                        const SizedBox(width: 7),
+                        Text(
+                          tab.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isActive ? Colors.white : _blue900,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
     );
   }
 }
 
-// ── Tab Chip ──────────────────────────────────────────────────────────────────
-
-class _TabChip extends StatelessWidget {
+// ── Tab Info Model ─────────────────────────────────────────────────────────────
+class _TabInfo {
   final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabChip({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : AppColors.surfaceLowest,
-          borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-          border: Border.all(
-            color: isActive ? AppColors.primary : AppColors.outlineVariant,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSm.copyWith(
-            color: isActive
-                ? AppColors.onPrimary
-                : AppColors.onSurfaceVariant,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+  const _TabInfo(this.label, this.icon, this.color, this.bgColor);
 }
 
 // ── Generic Add Form Sheet ─────────────────────────────────────────────────────
-
 void _showAddSheet(
   BuildContext context, {
   required String title,
+  required IconData titleIcon,
+  required Color iconColor,
   required Widget formContent,
   required VoidCallback onSimpan,
   required MasterSampahController controller,
 }) {
   Get.bottomSheet(
     isScrollControlled: true,
-    backgroundColor: AppColors.surfaceLowest,
-    shape: const RoundedRectangleBorder(
-      borderRadius:
-          BorderRadius.vertical(top: Radius.circular(AppTheme.radiusXl)),
-    ),
-    Padding(
+    backgroundColor: Colors.transparent,
+    Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        top: 16,
-        left: 16,
-        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 28,
+        top: 0,
+        left: 20,
+        right: 20,
       ),
       child: Form(
         key: controller.formKey,
@@ -135,26 +322,125 @@ void _showAddSheet(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Handle bar
+            const SizedBox(height: 14),
             Center(
               child: Container(
-                width: 40,
+                width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(title, style: AppTextStyles.titleLg),
-            const SizedBox(height: 16),
-            formContent,
             const SizedBox(height: 20),
+            // Title row
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_blue600, _blue500],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _blue500.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(titleIcon, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: _blue900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 58),
+              child: Text(
+                'Isi form berikut dengan benar',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Divider
+            Container(
+              height: 1,
+              color: const Color(0xFFE3F2FD),
+              margin: const EdgeInsets.only(bottom: 20),
+            ),
+            formContent,
+            const SizedBox(height: 24),
+            // Tombol Simpan
             Obx(
-              () => AppButton(
-                label: 'Simpan',
-                isLoading: controller.isSaving.value,
-                onPressed: onSimpan,
+              () => GestureDetector(
+                onTap: controller.isSaving.value ? null : onSimpan,
+                child: Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: controller.isSaving.value
+                          ? [Colors.grey.shade400, Colors.grey.shade400]
+                          : const [_blue600, _blue500],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: controller.isSaving.value
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: _blue500.withOpacity(0.35),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                  ),
+                  child: Center(
+                    child: controller.isSaving.value
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.save_rounded,
+                                  color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Simpan Data',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -164,8 +450,31 @@ void _showAddSheet(
   ).then((_) => controller.resetForm());
 }
 
-// ── Tab Kategori ──────────────────────────────────────────────────────────────
+// ── Shared Dropdown Decoration ─────────────────────────────────────────────────
+InputDecoration _dropdownDecoration(String label, IconData icon) {
+  return InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: _blue600, fontWeight: FontWeight.w600),
+    prefixIcon: Icon(icon, size: 20, color: _blue500),
+    filled: true,
+    fillColor: _blue50,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: _blue500, width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  );
+}
 
+// ── Tab Kategori ──────────────────────────────────────────────────────────────
 class _KategoriTab extends StatelessWidget {
   final MasterSampahController controller;
   const _KategoriTab({required this.controller});
@@ -174,56 +483,64 @@ class _KategoriTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _ModernFAB(
+        label: 'Tambah Kategori',
+        icon: Icons.add_rounded,
         onPressed: () => _showAddSheet(
           context,
           title: 'Tambah Kategori',
+          titleIcon: Icons.category_outlined,
+          iconColor: _blue600,
           controller: controller,
           onSimpan: controller.simpanKategori,
           formContent: Column(children: [
-            AppTextField(
+            _ModernTextField(
               controller: controller.namaController,
               label: 'Nama Kategori',
-              prefixIcon: Icons.label_outline_rounded,
+              hint: 'Contoh: Plastik, Kertas, Logam',
+              icon: Icons.label_outline_rounded,
               validator: (v) =>
                   v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
-            const SizedBox(height: 12),
-            AppTextField(
+            const SizedBox(height: 14),
+            _ModernTextField(
               controller: controller.deskripsiController,
               label: 'Deskripsi (opsional)',
-              prefixIcon: Icons.notes_rounded,
+              hint: 'Keterangan singkat kategori ini',
+              icon: Icons.notes_rounded,
               maxLines: 2,
             ),
           ]),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Tambah Kategori'),
       ),
       body: Obx(() {
         if (controller.listKategori.isEmpty) {
-          return const EmptyState(
+          return _ModernEmptyState(
             icon: Icons.category_outlined,
-            message: 'Belum ada kategori sampah.',
+            title: 'Belum Ada Kategori',
+            message: 'Tambahkan kategori sampah pertama Anda',
           );
         }
         return RefreshIndicator(
           onRefresh: controller.fetchAll,
-          color: AppColors.primary,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          color: _blue500,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listKategori.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, i) {
               final item = controller.listKategori[i];
-              return _MasterItemCard(
-                nama: item.nama,
-                subtitle: item.deskripsi,
-                onDelete: () => _confirmHapus(context,
-                    nama: item.nama,
-                    onConfirm: () => controller.hapusKategori(item.id)),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _MasterItemCard(
+                  nama: item.nama,
+                  subtitle: item.deskripsi,
+                  icon: Icons.category_outlined,
+                  iconGradient: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
+                  index: i,
+                  onDelete: () => _confirmHapus(context,
+                      nama: item.nama,
+                      onConfirm: () => controller.hapusKategori(item.id)),
+                ),
               );
             },
           ),
@@ -234,7 +551,6 @@ class _KategoriTab extends StatelessWidget {
 }
 
 // ── Tab Sub Kategori ──────────────────────────────────────────────────────────
-
 class _SubKategoriTab extends StatelessWidget {
   final MasterSampahController controller;
   const _SubKategoriTab({required this.controller});
@@ -243,23 +559,21 @@ class _SubKategoriTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _ModernFAB(
+        label: 'Tambah Sub Kategori',
+        icon: Icons.add_rounded,
         onPressed: () => _showAddSheet(
           context,
           title: 'Tambah Sub Kategori',
+          titleIcon: Icons.layers_outlined,
+          iconColor: const Color(0xFF00838F),
           controller: controller,
           onSimpan: controller.simpanSubKategori,
           formContent: Column(children: [
             Obx(
               () => DropdownButtonFormField<KategoriModel>(
                 value: controller.selectedKategoriForm.value,
-                decoration: InputDecoration(
-                  labelText: 'Kategori',
-                  prefixIcon: const Icon(Icons.category_outlined,
-                      size: 20, color: AppColors.outline),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
-                ),
+                decoration: _dropdownDecoration('Kategori *', Icons.category_outlined),
                 items: controller.listKategoriDropdown
                     .map((k) => DropdownMenuItem(value: k, child: Text(k.nama)))
                     .toList(),
@@ -267,52 +581,56 @@ class _SubKategoriTab extends StatelessWidget {
                 validator: (v) => v == null ? 'Pilih kategori' : null,
               ),
             ),
-            const SizedBox(height: 12),
-            AppTextField(
+            const SizedBox(height: 14),
+            _ModernTextField(
               controller: controller.namaController,
               label: 'Nama Sub Kategori',
-              prefixIcon: Icons.label_outline_rounded,
+              hint: 'Contoh: Plastik Keras, Kertas Bekas',
+              icon: Icons.label_outline_rounded,
               validator: (v) =>
                   v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
-            const SizedBox(height: 12),
-            AppTextField(
+            const SizedBox(height: 14),
+            _ModernTextField(
               controller: controller.deskripsiController,
               label: 'Deskripsi (opsional)',
-              prefixIcon: Icons.notes_rounded,
+              hint: 'Keterangan sub kategori',
+              icon: Icons.notes_rounded,
               maxLines: 2,
             ),
           ]),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Tambah Sub Kategori'),
       ),
       body: Obx(() {
         if (controller.listSubKategori.isEmpty) {
-          return const EmptyState(
+          return _ModernEmptyState(
             icon: Icons.layers_outlined,
-            message: 'Belum ada sub kategori.',
+            title: 'Belum Ada Sub Kategori',
+            message: 'Tambahkan sub kategori untuk mengklasifikasikan sampah',
           );
         }
         return RefreshIndicator(
           onRefresh: controller.fetchAll,
-          color: AppColors.primary,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          color: _blue500,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listSubKategori.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, i) {
               final item = controller.listSubKategori[i];
-              return _MasterItemCard(
-                nama: item.nama,
-                subtitle: item.kategori != null
-                    ? 'Kategori: ${item.kategori!.nama}'
-                    : null,
-                onDelete: () => _confirmHapus(context,
-                    nama: item.nama,
-                    onConfirm: () => controller.hapusSubKategori(item.id)),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _MasterItemCard(
+                  nama: item.nama,
+                  subtitle: item.kategori != null
+                      ? 'Kategori: ${item.kategori!.nama}'
+                      : null,
+                  icon: Icons.layers_outlined,
+                  iconGradient: const [Color(0xFF00838F), Color(0xFF26C6DA)],
+                  index: i,
+                  onDelete: () => _confirmHapus(context,
+                      nama: item.nama,
+                      onConfirm: () => controller.hapusSubKategori(item.id)),
+                ),
               );
             },
           ),
@@ -323,7 +641,6 @@ class _SubKategoriTab extends StatelessWidget {
 }
 
 // ── Tab Tipe ──────────────────────────────────────────────────────────────────
-
 class _TipeTab extends StatelessWidget {
   final MasterSampahController controller;
   const _TipeTab({required this.controller});
@@ -332,23 +649,21 @@ class _TipeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _ModernFAB(
+        label: 'Tambah Tipe',
+        icon: Icons.add_rounded,
         onPressed: () => _showAddSheet(
           context,
-          title: 'Tambah Tipe',
+          title: 'Tambah Tipe Sampah',
+          titleIcon: Icons.style_outlined,
+          iconColor: const Color(0xFF283593),
           controller: controller,
           onSimpan: controller.simpanTipe,
           formContent: Column(children: [
             Obx(
               () => DropdownButtonFormField<KategoriModel>(
                 value: controller.selectedKategoriForm.value,
-                decoration: InputDecoration(
-                  labelText: 'Kategori',
-                  prefixIcon: const Icon(Icons.category_outlined,
-                      size: 20, color: AppColors.outline),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
-                ),
+                decoration: _dropdownDecoration('Kategori *', Icons.category_outlined),
                 items: controller.listKategoriDropdown
                     .map((k) => DropdownMenuItem(value: k, child: Text(k.nama)))
                     .toList(),
@@ -356,17 +671,11 @@ class _TipeTab extends StatelessWidget {
                 validator: (v) => v == null ? 'Pilih kategori' : null,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Obx(
               () => DropdownButtonFormField<SubKategoriModel>(
                 value: controller.selectedSubKategoriForm.value,
-                decoration: InputDecoration(
-                  labelText: 'Sub Kategori',
-                  prefixIcon: const Icon(Icons.layers_outlined,
-                      size: 20, color: AppColors.outline),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
-                ),
+                decoration: _dropdownDecoration('Sub Kategori *', Icons.layers_outlined),
                 items: controller.listSubKategoriDropdown
                     .map((s) => DropdownMenuItem(value: s, child: Text(s.nama)))
                     .toList(),
@@ -374,53 +683,56 @@ class _TipeTab extends StatelessWidget {
                 validator: (v) => v == null ? 'Pilih sub kategori' : null,
               ),
             ),
-            const SizedBox(height: 12),
-            AppTextField(
+            const SizedBox(height: 14),
+            _ModernTextField(
               controller: controller.namaController,
               label: 'Nama Tipe',
-              hint: 'Contoh: PET, PP, Hope, ABS',
-              prefixIcon: Icons.label_outline_rounded,
+              hint: 'Contoh: PET, PP, HDPE, ABS',
+              icon: Icons.label_outline_rounded,
               validator: (v) =>
                   v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
-            const SizedBox(height: 12),
-            AppTextField(
+            const SizedBox(height: 14),
+            _ModernTextField(
               controller: controller.deskripsiController,
               label: 'Deskripsi (opsional)',
-              prefixIcon: Icons.notes_rounded,
+              hint: 'Keterangan tipe sampah',
+              icon: Icons.notes_rounded,
               maxLines: 2,
             ),
           ]),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Tambah Tipe'),
       ),
       body: Obx(() {
         if (controller.listTipe.isEmpty) {
-          return const EmptyState(
+          return _ModernEmptyState(
             icon: Icons.style_outlined,
-            message: 'Belum ada tipe sampah.',
+            title: 'Belum Ada Tipe',
+            message: 'Tambahkan tipe sampah seperti PET, PP, HDPE',
           );
         }
         return RefreshIndicator(
           onRefresh: controller.fetchAll,
-          color: AppColors.primary,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          color: _blue500,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listTipe.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, i) {
               final item = controller.listTipe[i];
-              return _MasterItemCard(
-                nama: item.nama,
-                subtitle: item.subKategori != null
-                    ? 'Sub Kategori: ${item.subKategori!.nama}'
-                    : null,
-                onDelete: () => _confirmHapus(context,
-                    nama: item.nama,
-                    onConfirm: () => controller.hapusTipe(item.id)),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _MasterItemCard(
+                  nama: item.nama,
+                  subtitle: item.subKategori != null
+                      ? 'Sub Kategori: ${item.subKategori!.nama}'
+                      : null,
+                  icon: Icons.style_outlined,
+                  iconGradient: const [Color(0xFF283593), Color(0xFF5C6BC0)],
+                  index: i,
+                  onDelete: () => _confirmHapus(context,
+                      nama: item.nama,
+                      onConfirm: () => controller.hapusTipe(item.id)),
+                ),
               );
             },
           ),
@@ -431,7 +743,6 @@ class _TipeTab extends StatelessWidget {
 }
 
 // ── Tab Jenis ─────────────────────────────────────────────────────────────────
-
 class _JenisTab extends StatelessWidget {
   final MasterSampahController controller;
   const _JenisTab({required this.controller});
@@ -440,29 +751,24 @@ class _JenisTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _ModernFAB(
+        label: 'Tambah Jenis',
+        icon: Icons.add_rounded,
         onPressed: () => _showAddSheet(
           context,
           title: 'Tambah Jenis Sampah',
+          titleIcon: Icons.eco_outlined,
+          iconColor: const Color(0xFF00695C),
           controller: controller,
           onSimpan: controller.simpanJenis,
           formContent: SingleChildScrollView(
             child: Column(children: [
-              // Kategori
               Obx(
                 () => DropdownButtonFormField<KategoriModel>(
                   value: controller.selectedKategoriForm.value,
-                  decoration: InputDecoration(
-                    labelText: 'Kategori *',
-                    prefixIcon: const Icon(Icons.category_outlined,
-                        size: 20, color: AppColors.outline),
-                    border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusMd)),
-                  ),
+                  decoration: _dropdownDecoration('Kategori *', Icons.category_outlined),
                   items: controller.listKategoriDropdown
-                      .map((k) =>
-                          DropdownMenuItem(value: k, child: Text(k.nama)))
+                      .map((k) => DropdownMenuItem(value: k, child: Text(k.nama)))
                       .toList(),
                   onChanged: (v) {
                     controller.selectedKategoriForm.value = v;
@@ -472,19 +778,12 @@ class _JenisTab extends StatelessWidget {
                   validator: (v) => v == null ? 'Pilih kategori' : null,
                 ),
               ),
-              const SizedBox(height: 12),
-              // Sub Kategori (opsional)
+              const SizedBox(height: 14),
               Obx(
                 () => DropdownButtonFormField<SubKategoriModel>(
                   value: controller.selectedSubKategoriForm.value,
-                  decoration: InputDecoration(
-                    labelText: 'Sub Kategori (opsional)',
-                    prefixIcon: const Icon(Icons.layers_outlined,
-                        size: 20, color: AppColors.outline),
-                    border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusMd)),
-                  ),
+                  decoration: _dropdownDecoration(
+                      'Sub Kategori (opsional)', Icons.layers_outlined),
                   items: [
                     const DropdownMenuItem<SubKategoriModel>(
                       value: null,
@@ -497,8 +796,7 @@ class _JenisTab extends StatelessWidget {
                       controller.selectedSubKategoriForm.value = v,
                 ),
               ),
-              const SizedBox(height: 12),
-              // Tipe (opsional, muncul jika sub kategori dipilih & ada tipe)
+              const SizedBox(height: 14),
               Obx(() {
                 if (controller.listTipeDropdown.isEmpty) {
                   return const SizedBox.shrink();
@@ -506,14 +804,8 @@ class _JenisTab extends StatelessWidget {
                 return Column(children: [
                   DropdownButtonFormField<TipeSampahModel>(
                     value: controller.selectedTipeForm.value,
-                    decoration: InputDecoration(
-                      labelText: 'Tipe (opsional)',
-                      prefixIcon: const Icon(Icons.style_outlined,
-                          size: 20, color: AppColors.outline),
-                      border: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusMd)),
-                    ),
+                    decoration: _dropdownDecoration(
+                        'Tipe (opsional)', Icons.style_outlined),
                     items: [
                       const DropdownMenuItem<TipeSampahModel>(
                         value: null,
@@ -524,28 +816,23 @@ class _JenisTab extends StatelessWidget {
                     ],
                     onChanged: (v) => controller.selectedTipeForm.value = v,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                 ]);
               }),
-              AppTextField(
+              _ModernTextField(
                 controller: controller.namaController,
                 label: 'Nama Jenis',
-                prefixIcon: Icons.label_outline_rounded,
+                hint: 'Contoh: Botol Air Mineral, Koran Bekas',
+                icon: Icons.label_outline_rounded,
                 validator: (v) =>
                     v == null || v.isEmpty ? 'Nama wajib diisi' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Obx(
                 () => DropdownButtonFormField<SatuanModel>(
                   value: controller.selectedSatuanForm.value,
-                  decoration: InputDecoration(
-                    labelText: 'Satuan Default (opsional)',
-                    prefixIcon: const Icon(Icons.straighten_rounded,
-                        size: 20, color: AppColors.outline),
-                    border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusMd)),
-                  ),
+                  decoration: _dropdownDecoration(
+                      'Satuan Default (opsional)', Icons.straighten_rounded),
                   items: controller.listSatuan
                       .map((s) => DropdownMenuItem(
                           value: s, child: Text('${s.nama} (${s.singkatan})')))
@@ -553,38 +840,34 @@ class _JenisTab extends StatelessWidget {
                   onChanged: (v) => controller.selectedSatuanForm.value = v,
                 ),
               ),
-              const SizedBox(height: 12),
-              AppTextField(
+              const SizedBox(height: 14),
+              _ModernTextField(
                 controller: controller.deskripsiController,
                 label: 'Deskripsi (opsional)',
-                prefixIcon: Icons.notes_rounded,
+                hint: 'Keterangan tambahan',
+                icon: Icons.notes_rounded,
                 maxLines: 2,
               ),
             ]),
           ),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Tambah Jenis'),
       ),
       body: Obx(() {
         if (controller.listJenis.isEmpty) {
-          return const EmptyState(
+          return _ModernEmptyState(
             icon: Icons.eco_outlined,
-            message: 'Belum ada jenis sampah.',
+            title: 'Belum Ada Jenis Sampah',
+            message: 'Tambahkan jenis sampah yang diterima bank sampah',
           );
         }
         return RefreshIndicator(
           onRefresh: controller.fetchAll,
-          color: AppColors.primary,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          color: _blue500,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listJenis.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, i) {
               final item = controller.listJenis[i];
-              // Breadcrumb: Kategori › Sub › Tipe
               final parts = <String>[];
               if (item.subKategori?.kategori != null) {
                 parts.add(item.subKategori!.kategori!.nama);
@@ -593,18 +876,23 @@ class _JenisTab extends StatelessWidget {
               }
               if (item.subKategori != null) parts.add(item.subKategori!.nama);
               if (item.tipe != null) parts.add(item.tipe!.nama);
-              final breadcrumb =
-                  parts.isNotEmpty ? parts.join(' › ') : null;
+              final breadcrumb = parts.isNotEmpty ? parts.join(' › ') : null;
 
-              return _MasterItemCard(
-                nama: item.nama,
-                subtitle: breadcrumb,
-                trailing: item.satuanDefault != null
-                    ? _SatuanBadge(satuan: item.satuanDefault!.singkatan)
-                    : null,
-                onDelete: () => _confirmHapus(context,
-                    nama: item.nama,
-                    onConfirm: () => controller.hapusJenis(item.id)),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _MasterItemCard(
+                  nama: item.nama,
+                  subtitle: breadcrumb,
+                  icon: Icons.eco_outlined,
+                  iconGradient: const [Color(0xFF00695C), Color(0xFF26A69A)],
+                  index: i,
+                  trailing: item.satuanDefault != null
+                      ? _SatuanBadge(satuan: item.satuanDefault!.singkatan)
+                      : null,
+                  onDelete: () => _confirmHapus(context,
+                      nama: item.nama,
+                      onConfirm: () => controller.hapusJenis(item.id)),
+                ),
               );
             },
           ),
@@ -615,7 +903,6 @@ class _JenisTab extends StatelessWidget {
 }
 
 // ── Tab Satuan ────────────────────────────────────────────────────────────────
-
 class _SatuanTab extends StatelessWidget {
   final MasterSampahController controller;
   const _SatuanTab({required this.controller});
@@ -624,59 +911,65 @@ class _SatuanTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _ModernFAB(
+        label: 'Tambah Satuan',
+        icon: Icons.add_rounded,
         onPressed: () => _showAddSheet(
           context,
           title: 'Tambah Satuan',
+          titleIcon: Icons.straighten_rounded,
+          iconColor: _purple,
           controller: controller,
           onSimpan: controller.simpanSatuan,
           formContent: Column(children: [
-            AppTextField(
+            _ModernTextField(
               controller: controller.namaController,
               label: 'Nama Satuan',
-              hint: 'Contoh: Kilogram',
-              prefixIcon: Icons.straighten_rounded,
+              hint: 'Contoh: Kilogram, Liter, Buah',
+              icon: Icons.straighten_rounded,
               validator: (v) =>
                   v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
-            const SizedBox(height: 12),
-            AppTextField(
+            const SizedBox(height: 14),
+            _ModernTextField(
               controller: controller.singkatanController,
               label: 'Singkatan',
-              hint: 'Contoh: kg',
-              prefixIcon: Icons.short_text_rounded,
+              hint: 'Contoh: kg, L, bh',
+              icon: Icons.short_text_rounded,
               validator: (v) =>
                   v == null || v.isEmpty ? 'Singkatan wajib diisi' : null,
             ),
           ]),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Tambah Satuan'),
       ),
       body: Obx(() {
         if (controller.listSatuan.isEmpty) {
-          return const EmptyState(
+          return _ModernEmptyState(
             icon: Icons.straighten_outlined,
-            message: 'Belum ada satuan.',
+            title: 'Belum Ada Satuan',
+            message: 'Tambahkan satuan pengukuran seperti kg, liter, dll',
           );
         }
         return RefreshIndicator(
           onRefresh: controller.fetchAll,
-          color: AppColors.primary,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          color: _blue500,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listSatuan.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, i) {
               final item = controller.listSatuan[i];
-              return _MasterItemCard(
-                nama: item.nama,
-                trailing: _SatuanBadge(satuan: item.singkatan),
-                onDelete: () => _confirmHapus(context,
-                    nama: item.nama,
-                    onConfirm: () => controller.hapusSatuan(item.id)),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _MasterItemCard(
+                  nama: item.nama,
+                  icon: Icons.straighten_rounded,
+                  iconGradient: const [_purple, Color(0xFFAB47BC)],
+                  index: i,
+                  trailing: _SatuanBadge(satuan: item.singkatan),
+                  onDelete: () => _confirmHapus(context,
+                      nama: item.nama,
+                      onConfirm: () => controller.hapusSatuan(item.id)),
+                ),
               );
             },
           ),
@@ -686,48 +979,191 @@ class _SatuanTab extends StatelessWidget {
   }
 }
 
-// ── Shared sub-widgets ────────────────────────────────────────────────────────
+// ── Modern FAB ────────────────────────────────────────────────────────────────
+class _ModernFAB extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
 
+  const _ModernFAB({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [_blue600, _blue500],
+          ),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: _blue500.withOpacity(0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Master Item Card (Modernized) ─────────────────────────────────────────────
 class _MasterItemCard extends StatelessWidget {
   final String nama;
   final String? subtitle;
   final Widget? trailing;
+  final IconData icon;
+  final List<Color> iconGradient;
+  final int index;
   final VoidCallback onDelete;
 
   const _MasterItemCard({
     required this.nama,
     this.subtitle,
     this.trailing,
+    required this.icon,
+    required this.iconGradient,
+    required this.index,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE3F2FD), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: _blue900.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Row(
         children: [
+          // ── Icon ─────────────────────────────────────────────────────────
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: iconGradient,
+              ),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: iconGradient.first.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 14),
+
+          // ── Info ─────────────────────────────────────────────────────────
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(nama, style: AppTextStyles.titleMd),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle!,
-                      style: AppTextStyles.bodyMd
-                          .copyWith(color: AppColors.onSurfaceVariant)),
+                Text(
+                  nama,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: _blue900,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.subdirectory_arrow_right_rounded,
+                          size: 12, color: _blue400),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
           ),
-          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-          const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded,
-                color: AppColors.error, size: 20),
-            onPressed: onDelete,
-            tooltip: 'Hapus',
+
+          // ── Trailing + Delete ─────────────────────────────────────────────
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: onDelete,
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.shade100, width: 1.2),
+              ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: Colors.red.shade400,
+                size: 20,
+              ),
+            ),
           ),
         ],
       ),
@@ -735,6 +1171,77 @@ class _MasterItemCard extends StatelessWidget {
   }
 }
 
+// ── Modern Text Field ─────────────────────────────────────────────────────────
+class _ModernTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String? hint;
+  final IconData icon;
+  final int maxLines;
+  final String? Function(String?)? validator;
+
+  const _ModernTextField({
+    required this.controller,
+    required this.label,
+    this.hint,
+    required this.icon,
+    this.maxLines = 1,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      validator: validator,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: _blue900,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: const TextStyle(
+          color: _blue600,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        hintStyle: TextStyle(
+          color: Colors.grey.shade400,
+          fontSize: 14,
+        ),
+        prefixIcon: Icon(icon, size: 20, color: _blue500),
+        filled: true,
+        fillColor: _blue50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _blue500, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+}
+
+// ── Satuan Badge ──────────────────────────────────────────────────────────────
 class _SatuanBadge extends StatelessWidget {
   final String satuan;
   const _SatuanBadge({required this.satuan});
@@ -742,30 +1249,254 @@ class _SatuanBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-        border: Border.all(color: AppColors.outlineVariant),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFBBDEFB), width: 1.2),
       ),
-      child: Text(satuan,
-          style: AppTextStyles.labelSm
-              .copyWith(color: AppColors.onSurfaceVariant)),
+      child: Text(
+        satuan,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: _blue600,
+          letterSpacing: 0.3,
+        ),
+      ),
     );
   }
 }
 
+// ── Modern Empty State ─────────────────────────────────────────────────────────
+class _ModernEmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+
+  const _ModernEmptyState({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+                ),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: _blue500.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: _blue600, size: 42),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: _blue900,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade500,
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 28),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: _blue50,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFBBDEFB), width: 1.5),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_circle_outline_rounded,
+                      size: 16, color: _blue600),
+                  SizedBox(width: 8),
+                  Text(
+                    'Gunakan tombol di bawah untuk menambah',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _blue600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Confirm Hapus Dialog ───────────────────────────────────────────────────────
 Future<void> _confirmHapus(
   BuildContext context, {
   required String nama,
   required VoidCallback onConfirm,
 }) async {
-  final ok = await ConfirmDialog.show(
-    title: 'Hapus Data',
-    message:
-        'Yakin ingin menghapus "$nama"? Data yang terhubung mungkin ikut terpengaruh.',
-    confirmLabel: 'Hapus',
-    isDanger: true,
+  final ok = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withOpacity(0.5),
+    builder: (ctx) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon warning
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.red.shade100, width: 1.5),
+              ),
+              child: Icon(Icons.warning_amber_rounded,
+                  color: Colors.red.shade400, size: 34),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Hapus Data?',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: _blue900,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 10),
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.6,
+                ),
+                children: [
+                  const TextSpan(text: 'Yakin ingin menghapus\n'),
+                  TextSpan(
+                    text: '"$nama"',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: _blue900,
+                    ),
+                  ),
+                  const TextSpan(
+                      text: '?\nData yang terhubung mungkin ikut terpengaruh.'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(false),
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F6FF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFFBBDEFB), width: 1.5),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Batal',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: _blue600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(true),
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red.shade500, Colors.red.shade400],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.delete_rounded,
+                                color: Colors.white, size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Hapus',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
   );
-  if (ok) onConfirm();
+  if (ok == true) onConfirm();
 }

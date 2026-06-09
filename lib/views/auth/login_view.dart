@@ -18,22 +18,24 @@ class LoginView extends GetView<AuthController> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Container(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceLowest,
                   borderRadius: BorderRadius.circular(AppTheme.radiusXl),
                   border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                    color: AppColors.outlineVariant.withValues(alpha: 0.25),
+                    width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
@@ -42,61 +44,80 @@ class LoginView extends GetView<AuthController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Logo
-                      Image.asset(
-                        'assets/images/logo.png', // sesuaikan path dengan lokasi file logo kamu
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.contain,
+                      // Logo Container with circular green halo
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 18),
+
+                      // Title
                       Text(
                         'BISA',
                         style: AppTextStyles.headlineLgMobile.copyWith(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.primary,
+                          letterSpacing: -0.5,
                         ),
                       ),
+                      const SizedBox(height: 4),
                       Text(
                         'Basis Informasi Sampah',
-                        style: AppTextStyles.bodyMd,
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 36),
 
-                      // Email
+                      // Email Field
                       AppTextField(
                         controller: controller.emailController,
                         label: 'Email',
-                        hint: 'Masukkan email',
-                        prefixIcon: Icons.person_outline_rounded,
+                        hint: 'Masukkan alamat email Anda',
+                        prefixIcon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         validator: AppValidator.email,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
 
-                      // Password
+                      // Password Field
                       Obx(
                         () => AppTextField(
                           controller: controller.passwordController,
                           label: 'Kata Sandi',
-                          hint: 'Masukkan kata sandi',
+                          hint: 'Masukkan kata sandi Anda',
                           prefixIcon: Icons.lock_outline_rounded,
                           obscureText: !controller.isPasswordVisible.value,
                           validator: AppValidator.password,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              controller.isPasswordVisible.value
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              color: AppColors.outline,
-                              size: 20,
+                          suffixIcon: Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: IconButton(
+                              icon: Icon(
+                                controller.isPasswordVisible.value
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: AppColors.textTertiary,
+                                size: 20,
+                              ),
+                              onPressed: controller.togglePasswordVisibility,
                             ),
-                            onPressed: controller.togglePasswordVisibility,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
 
-                      // Lupa sandi
+                      // Lupa Sandi
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
@@ -110,13 +131,14 @@ class LoginView extends GetView<AuthController> {
                             'Lupa sandi?',
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 28),
 
-                      // Tombol masuk
+                      // Tombol Masuk Sistem
                       Obx(
                         () => _GradientButton(
                           label: 'Masuk Sistem',
@@ -124,15 +146,17 @@ class LoginView extends GetView<AuthController> {
                           onPressed: controller.login,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
 
-                      // Daftar
+                      // Link Daftar
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             'Belum punya akun? ',
-                            style: AppTextStyles.bodyMd,
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           GestureDetector(
                             onTap: () => Get.toNamed(AppRoutes.register),
@@ -140,12 +164,12 @@ class LoginView extends GetView<AuthController> {
                               'Daftar',
                               style: AppTextStyles.labelLg.copyWith(
                                 color: AppColors.primary,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -171,61 +195,64 @@ class _GradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
       height: 52,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.secondary, AppColors.primary],
-          ),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
         ),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2E7D32).withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          onPressed: isLoading ? null : onPressed,
-          child: isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.onPrimary,
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      label,
-                      style: AppTextStyles.labelLg.copyWith(
-                        color: AppColors.onPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: AppColors.onPrimary,
-                      size: 20,
-                    ),
-                  ],
+        ],
+      ),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        onPressed: isLoading ? null : onPressed,
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
                 ),
-        ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                      fontFamily: 'PlusJakartaSans',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ],
+              ),
       ),
     );
   }

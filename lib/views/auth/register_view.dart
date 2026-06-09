@@ -50,11 +50,11 @@ class _RegisterViewState extends State<RegisterView> {
                   color: AppColors.surfaceLowest,
                   borderRadius: BorderRadius.circular(AppTheme.radiusXl),
                   border: Border.all(
-                    color: AppColors.outlineVariant.withOpacity(0.3),
+                    color: AppColors.outlineVariant.withValues(alpha: 0.3),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -113,7 +113,7 @@ class _RegisterViewState extends State<RegisterView> {
                             AppTheme.radiusMd,
                           ),
                           border: Border.all(
-                            color: AppColors.outlineVariant.withOpacity(0.4),
+                            color: AppColors.outlineVariant.withValues(alpha: 0.4),
                           ),
                         ),
                         child: Row(
@@ -245,9 +245,7 @@ class _RegisterViewState extends State<RegisterView> {
                                 AppTheme.radiusMd,
                               ),
                               border: Border.all(
-                                color: AppColors.outlineVariant.withOpacity(
-                                  0.4,
-                                ),
+                                color: AppColors.outlineVariant.withValues(alpha: 0.4),
                               ),
                             ),
                             child: Row(
@@ -274,7 +272,7 @@ class _RegisterViewState extends State<RegisterView> {
                               AppTheme.radiusMd,
                             ),
                             border: Border.all(
-                              color: AppColors.outlineVariant.withOpacity(0.4),
+                              color: AppColors.outlineVariant.withValues(alpha: 0.4),
                             ),
                           ),
                           child: Column(

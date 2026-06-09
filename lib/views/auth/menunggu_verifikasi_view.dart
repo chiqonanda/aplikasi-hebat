@@ -63,109 +63,113 @@ class _MenungguVerifikasiViewState extends State<MenungguVerifikasiView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const Spacer(),
-
-              // Ilustrasi
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-                ),
-                child: const Icon(
-                  Icons.hourglass_top_rounded,
-                  color: AppColors.onPrimaryContainer,
-                  size: 44,
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Judul
-              Text(
-                'Menunggu Verifikasi',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.primary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-
-              // Nama pengguna + penjelasan
-              Obx(() {
-                final nama = SessionService.to.profile.value?.namaLengkap ?? '';
-                return Text(
-                  'Halo $nama,\n\nAkun kamu sudah terdaftar. Kelurahan perlu memverifikasi dan menghubungkan kamu ke bank sampah terlebih dahulu sebelum bisa menggunakan aplikasi.',
-                  style: AppTextStyles.bodyMd,
-                  textAlign: TextAlign.center,
-                );
-              }),
-              const SizedBox(height: 12),
-
-              // Info tambahan
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLow,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withOpacity(0.4),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Ilustrasi
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+                    ),
+                    child: const Icon(
+                      Icons.hourglass_top_rounded,
+                      color: AppColors.onPrimaryContainer,
+                      size: 44,
+                    ),
                   ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.info_outline_rounded,
+                  const SizedBox(height: 28),
+
+                  // Judul
+                  Text(
+                    'Menunggu Verifikasi',
+                    style: AppTextStyles.headlineMd.copyWith(
+                      color: AppColors.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Nama pengguna + penjelasan
+                  Obx(() {
+                    final nama = SessionService.to.profile.value?.namaLengkap ?? '';
+                    return Text(
+                      'Halo $nama,\n\nAkun kamu sudah terdaftar. Kelurahan perlu memverifikasi dan menghubungkan kamu ke bank sampah terlebih dahulu sebelum bisa menggunakan aplikasi.',
+                      style: AppTextStyles.bodyMd,
+                      textAlign: TextAlign.center,
+                    );
+                  }),
+                  const SizedBox(height: 16),
+
+                  // Info tambahan
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLow,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                      border: Border.all(
+                        color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          size: 18,
+                          color: AppColors.outline,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Setelah kelurahan menyetujui akunmu, tekan tombol "Cek Status" di bawah untuk masuk ke aplikasi.',
+                            style: AppTextStyles.labelSm,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // Tombol cek status
+                  AppButton(
+                    label: 'Cek Status',
+                    icon: Icons.refresh_rounded,
+                    isLoading: _isChecking,
+                    onPressed: _cekStatus,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Keluar
+                  TextButton.icon(
+                    onPressed: () => Get.find<AuthController>().logout(),
+                    icon: const Icon(
+                      Icons.logout_rounded,
                       size: 18,
                       color: AppColors.outline,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Setelah kelurahan menyetujui akunmu, tekan tombol "Cek Status" di bawah untuk masuk ke aplikasi.',
-                        style: AppTextStyles.labelSm,
+                    label: Text(
+                      'Keluar',
+                      style: AppTextStyles.labelLg.copyWith(
+                        color: AppColors.outline,
                       ),
                     ),
-                  ],
-                ),
-              ),
-
-              const Spacer(),
-
-              // Tombol cek status
-              AppButton(
-                label: 'Cek Status',
-                icon: Icons.refresh_rounded,
-                isLoading: _isChecking,
-                onPressed: _cekStatus,
-              ),
-              const SizedBox(height: 12),
-
-              // Keluar
-              TextButton.icon(
-                onPressed: () => Get.find<AuthController>().logout(),
-                icon: const Icon(
-                  Icons.logout_rounded,
-                  size: 18,
-                  color: AppColors.outline,
-                ),
-                label: Text(
-                  'Keluar',
-                  style: AppTextStyles.labelLg.copyWith(
-                    color: AppColors.outline,
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),

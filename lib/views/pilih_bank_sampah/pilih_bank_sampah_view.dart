@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
 import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../core/services/session_service.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 
 class PilihBankSampahView extends GetView<SessionController> {
@@ -13,7 +16,7 @@ class PilihBankSampahView extends GetView<SessionController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.scaffoldBg,
       body: Column(
         children: [
           // ── Header gradient (sama seperti dashboard) ──
@@ -23,21 +26,22 @@ class PilihBankSampahView extends GetView<SessionController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF2E7D32),
-                    strokeWidth: 2.5,
-                  ),
-                );
+                return const LoadingWidget();
               }
 
               if (controller.listBankSampah.isEmpty) {
-                return _buildEmptyState();
+                return EmptyState(
+                  message: 'Belum Ada Bank Sampah',
+                  subtitle: 'Kamu belum terhubung ke bank sampah manapun. Hubungi kelurahan untuk mendapat akses.',
+                  icon: Icons.store_outlined,
+                  actionLabel: 'Muat Ulang',
+                  onAction: controller.fetchBankSampahSaya,
+                );
               }
 
               return RefreshIndicator(
                 onRefresh: controller.fetchBankSampahSaya,
-                color: const Color(0xFF2E7D32),
+                color: AppColors.pengelolaMain,
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
                   physics: const BouncingScrollPhysics(),
@@ -75,7 +79,7 @@ class PilihBankSampahView extends GetView<SessionController> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF388E3C)],
+          colors: AppColors.pengelolaGradient,
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(32),
@@ -102,10 +106,9 @@ class PilihBankSampahView extends GetView<SessionController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'BISA',
-                      style: TextStyle(
-                        fontSize: 18,
+                      style: AppTextStyles.titleLg.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         letterSpacing: 1.2,
@@ -113,9 +116,8 @@ class PilihBankSampahView extends GetView<SessionController> {
                     ),
                     Text(
                       'Basis Informasi Sampah',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.white.withOpacity(0.75),
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: Colors.white.withValues(alpha: 0.75),
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -131,10 +133,10 @@ class PilihBankSampahView extends GetView<SessionController> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
+                      color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -154,9 +156,8 @@ class PilihBankSampahView extends GetView<SessionController> {
           // Greeting
           Text(
             'Selamat Datang 👋',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.white.withOpacity(0.8),
+            style: AppTextStyles.bodySm.copyWith(
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 4),
@@ -165,8 +166,7 @@ class PilihBankSampahView extends GetView<SessionController> {
                 SessionService.to.profile.value?.namaLengkap ?? '';
             return Text(
               nama,
-              style: const TextStyle(
-                fontSize: 22,
+              style: AppTextStyles.headlineMd.copyWith(
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
                 letterSpacing: -0.3,
@@ -179,10 +179,10 @@ class PilihBankSampahView extends GetView<SessionController> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -192,120 +192,20 @@ class PilihBankSampahView extends GetView<SessionController> {
                 Icon(
                   Icons.store_outlined,
                   size: 14,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'Pilih bank sampah yang ingin dikelola',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ─── Empty State ──────────────────────────────────────────────────────────
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.store_outlined,
-                  color: Color(0xFF2E7D32),
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Belum Ada Bank Sampah',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Kamu belum terhubung ke bank sampah\nmanapun. Hubungi kelurahan untuk\nmendapat akses.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade500,
-                  height: 1.6,
-                ),
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: controller.fetchBankSampahSaya,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 13,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF2E7D32).withOpacity(0.35),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Muat Ulang',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -333,13 +233,13 @@ class _BankSampahCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: isActive
-              ? Border.all(color: const Color(0xFF2E7D32).withOpacity(0.25), width: 1.5)
-              : Border.all(color: Colors.grey.shade100),
+              ? Border.all(color: AppColors.pengelolaMain.withValues(alpha: 0.25), width: 1.5)
+              : Border.all(color: AppColors.cardBorder),
           boxShadow: [
             BoxShadow(
               color: isActive
-                  ? const Color(0xFF2E7D32).withOpacity(0.08)
-                  : Colors.black.withOpacity(0.04),
+                  ? AppColors.pengelolaMain.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -353,15 +253,15 @@ class _BankSampahCard extends StatelessWidget {
               height: 52,
               decoration: BoxDecoration(
                 color: isActive
-                    ? const Color(0xFFE8F5E9)
-                    : Colors.grey.shade100,
+                    ? AppColors.pengelolaLight
+                    : AppColors.scaffoldBg,
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Icon(
                 Icons.store_rounded,
                 color: isActive
-                    ? const Color(0xFF2E7D32)
-                    : Colors.grey.shade400,
+                    ? AppColors.pengelolaMain
+                    : AppColors.textTertiary,
                 size: 26,
               ),
             ),
@@ -374,12 +274,11 @@ class _BankSampahCard extends StatelessWidget {
                 children: [
                   Text(
                     bank.nama,
-                    style: TextStyle(
-                      fontSize: 15,
+                    style: AppTextStyles.titleSm.copyWith(
                       fontWeight: FontWeight.w700,
                       color: isActive
-                          ? const Color(0xFF1A1A2E)
-                          : Colors.grey.shade500,
+                          ? AppColors.textPrimary
+                          : AppColors.textTertiary,
                     ),
                   ),
                   if (bank.rt != null || bank.alamat != null) ...[
@@ -389,7 +288,7 @@ class _BankSampahCard extends StatelessWidget {
                         Icon(
                           Icons.location_on_outlined,
                           size: 12,
-                          color: Colors.grey.shade400,
+                          color: AppColors.textTertiary,
                         ),
                         const SizedBox(width: 3),
                         Expanded(
@@ -399,9 +298,8 @@ class _BankSampahCard extends StatelessWidget {
                               if (bank.rw != null) 'RW ${bank.rw}',
                               if (bank.alamat != null) bank.alamat!,
                             ].join(' • '),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade500,
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -426,18 +324,18 @@ class _BankSampahCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFE8F5E9)
-                        : Colors.grey.shade100,
+                        ? AppColors.pengelolaLight
+                        : AppColors.scaffoldBg,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     isActive ? 'Aktif' : 'Nonaktif',
-                    style: TextStyle(
+                    style: AppTextStyles.bodySm.copyWith(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: isActive
-                          ? const Color(0xFF2E7D32)
-                          : Colors.grey.shade400,
+                          ? AppColors.pengelolaMain
+                          : AppColors.textTertiary,
                     ),
                   ),
                 ),
@@ -445,8 +343,8 @@ class _BankSampahCard extends StatelessWidget {
                 Icon(
                   Icons.chevron_right_rounded,
                   color: isActive
-                      ? const Color(0xFF2E7D32)
-                      : Colors.grey.shade300,
+                      ? AppColors.pengelolaMain
+                      : AppColors.textTertiary,
                   size: 22,
                 ),
               ],

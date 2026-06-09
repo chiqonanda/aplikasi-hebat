@@ -4,14 +4,14 @@ class AppColors {
   AppColors._();
 
   // Primary — Forest Green
-  static const Color primary = Color(0xFF216140);
-  static const Color primaryContainer = Color(0xFF3C7A57);
+  static const Color primary = Color(0xFF2E7D32);
+  static const Color primaryContainer = Color(0xFF43A047);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color onPrimaryContainer = Color(0xFFC6FFD8);
   static const Color inversePrimary = Color(0xFF94D5AB);
 
   // Secondary — Leaf Green
-  static const Color secondary = Color(0xFF206C32);
+  static const Color secondary = Color(0xFF43A047);
   static const Color secondaryContainer = Color(0xFFA6F5AB);
   static const Color onSecondary = Color(0xFFFFFFFF);
   static const Color onSecondaryContainer = Color(0xFF277237);
@@ -22,8 +22,8 @@ class AppColors {
   static const Color onTertiary = Color(0xFFFFFFFF);
 
   // Background & Surface
-  static const Color background = Color(0xFFF4FAFF);
-  static const Color surface = Color(0xFFF4FAFF);
+  static const Color background = Color(0xFFF5F7FA);
+  static const Color surface = Color(0xFFF5F7FA);
   static const Color surfaceLowest = Color(0xFFFFFFFF);
   static const Color surfaceLow = Color(0xFFE9F6FD);
   static const Color surfaceContainer = Color(0xFFE3F0F8);
@@ -58,4 +58,26 @@ class AppColors {
 
   // Shadow — green-tinted per design system
   static const Color shadow = Color(0x143C7A57);
+
+  // ── Role: Pengelola (Green) ──────────────────
+  static const Color pengelolaMain = Color(0xFF2E7D32);
+  static const Color pengelolaLight = Color(0xFFE8F5E9);
+  static const Color pengelolaDark = Color(0xFF1B5E20);
+
+  // ── Role: Kelurahan (Blue) ───────────────────
+  static const Color kelurahanMain = Color(0xFF1E88E5);
+  static const Color kelurahanDark = Color(0xFF0A2540);
+  static const Color kelurahanLight = Color(0xFFE3F2FD);
+
+  // ── Gradient Pairs ───────────────────────────
+  static const List<Color> pengelolaGradient = [Color(0xFF2E7D32), Color(0xFF43A047)];
+  static const List<Color> kelurahanGradient = [Color(0xFF0A2540), Color(0xFF1E88E5)];
+
+  // ── Neutral extensions ───────────────────────
+  static const Color textPrimary = Color(0xFF1A1A2E);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color divider = Color(0xFFE5E7EB);
+  static const Color cardBorder = Color(0xFFF0F0F0);
+  static const Color scaffoldBg = Color(0xFFF8FAFB);
 }

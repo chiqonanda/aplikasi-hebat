@@ -17,115 +17,123 @@ class HargaView extends GetView<HargaController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Daftar Harga Sampah'),
-        leading: (ModalRoute.of(context)?.canPop ?? false)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => Get.back(),
-              )
-            : null,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            onPressed: () => _showFormSheet(context, null),
-            tooltip: 'Tambah Harga',
-          ),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) return const LoadingWidget();
-
-        if (controller.listHarga.isEmpty) {
-          return EmptyState(
-            icon: Icons.sell_outlined,
-            message:
-                'Belum ada data harga.\nTambahkan harga untuk tiap jenis sampah.',
-            actionLabel: 'Tambah Harga',
-            onAction: () => _showFormSheet(context, null),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: controller.fetchHarga,
-          color: AppColors.primary,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Info banner
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.infoContainer,
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusMd),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline_rounded,
-                        color: AppColors.info, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Harga akan otomatis tersimpan saat input data sampah.',
-                        style: AppTextStyles.bodyMd
-                            .copyWith(color: AppColors.info),
-                      ),
-                    ),
-                  ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom AppPageHeader replacing default AppBar
+            AppPageHeader(
+              title: 'Daftar Harga Sampah',
+              subtitle: 'Harga per satuan jenis sampah',
+              gradientColors: AppColors.pengelolaGradient,
+              showBack: ModalRoute.of(context)?.canPop ?? false,
+              trailing: Tooltip(
+                message: 'Tambah Harga',
+                child: IconButton(
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  onPressed: () => _showFormSheet(context, null),
                 ),
               ),
-              const SizedBox(height: 16),
+            ),
 
-              ...controller.hargaPerKategori.entries.map((entry) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) return const LoadingWidget();
+
+                if (controller.listHarga.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.sell_outlined,
+                    message: 'Belum ada data harga.',
+                    subtitle: 'Tambahkan harga untuk tiap jenis sampah.',
+                    actionLabel: 'Tambah Harga',
+                    onAction: () => _showFormSheet(context, null),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: controller.fetchHarga,
+                  color: AppColors.pengelolaMain,
+                  child: ListView(
+                    padding: AppTheme.pagePaddingAll,
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      // Info banner
+                      Container(
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryContainer,
-                          borderRadius: BorderRadius.circular(
-                              AppTheme.radiusFull),
+                          color: AppColors.infoContainer,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                         ),
-                        child: Text(
-                          entry.key,
-                          style: AppTextStyles.labelSm.copyWith(
-                              color: AppColors.onPrimaryContainer),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline_rounded,
+                                color: AppColors.info, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Harga akan otomatis tersimpan saat input data sampah.',
+                                style: AppTextStyles.bodyMd.copyWith(color: AppColors.info),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    ...entry.value.map((harga) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _HargaCard(
-                            harga: harga,
-                            onEdit: () => _showFormSheet(context, harga),
-                            onDelete: () => controller.deleteHarga(harga),
-                          ),
-                        )),
-                    const SizedBox(height: 8),
-                  ],
+                      const SizedBox(height: 16),
+
+                      ...controller.hargaPerKategori.entries.map((entry) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.pengelolaLight,
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                                ),
+                                child: Text(
+                                  entry.key,
+                                  style: AppTextStyles.labelSm.copyWith(
+                                      color: AppColors.pengelolaDark),
+                                ),
+                              ),
+                            ),
+                            ...entry.value.map((harga) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: _HargaCard(
+                                    harga: harga,
+                                    onEdit: () => _showFormSheet(context, harga),
+                                    onDelete: () => controller.deleteHarga(harga),
+                                  ),
+                                )),
+                            const SizedBox(height: 8),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
                 );
               }),
-            ],
-          ),
-        );
-      }),
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormSheet(context, null),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
+        backgroundColor: AppColors.pengelolaMain,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add_rounded),
       ),
     );
   }
 
   void _showFormSheet(BuildContext context, HargaSampahModel? existing) {
-    if (existing != null) controller.initEdit(existing);
-    else controller.resetForm();
+    if (existing != null) {
+      controller.initEdit(existing);
+    } else {
+      controller.resetForm();
+    }
 
     showModalBottomSheet(
       context: context,
@@ -160,19 +168,18 @@ class _HargaCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.secondaryContainer,
+              color: AppColors.pengelolaLight,
               borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             ),
             child: const Icon(Icons.sell_outlined,
-                color: AppColors.onSecondaryContainer, size: 22),
+                color: AppColors.pengelolaMain, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(harga.namaItem,
-                    style: AppTextStyles.titleMd),
+                Text(harga.namaItem, style: AppTextStyles.titleMd),
                 Text(harga.breadcrumb,
                     style: AppTextStyles.bodyMd,
                     maxLines: 1,
@@ -186,8 +193,7 @@ class _HargaCard extends StatelessWidget {
             children: [
               Text(
                 FormatHelper.currency(harga.hargaPerSatuan),
-                style: AppTextStyles.titleMd
-                    .copyWith(color: AppColors.primary),
+                style: AppTextStyles.titleMd.copyWith(color: AppColors.pengelolaMain),
               ),
               Text(
                 '/ ${harga.satuan?.singkatan ?? '-'}',
@@ -244,193 +250,195 @@ class _HargaFormSheet extends StatelessWidget {
           16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Form(
         key: controller.formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              controller.isEditMode ? 'Edit Harga' : 'Tambah Harga',
-              style: AppTextStyles.titleLg,
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              Text(
+                controller.isEditMode ? 'Edit Harga' : 'Tambah Harga',
+                style: AppTextStyles.titleLg,
+              ),
+              const SizedBox(height: 20),
 
-            // Kategori
-            Obx(() => _DropdownField<String>(
-                  label: 'Kategori *',
-                  hint: 'Pilih kategori',
-                  value: controller.selectedKategoriId.value.isEmpty
-                      ? null
-                      : controller.selectedKategoriId.value,
-                  items: controller.listKategori
-                      .map((k) => DropdownMenuItem(
-                            value: k.id,
-                            child: Text(k.nama),
-                          ))
-                      .toList(),
-                  validator: (v) =>
-                      AppValidator.required(v, fieldName: 'Kategori'),
-                  onChanged: controller.onKategoriChanged,
-                )),
-            const SizedBox(height: 12),
-
-            // Sub kategori (opsional)
-            Obx(() {
-              if (controller.selectedKategoriId.value.isEmpty ||
-                  controller.listSubKategori.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return Column(
-                children: [
-                  _DropdownField<String>(
-                    label: 'Sub Kategori (opsional)',
-                    hint: 'Pilih sub kategori',
-                    value: controller.selectedSubKategoriId.value.isEmpty
+              // Kategori
+              Obx(() => _DropdownField<String>(
+                    label: 'Kategori *',
+                    hint: 'Pilih kategori',
+                    value: controller.selectedKategoriId.value.isEmpty
                         ? null
-                        : controller.selectedSubKategoriId.value,
-                    items: controller.listSubKategori
-                        .map((s) => DropdownMenuItem(
-                              value: s.id,
-                              child: Text(s.nama),
+                        : controller.selectedKategoriId.value,
+                    items: controller.listKategori
+                        .map((k) => DropdownMenuItem(
+                              value: k.id,
+                              child: Text(k.nama),
                             ))
                         .toList(),
-                    onChanged: controller.onSubKategoriChanged,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              );
-            }),
+                    validator: (v) =>
+                        AppValidator.required(v, fieldName: 'Kategori'),
+                    onChanged: controller.onKategoriChanged,
+                  )),
+              const SizedBox(height: 12),
 
-            // Tipe (opsional)
-            Obx(() {
-              if (controller.selectedSubKategoriId.value.isEmpty ||
-                  controller.listTipe.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return Column(
+              // Sub kategori (opsional)
+              Obx(() {
+                if (controller.selectedKategoriId.value.isEmpty ||
+                    controller.listSubKategori.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    _DropdownField<String>(
+                      label: 'Sub Kategori (opsional)',
+                      hint: 'Pilih sub kategori',
+                      value: controller.selectedSubKategoriId.value.isEmpty
+                          ? null
+                          : controller.selectedSubKategoriId.value,
+                      items: controller.listSubKategori
+                          .map((s) => DropdownMenuItem(
+                                value: s.id,
+                                child: Text(s.nama),
+                              ))
+                          .toList(),
+                      onChanged: controller.onSubKategoriChanged,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              }),
+
+              // Tipe (opsional)
+              Obx(() {
+                if (controller.selectedSubKategoriId.value.isEmpty ||
+                    controller.listTipe.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    _DropdownField<String>(
+                      label: 'Tipe (opsional)',
+                      hint: 'Pilih tipe material',
+                      value: controller.selectedTipeId.value.isEmpty
+                          ? null
+                          : controller.selectedTipeId.value,
+                      items: controller.listTipe
+                          .map((t) => DropdownMenuItem(
+                                value: t.id,
+                                child: Text(t.nama),
+                              ))
+                          .toList(),
+                      onChanged: controller.onTipeChanged,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              }),
+
+              // Jenis (opsional)
+              Obx(() {
+                if (controller.listJenisSampah.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                if (controller.listTipe.isNotEmpty &&
+                    controller.selectedTipeId.value.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    _DropdownField<String>(
+                      label: 'Jenis Sampah (opsional)',
+                      hint: 'Pilih jenis sampah',
+                      value: controller.selectedJenisId.value.isEmpty
+                          ? null
+                          : controller.selectedJenisId.value,
+                      items: controller.listJenisSampah
+                          .map((j) => DropdownMenuItem(
+                                value: j.id,
+                                child: Text(j.nama),
+                              ))
+                          .toList(),
+                      onChanged: (v) =>
+                          controller.selectedJenisId.value = v ?? '',
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              }),
+
+              // Harga & Satuan
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _DropdownField<String>(
-                    label: 'Tipe (opsional)',
-                    hint: 'Pilih tipe material',
-                    value: controller.selectedTipeId.value.isEmpty
-                        ? null
-                        : controller.selectedTipeId.value,
-                    items: controller.listTipe
-                        .map((t) => DropdownMenuItem(
-                              value: t.id,
-                              child: Text(t.nama),
-                            ))
-                        .toList(),
-                    onChanged: controller.onTipeChanged,
+                  Expanded(
+                    flex: 2,
+                    child: AppTextField(
+                      controller: controller.hargaController,
+                      label: 'Harga *',
+                      hint: 'Contoh: 2500',
+                      prefixIcon: Icons.payments_outlined,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      validator: AppValidator.harga,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Obx(() => _DropdownField<String>(
+                          label: 'Satuan *',
+                          hint: 'Satuan',
+                          value: controller.selectedSatuanId.value.isEmpty
+                              ? null
+                              : controller.selectedSatuanId.value,
+                          items: controller.listSatuan
+                              .map((s) => DropdownMenuItem(
+                                    value: s.id,
+                                    child: Text(s.singkatan),
+                                  ))
+                              .toList(),
+                          validator: (v) =>
+                              AppValidator.required(v, fieldName: 'Satuan'),
+                          onChanged: (v) =>
+                              controller.selectedSatuanId.value = v ?? '',
+                        )),
+                  ),
                 ],
-              );
-            }),
+              ),
+              const SizedBox(height: 24),
 
-            // Jenis (opsional)
-            Obx(() {
-              if (controller.listJenisSampah.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              if (controller.listTipe.isNotEmpty &&
-                  controller.selectedTipeId.value.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return Column(
+              // Tombol
+              Row(
                 children: [
-                  _DropdownField<String>(
-                    label: 'Jenis Sampah (opsional)',
-                    hint: 'Pilih jenis sampah',
-                    value: controller.selectedJenisId.value.isEmpty
-                        ? null
-                        : controller.selectedJenisId.value,
-                    items: controller.listJenisSampah
-                        .map((j) => DropdownMenuItem(
-                              value: j.id,
-                              child: Text(j.nama),
-                            ))
-                        .toList(),
-                    onChanged: (v) =>
-                        controller.selectedJenisId.value = v ?? '',
+                  Expanded(
+                    child: AppButton(
+                      label: 'Batal',
+                      outlined: true,
+                      onPressed: () => Get.back(),
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Obx(() => AppButton(
+                          label: controller.isEditMode ? 'Simpan' : 'Tambah',
+                          isLoading: controller.isLoading.value,
+                          onPressed: controller.simpan,
+                          icon: Icons.check_rounded,
+                        )),
+                  ),
                 ],
-              );
-            }),
-
-            // Harga & Satuan
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: AppTextField(
-                    controller: controller.hargaController,
-                    label: 'Harga *',
-                    hint: 'Contoh: 2500',
-                    prefixIcon: Icons.payments_outlined,
-                    keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
-                    validator: AppValidator.harga,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Obx(() => _DropdownField<String>(
-                        label: 'Satuan *',
-                        hint: 'Satuan',
-                        value: controller.selectedSatuanId.value.isEmpty
-                            ? null
-                            : controller.selectedSatuanId.value,
-                        items: controller.listSatuan
-                            .map((s) => DropdownMenuItem(
-                                  value: s.id,
-                                  child: Text(s.singkatan),
-                                ))
-                            .toList(),
-                        validator: (v) =>
-                            AppValidator.required(v, fieldName: 'Satuan'),
-                        onChanged: (v) =>
-                            controller.selectedSatuanId.value = v ?? '',
-                      )),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Tombol
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Batal',
-                    outlined: true,
-                    onPressed: () => Get.back(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Obx(() => AppButton(
-                        label: controller.isEditMode ? 'Simpan' : 'Tambah',
-                        isLoading: controller.isLoading.value,
-                        onPressed: controller.simpan,
-                        icon: Icons.check_rounded,
-                      )),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -482,7 +490,7 @@ class _DropdownField<T> extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),

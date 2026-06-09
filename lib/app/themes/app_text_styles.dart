@@ -95,6 +95,33 @@ class AppTextStyles {
     color: AppColors.onSurfaceVariant,
   );
 
+  // Body Small — untuk caption, metadata, badge text
+  static const TextStyle bodySm = TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 16 / 12,
+    color: AppColors.onSurfaceVariant,
+  );
+
+  // Title Small — untuk sub-header card, section minor
+  static const TextStyle titleSm = TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    height: 20 / 14,
+    color: AppColors.onBackground,
+  );
+
+  // Label Medium — untuk button-like text
+  static const TextStyle labelMd = TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+    height: 18 / 13,
+    color: AppColors.onBackground,
+  );
+
   // Helper: copy dengan warna custom
   static TextStyle withColor(TextStyle style, Color color) =>
       style.copyWith(color: color);

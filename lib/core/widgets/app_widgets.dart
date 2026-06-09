@@ -82,6 +82,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final int maxLines;
   final bool readOnly;
+  final bool enabled;
   final VoidCallback? onTap;
   final void Function(String)? onChanged;
 
@@ -97,12 +98,14 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.maxLines = 1,
     this.readOnly = false,
+    this.enabled = true,
     this.onTap,
     this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool isInteractive = enabled && !readOnly;
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -110,14 +113,19 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       maxLines: maxLines,
       readOnly: readOnly,
+      enabled: enabled,
       onTap: onTap,
       onChanged: onChanged,
-      style: AppTextStyles.bodyLg,
+      style: AppTextStyles.bodyLg.copyWith(
+        color: isInteractive ? AppColors.textPrimary : AppColors.textSecondary,
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        filled: !isInteractive,
+        fillColor: isInteractive ? null : AppColors.scaffoldBg,
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, size: 20, color: AppColors.outline)
+            ? Icon(prefixIcon, size: 20, color: isInteractive ? AppColors.outline : AppColors.textTertiary)
             : null,
         suffixIcon: suffixIcon,
       ),
@@ -256,6 +264,7 @@ class StatusChip extends StatelessWidget {
 // ── EmptyState ─────────────────────────────────────────────
 class EmptyState extends StatelessWidget {
   final String message;
+  final String? subtitle;
   final IconData icon;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -263,6 +272,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
     required this.message,
+    this.subtitle,
     this.icon = Icons.inbox_outlined,
     this.actionLabel,
     this.onAction,
@@ -281,8 +291,16 @@ class EmptyState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMd,
+              style: AppTextStyles.bodyLg.copyWith(fontWeight: FontWeight.bold),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMd.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 16),
               AppButton(label: actionLabel!, onPressed: onAction, width: 160),
@@ -296,12 +314,25 @@ class EmptyState extends StatelessWidget {
 
 // ── LoadingWidget ──────────────────────────────────────────
 class LoadingWidget extends StatelessWidget {
-  const LoadingWidget({super.key});
+  final String? message;
+  const LoadingWidget({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(color: AppColors.primary),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(color: AppColors.primary),
+          if (message != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              message!,
+              style: AppTextStyles.bodyMd.copyWith(color: AppColors.textSecondary),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -364,5 +395,416 @@ class ConfirmDialog {
       ),
     );
     return result ?? false;
+  }
+}
+
+// ── ShimmerLoading ──────────────────────────────────────────
+class ShimmerLoading extends StatefulWidget {
+  final Widget child;
+  const ShimmerLoading({super.key, required this.child});
+
+  @override
+  State<ShimmerLoading> createState() => _ShimmerLoadingState();
+}
+
+class _ShimmerLoadingState extends State<ShimmerLoading> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _opacityAnimation = Tween<double>(begin: 0.35, end: 0.85).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacityAnimation,
+      child: widget.child,
+    );
+  }
+}
+
+// ── AppLoadingState ──────────────────────────────────────────
+class AppLoadingState extends StatelessWidget {
+  final String? message;
+  const AppLoadingState({super.key, this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (message != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              message!,
+              style: AppTextStyles.bodyMd.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+        ShimmerLoading(
+          child: Column(
+            children: List.generate(3, (index) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.outlineVariant),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            height: 14,
+                            width: 120,
+                            color: Colors.grey.shade200,
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 10,
+                            width: 80,
+                            color: Colors.grey.shade200,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── AppEmptyState ──────────────────────────────────────────
+class AppEmptyState extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const AppEmptyState({
+    super.key,
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 48, color: AppColors.textTertiary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                subtitle!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 20),
+              SizedBox(
+                width: 140,
+                height: 38,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.pengelolaMain,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: onAction,
+                  child: Text(
+                    actionLabel!,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── StatCard ────────────────────────────────────────────────
+class StatCard extends StatelessWidget {
+  final String label;
+  final String sublabel;
+  final String value;
+  final String satuan;
+  final IconData icon;
+  final List<Color> gradientColors;
+  final Color iconBg;
+  final double height;
+
+  const StatCard({
+    super.key,
+    required this.label,
+    required this.sublabel,
+    required this.value,
+    required this.satuan,
+    required this.icon,
+    required this.gradientColors,
+    required this.iconBg,
+    required this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: Container(
+        height: height,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLowest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Top Row: Icon Container and Sublabel
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    sublabel,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textTertiary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+
+            // Value + Unit (Forced Bounded Width + ScaleDown)
+            SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    if (satuan.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        satuan,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            // Label
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── AppPageHeader ──────────────────────────────────────────
+class AppPageHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<Color> gradientColors;
+  final bool showBack;
+  final Widget? trailing;
+
+  const AppPageHeader({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.gradientColors,
+    this.showBack = true,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: 20,
+        left: showBack ? 8 : 20,
+        right: 20,
+        bottom: 24,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (showBack)
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              onPressed: () => Get.back(),
+            ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(left: showBack ? 4 : 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
+        ],
+      ),
+    );
   }
 }

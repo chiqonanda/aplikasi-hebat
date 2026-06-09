@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../app/themes/app_colors.dart';
 import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/bank_sampah_controller.dart';
 import '../../core/utils/validator.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -10,13 +12,13 @@ class BankSampahFormView extends GetView<BankSampahController> {
   const BankSampahFormView({super.key});
 
   // ── Theme Dashboard Kelurahan ────────────────────────────────────────────
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue800 = Color(0xFF0D3461);
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue800 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);
-  static const _blue200 = Color(0xFFBBDEFB);
-  static const _blue50 = Color(0xFFE3F2FD);
-  static const _bg = Color(0xFFF0F6FF);
+  static const _blue200 = AppColors.kelurahanLight;
+  static const _blue50 = AppColors.kelurahanLight;
+  static const _bg = AppColors.scaffoldBg;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,12 @@ class BankSampahFormView extends GetView<BankSampahController> {
           child: Column(
             children: [
               // ── Header ────────────────────────────────────────────────
-              _buildHeader(),
+              Obx(() => AppPageHeader(
+                title: controller.isEditMode ? 'Edit Bank Sampah' : 'Tambah Bank Sampah',
+                subtitle: controller.isEditMode ? 'Perbarui data bank sampah' : 'Tambahkan bank sampah baru',
+                gradientColors: AppColors.kelurahanGradient,
+                showBack: true,
+              )),
 
               // ── Content ───────────────────────────────────────────────
               Expanded(
@@ -107,7 +114,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                                   boxShadow: [
                                     BoxShadow(
                                       color:
-                                          _blue500.withOpacity(0.05),
+                                          _blue500.withValues(alpha: 0.05),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -257,7 +264,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                                                   .isAktif.value
                                               ? _blue500
                                               : Colors.grey)
-                                          .withOpacity(0.25),
+                                          .withValues(alpha: 0.25),
                                       blurRadius: 10,
                                       offset:
                                           const Offset(0, 5),
@@ -425,7 +432,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                               BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: _blue500.withOpacity(0.3),
+                              color: _blue500.withValues(alpha: 0.3),
                               blurRadius: 14,
                               offset: const Offset(0, 6),
                             ),
@@ -472,113 +479,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        Container(
-          padding:
-              const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _blue900,
-                _blue800,
-                Color(0xFF1040A0),
-              ],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(34),
-              bottomRight: Radius.circular(34),
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color:
-                            Colors.white.withOpacity(0.12),
-                        borderRadius:
-                            BorderRadius.circular(16),
-                        border: Border.all(
-                          color:
-                              Colors.white.withOpacity(0.15),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ),
 
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: Obx(
-                      () => Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            controller.isEditMode
-                                ? 'Edit Bank Sampah'
-                                : 'Tambah Bank Sampah',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight:
-                                  FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            controller.isEditMode
-                                ? 'Perbarui data bank sampah'
-                                : 'Tambahkan bank sampah baru',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: _blue200
-                                  .withOpacity(0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-
-        Positioned(
-          top: -40,
-          right: -30,
-          child: Container(
-            width: 170,
-            height: 170,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.04),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   void _showRtSelectionSheet(BuildContext context) {
     final initialSelected = List<String>.from(
@@ -624,8 +525,8 @@ class _SectionCard extends StatelessWidget {
     required this.child,
   });
 
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);
 
   @override
@@ -642,7 +543,7 @@ class _SectionCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color:
-                _blue500.withOpacity(0.06),
+                _blue500.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -743,8 +644,8 @@ class _RtChip extends StatelessWidget {
     required this.onRemove,
   });
 
-  static const _blue500 = Color(0xFF1E88E5);
-  static const _blue50 = Color(0xFFE3F2FD);
+  static const _blue500 = AppColors.kelurahanMain;
+  static const _blue50 = AppColors.kelurahanLight;
 
   @override
   Widget build(BuildContext context) {
@@ -806,8 +707,8 @@ class _PengelolaTile
     required this.onRemove,
   });
 
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
 
   @override
   Widget build(BuildContext context) {
@@ -906,12 +807,9 @@ class _RtSelectionSheetState
 
   String _searchQuery = '';
 
-  static const _blue900 =
-      Color(0xFF0A2540);
-  static const _blue500 =
-      Color(0xFF1E88E5);
-  static const _blue400 =
-      Color(0xFF42A5F5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
+  static const _blue400 = Color(0xFF42A5F5);
 
   static final List<String>
       _defaultRts =
@@ -1022,9 +920,9 @@ class _RtSelectionSheetState
                 0.78,
         decoration:
             const BoxDecoration(
-          color: Color(0xFFF7FAFF),
+          color: AppColors.scaffoldBg,
           borderRadius:
-              BorderRadius.only(
+              const BorderRadius.only(
             topLeft:
                 Radius.circular(32),
             topRight:
@@ -1283,42 +1181,24 @@ class _RtSelectionSheetState
                               ),
                               decoration:
                                   BoxDecoration(
-                                gradient:
-                                    isSelected
-                                        ? const LinearGradient(
-                                            colors: [
-                                              _blue500,
-                                              _blue400,
-                                            ],
-                                          )
-                                        : null,
                                 color: isSelected
-                                    ? null
-                                    : Colors
-                                        .white,
+                                    ? _blue500
+                                    : Colors.white,
                                 borderRadius:
-                                    BorderRadius.circular(
-                                        16),
+                                    BorderRadius.circular(16),
                                 border:
                                     Border.all(
                                   color: isSelected
                                       ? _blue500
-                                      : Colors
-                                          .grey
-                                          .shade300,
+                                      : Colors.grey.shade300,
                                 ),
                                 boxShadow: [
                                   if (isSelected)
                                     BoxShadow(
                                       color: _blue500
-                                          .withOpacity(
-                                              0.25),
-                                      blurRadius:
-                                          10,
-                                      offset:
-                                          const Offset(
-                                              0,
-                                              4),
+                                          .withValues(alpha: 0.25),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
                                 ],
                               ),

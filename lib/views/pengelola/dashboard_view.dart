@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../app/routes/app_routes.dart';
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/pengelola/dashboard_controller.dart';
 import '../../controllers/pengelola/pengelola_main_controller.dart';
 import '../../core/utils/format_helper.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../models/pengelolaan_sampah_model.dart';
-import '../../app/themes/app_theme.dart';
-import '../../core/utils/tooltip_helper.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -15,11 +18,11 @@ class DashboardView extends GetView<DashboardController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controller.fetchDashboardData,
-          color: const Color(0xFF2E7D32),
+          color: AppColors.pengelolaMain,
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -29,7 +32,7 @@ class DashboardView extends GetView<DashboardController> {
               // Statistik cards
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: Obx(() => _buildStatistikRow()),
                 ),
               ),
@@ -37,17 +40,15 @@ class DashboardView extends GetView<DashboardController> {
               // Tombol CTA Input Sampah Full-Width
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: _buildInputSampahCTA(),
                 ),
               ),
 
-
-
               // Aktivitas terbaru header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -56,19 +57,13 @@ class DashboardView extends GetView<DashboardController> {
                         children: [
                           const Text(
                             'Aktivitas Terbaru',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A2E),
-                              letterSpacing: -0.3,
-                            ),
+                            style: AppTextStyles.titleLg,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Riwayat pengelolaan sampah',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade500,
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -87,8 +82,8 @@ class DashboardView extends GetView<DashboardController> {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(20),
+                            color: AppColors.pengelolaLight,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                           ),
                           child: const Row(
                             children: [
@@ -97,14 +92,14 @@ class DashboardView extends GetView<DashboardController> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2E7D32),
+                                  color: AppColors.pengelolaMain,
                                 ),
                               ),
                               SizedBox(width: 4),
                               Icon(
                                 Icons.arrow_forward_ios_rounded,
                                 size: 11,
-                                color: Color(0xFF2E7D32),
+                                color: AppColors.pengelolaMain,
                               ),
                             ],
                           ),
@@ -121,12 +116,7 @@ class DashboardView extends GetView<DashboardController> {
                   return const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(40),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF2E7D32),
-                          strokeWidth: 2.5,
-                        ),
-                      ),
+                      child: LoadingWidget(message: 'Memuat aktivitas terbaru...'),
                     ),
                   );
                 }
@@ -134,98 +124,15 @@ class DashboardView extends GetView<DashboardController> {
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
+                        horizontal: 20,
                         vertical: 8,
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.grey.shade100),
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F5E9),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(
-                                Icons.inbox_outlined,
-                                color: Color(0xFF2E7D32),
-                                size: 32,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Belum Ada Data',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1A2E),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Mulai input data sampah\nsekarang.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade500,
-                                height: 1.5,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            GestureDetector(
-                              onTap: () => Get.toNamed(AppRoutes.inputSampah),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF2E7D32),
-                                      Color(0xFF43A047),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF2E7D32)
-                                          .withOpacity(0.35),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.add_rounded,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Input Data',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: EmptyState(
+                        message: 'Belum Ada Data',
+                        subtitle: 'Mulai input data sampah sekarang.',
+                        icon: Icons.inbox_outlined,
+                        actionLabel: 'Input Data',
+                        onAction: () => Get.toNamed(AppRoutes.inputSampah),
                       ),
                     ),
                   );
@@ -235,7 +142,7 @@ class DashboardView extends GetView<DashboardController> {
                     (context, index) {
                       final item = controller.aktivitasTerbaru[index];
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
                         child: _AktivitasCard(item: item),
                       );
                     },
@@ -255,13 +162,19 @@ class DashboardView extends GetView<DashboardController> {
   // ─── Header ───────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
+    final context = Get.context!;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20,
+        left: 20,
+        right: 20,
+        bottom: 28,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF388E3C)],
+          colors: AppColors.pengelolaGradient,
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(32),
@@ -278,7 +191,7 @@ class DashboardView extends GetView<DashboardController> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                 child: Image.asset(
-                  'assets/images/logo.png', // sesuaikan path dengan lokasi file logo
+                  'assets/images/logo.png',
                   width: 44,
                   height: 44,
                   fit: BoxFit.contain,
@@ -302,7 +215,7 @@ class DashboardView extends GetView<DashboardController> {
                       'Dashboard Pengelola',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white.withValues(alpha: 0.75),
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -339,74 +252,57 @@ class DashboardView extends GetView<DashboardController> {
 
           const SizedBox(height: 24),
 
-          // Greeting
-          Text(
-            'Selamat Datang',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.75),
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 2),
+          // Greeting "Selamat Datang, [Nama]"
           Obx(
             () => Text(
-              controller.bankSampahNama,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Obx(
-            () => Text(
-              'Petugas: ${controller.penggunaNama}',
+              'Selamat Datang, ${controller.penggunaNama}',
               style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withOpacity(0.75),
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.2,
               ),
             ),
           ),
-          const SizedBox(height: 14),
-          
-          // Stat Hari Ini
-          Obx(() {
-            return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          const SizedBox(height: 8),
+
+          // Lencana Nama Bank Sampah yang Aktif
+          Obx(
+            () => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.today_rounded,
+                  const Icon(
+                    Icons.store_rounded,
+                    color: Colors.white,
                     size: 16,
-                    color: Colors.white.withOpacity(0.85),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
+                  const SizedBox(width: 6),
+                  Flexible(
                     child: Text(
-                      'Hari Ini: ${FormatHelper.number(controller.totalJumlahHariIni.value)} kg, ${controller.totalTransaksiHariIni.value} transaksi',
+                      controller.bankSampahNama,
                       style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-            );
-          }),
+            ),
+          ),
         ],
       ),
     );
@@ -420,12 +316,12 @@ class DashboardView extends GetView<DashboardController> {
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+            colors: AppColors.pengelolaGradient,
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2E7D32).withOpacity(0.35),
+              color: AppColors.pengelolaMain.withValues(alpha: 0.35),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -465,125 +361,94 @@ class DashboardView extends GetView<DashboardController> {
           padding: EdgeInsets.only(bottom: 14),
           child: Text(
             'Ringkasan Bulan Ini',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A2E),
-              letterSpacing: -0.3,
-            ),
+            style: AppTextStyles.titleLg,
           ),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                label: 'Transaksi',
-                sublabel: 'Bulan Ini',
-                value: controller.totalTransaksiBulanIni.value.toString(),
-                satuan: 'entri',
-                icon: Icons.receipt_long_outlined,
-                gradientColors: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
-                iconBg: const Color(0xFF0D47A1),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _StatCard(
-                label: 'Total Nilai',
-                sublabel: 'Bulan Ini',
-                value: FormatHelper.currency(
-                    controller.totalNilaiBulanIni.value),
-                satuan: 'Rupiah',
-                icon: Icons.payments_outlined,
-                gradientColors: const [Color(0xFFE65100), Color(0xFFFF7043)],
-                iconBg: const Color(0xFFBF360C),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        const Padding(
-          padding: EdgeInsets.only(bottom: 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
             children: [
-              Text(
-                'Rincian Sampah Terkumpul',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A2E),
-                  letterSpacing: -0.3,
+              SizedBox(
+                width: 135,
+                child: StatCard(
+                  label: 'Transaksi',
+                  sublabel: 'Bulan Ini',
+                  value: controller.totalTransaksiBulanIni.value.toString(),
+                  satuan: 'entri',
+                  icon: Icons.receipt_long_outlined,
+                  gradientColors: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
+                  iconBg: const Color(0xFF0D47A1),
+                  height: 125,
                 ),
               ),
-              SizedBox(height: 2),
-              Text(
-                'Berdasarkan jenis satuan',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF757575),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 135,
+                child: StatCard(
+                  label: 'Total Nilai',
+                  sublabel: 'Bulan Ini',
+                  value: FormatHelper.currency(
+                      controller.totalNilaiBulanIni.value),
+                  satuan: '',
+                  icon: Icons.payments_outlined,
+                  gradientColors: const [Color(0xFFE65100), Color(0xFFFF7043)],
+                  iconBg: const Color(0xFFBF360C),
+                  height: 125,
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 135,
+                child: StatCard(
+                  label: 'Sampah Padat',
+                  sublabel: 'Bulan Ini',
+                  value: FormatHelper.number(
+                      controller.totalKgBulanIni.value),
+                  satuan: 'kg',
+                  icon: Icons.scale_outlined,
+                  gradientColors: const [Color(0xFF2E7D32), Color(0xFF43A047)],
+                  iconBg: const Color(0xFF1B5E20),
+                  height: 125,
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 135,
+                child: StatCard(
+                  label: 'Sampah Cair',
+                  sublabel: 'Bulan Ini',
+                  value: FormatHelper.number(
+                      controller.totalLiterBulanIni.value),
+                  satuan: 'liter',
+                  icon: Icons.water_drop_rounded,
+                  gradientColors: const [Color(0xFF0277BD), Color(0xFF00ACC1)],
+                  iconBg: const Color(0xFF01579B),
+                  height: 125,
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 135,
+                child: StatCard(
+                  label: 'Sampah Satuan',
+                  sublabel: 'Bulan Ini',
+                  value: FormatHelper.number(
+                      controller.totalSatuanBulanIni.value),
+                  satuan: 'satuan',
+                  icon: Icons.category_outlined,
+                  gradientColors: const [Color(0xFF6A1B9A), Color(0xFF8E24AA)],
+                  iconBg: const Color(0xFF4A148C),
+                  height: 125,
                 ),
               ),
             ],
           ),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                label: 'Sampah Padat',
-                sublabel: 'Bulan Ini',
-                value: FormatHelper.number(
-                    controller.totalKgBulanIni.value),
-                satuan: 'kg',
-                icon: Icons.scale_outlined,
-                gradientColors: const [Color(0xFF2E7D32), Color(0xFF43A047)],
-                iconBg: const Color(0xFF1B5E20),
-                height: 135,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatCard(
-                label: 'Sampah Cair',
-                sublabel: 'Bulan Ini',
-                value: FormatHelper.number(
-                    controller.totalLiterBulanIni.value),
-                satuan: 'liter',
-                icon: Icons.water_drop_rounded,
-                gradientColors: const [Color(0xFF0277BD), Color(0xFF00ACC1)],
-                iconBg: const Color(0xFF01579B),
-                height: 135,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatCard(
-                label: 'Sampah Satuan',
-                sublabel: 'Bulan Ini',
-                value: FormatHelper.number(
-                    controller.totalSatuanBulanIni.value),
-                satuan: 'satuan',
-                icon: Icons.category_outlined,
-                gradientColors: const [Color(0xFF6A1B9A), Color(0xFF8E24AA)],
-                iconBg: const Color(0xFF4A148C),
-                height: 135,
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
-
-
 }
-
-// ─────────────────────────────────────────
-// Supporting classes
-// ─────────────────────────────────────────
-
-
 
 // ─────────────────────────────────────────
 // Header Icon Button
@@ -612,10 +477,10 @@ class _HeaderIconBtn extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(isDestructive ? 0.08 : 0.15),
+            color: Colors.white.withValues(alpha: isDestructive ? 0.08 : 0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -631,121 +496,6 @@ class _HeaderIconBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────
-// Stat Card
-// ─────────────────────────────────────────
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String sublabel;
-  final String value;
-  final String satuan;
-  final IconData icon;
-  final List<Color> gradientColors;
-  final Color iconBg;
-  final double height;
-
-  const _StatCard({
-    required this.label,
-    required this.sublabel,
-    required this.value,
-    required this.satuan,
-    required this.icon,
-    required this.gradientColors,
-    required this.iconBg,
-    this.height = 150,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isCompact = height < 140;
-    return Container(
-      height: height, // ← dynamic height
-      padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 10 : 14,
-        vertical: isCompact ? 10 : 14,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradientColors,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.first.withOpacity(0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon
-          Container(
-            width: isCompact ? 30 : 34,
-            height: isCompact ? 30 : 34,
-            decoration: BoxDecoration(
-              color: iconBg.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: Colors.white, size: isCompact ? 16 : 18),
-          ),
-          SizedBox(height: isCompact ? 4 : 8),
-          // Value — pakai FittedBox biar auto shrink kalau panjang
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-          if (satuan.isNotEmpty)
-            Text(
-              satuan,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withOpacity(0.75),
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          const Spacer(), // ← dorong label ke bawah secara konsisten
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            sublabel,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.white.withOpacity(0.65),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────
-
 
 
 // ─────────────────────────────────────────
@@ -762,11 +512,11 @@ class _AktivitasCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLowest,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -779,12 +529,12 @@ class _AktivitasCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
+              color: AppColors.pengelolaLight,
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
               Icons.recycling_rounded,
-              color: Color(0xFF2E7D32),
+              color: AppColors.pengelolaMain,
               size: 24,
             ),
           ),
@@ -799,7 +549,7 @@ class _AktivitasCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -807,9 +557,9 @@ class _AktivitasCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   item.breadcrumb,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: AppColors.textSecondary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -817,19 +567,19 @@ class _AktivitasCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.calendar_today_outlined,
                       size: 11,
-                      color: Colors.grey.shade400,
+                      color: AppColors.textTertiary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       FormatHelper.dateFromString(
                         item.tanggalPengelolaan.toIso8601String(),
                       ),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade400,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ],
@@ -848,7 +598,7 @@ class _AktivitasCard extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                  color: AppColors.pengelolaLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -859,7 +609,7 @@ class _AktivitasCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2E7D32),
+                    color: AppColors.pengelolaMain,
                   ),
                 ),
               ),
@@ -867,10 +617,10 @@ class _AktivitasCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   FormatHelper.currency(item.totalHarga),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade500,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],

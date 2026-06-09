@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/monitoring_controller.dart';
 import '../../core/utils/format_helper.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../models/pengelolaan_sampah_model.dart';
 
 class DetailBankSampahView extends GetView<MonitoringController> {
   const DetailBankSampahView({super.key});
 
-  // ── Theme Colors (Sama seperti Dashboard Kelurahan) ─────────────────────
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue800 = Color(0xFF0D3461);
-  static const _blue500 = Color(0xFF1E88E5);
+  // ── Theme Colors ────────────────────────────────────────────────────────
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);
-  static const _blue200 = Color(0xFFBBDEFB);
-  static const _bg = Color(0xFFF0F6FF);
+  static const _blue200 = AppColors.kelurahanLight;
+  static const _bg = AppColors.scaffoldBg;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +48,20 @@ class DetailBankSampahView extends GetView<MonitoringController> {
               slivers: [
                 // ── Header ────────────────────────────────────────────────
                 SliverToBoxAdapter(
-                  child: _buildHeader(bank),
+                  child: AppPageHeader(
+                    title: 'Detail',
+                    subtitle: 'Bank Sampah',
+                    gradientColors: AppColors.kelurahanGradient,
+                    showBack: true,
+                  ),
+                ),
+
+                // ── Info Bank Card ───────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    child: _buildBankInfoCard(bank),
+                  ),
                 ),
 
                 // ── Statistik ─────────────────────────────────────────────
@@ -97,21 +113,20 @@ class DetailBankSampahView extends GetView<MonitoringController> {
                     return const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 60),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: _blue500,
-                            strokeWidth: 2.6,
-                          ),
-                        ),
+                        child: LoadingWidget(),
                       ),
                     );
                   }
 
                   if (controller.detailTransaksi.isEmpty) {
-                    return SliverToBoxAdapter(
+                    return const SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _EmptyState(),
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                        child: EmptyState(
+                          message: 'Belum Ada Transaksi',
+                          subtitle: 'Belum ada transaksi pengelolaan sampah pada bulan ini.',
+                          icon: Icons.receipt_long_rounded,
+                        ),
                       ),
                     );
                   }
@@ -142,216 +157,143 @@ class DetailBankSampahView extends GetView<MonitoringController> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
-  Widget _buildHeader(dynamic bank) {
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _blue900,
-                _blue800,
-                Color(0xFF1040A0),
+  // ── Info Bank Card Helper ────────────────────────────────────────────────
+  Widget _buildBankInfoCard(dynamic bank) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacingLg),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: _blue200.withValues(alpha: 0.5),
+          width: 1.2,
+        ),
+        boxShadow: AppTheme.cardShadowLight,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: AppColors.kelurahanGradient,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: _blue500.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(34),
-              bottomRight: Radius.circular(34),
+            child: const Icon(
+              Icons.store_rounded,
+              color: Colors.white,
+              size: 30,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── App Bar Custom ───────────────────────────────────────
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 46,
-                      height: 46,
+          const SizedBox(width: AppTheme.spacingLg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  bank.nama,
+                  style: AppTextStyles.titleLg.copyWith(
+                    color: _blue900,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingSm),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.18),
-                        ),
+                        color: bank.isActive
+                            ? const Color(0xFFE8F5E9)
+                            : const Color(0xFFFFEBEE),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      'Detail Bank Sampah',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 28),
-
-              // ── Bank Info ────────────────────────────────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [_blue500, _blue400],
-                      ),
-                      borderRadius: BorderRadius.circular(22),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _blue500.withOpacity(0.35),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.store_rounded,
-                      color: Colors.white,
-                      size: 34,
-                    ),
-                  ),
-
-                  const SizedBox(width: 16),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          bank.nama,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -0.8,
-                            height: 1.1,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: bank.isActive
+                                ? Colors.green
+                                : Colors.red,
                           ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: bank.isActive
-                                    ? Colors.green.withOpacity(0.18)
-                                    : Colors.red.withOpacity(0.18),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: bank.isActive
-                                      ? Colors.green.withOpacity(0.3)
-                                      : Colors.red.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.circle,
-                                    size: 10,
-                                    color: bank.isActive
-                                        ? Colors.greenAccent
-                                        : Colors.redAccent,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    bank.isActive
-                                        ? 'Aktif'
-                                        : 'Tidak Aktif',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        if (bank.rt != null || bank.rw != null)
-                          _InfoItem(
-                            icon: Icons.location_city_rounded,
-                            text:
-                                'RT ${bank.rt ?? '-'} / RW ${bank.rw ?? '-'}',
-                          ),
-
-                        if (bank.alamat != null &&
-                            bank.alamat.toString().isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: _InfoItem(
-                              icon: Icons.location_on_rounded,
-                              text: bank.alamat!,
+                          const SizedBox(width: 6),
+                          Text(
+                            bank.isActive ? 'Aktif' : 'Tidak Aktif',
+                            style: AppTextStyles.bodySm.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: bank.isActive
+                                  ? Colors.green.shade800
+                                  : Colors.red.shade800,
                             ),
                           ),
-                      ],
+                        ],
+                      ),
                     ),
+                  ],
+                ),
+                if (bank.rt != null || bank.rw != null) ...[
+                  const SizedBox(height: AppTheme.spacingMd),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_city_rounded,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'RT ${bank.rt ?? '-'} / RW ${bank.rw ?? '-'}',
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-          ),
-        ),
-
-        // Decorative Blur Circle
-        Positioned(
-          top: -20,
-          right: -10,
-          child: Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.05),
+                if (bank.alamat != null && bank.alamat.toString().isNotEmpty) ...[
+                  const SizedBox(height: AppTheme.spacingSm),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          bank.alamat!,
+                          style: AppTextStyles.bodyMd.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
-        ),
-
-        Positioned(
-          top: 60,
-          right: 50,
-          child: Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _blue400.withOpacity(0.08),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -440,45 +382,6 @@ class DetailBankSampahView extends GetView<MonitoringController> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Info Item
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _InfoItem extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _InfoItem({
-    required this.icon,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 15,
-          color: DetailBankSampahView._blue200,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.white.withOpacity(0.82),
-              height: 1.5,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Stat Card
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -497,8 +400,12 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 132,
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.noScaling,
+      ),
+      child: Container(
+        height: 132,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -509,7 +416,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: gradient.first.withOpacity(0.3),
+            color: gradient.first.withValues(alpha: 0.3),
             blurRadius: 14,
             offset: const Offset(0, 7),
           ),
@@ -522,7 +429,7 @@ class _StatCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -553,11 +460,12 @@ class _StatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
             ),
           ),
         ],
       ),
+    )
     );
   }
 }
@@ -573,9 +481,9 @@ class _TransaksiCard extends StatelessWidget {
     required this.transaksi,
   });
 
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue500 = Color(0xFF1E88E5);
-  static const _blue50 = Color(0xFFE3F2FD);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
+  static const _blue50 = AppColors.kelurahanLight;
 
   @override
   Widget build(BuildContext context) {
@@ -585,12 +493,12 @@ class _TransaksiCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFE3F2FD),
+          color: _blue50,
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: _blue500.withOpacity(0.06),
+            color: _blue500.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -611,7 +519,7 @@ class _TransaksiCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: _blue500.withOpacity(0.28),
+                  color: _blue500.withValues(alpha: 0.28),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -649,7 +557,7 @@ class _TransaksiCard extends StatelessWidget {
                   '${FormatHelper.number(transaksi.jumlah)} ${transaksi.satuan?.singkatan ?? ''}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade600,
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -658,10 +566,10 @@ class _TransaksiCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.person_outline_rounded,
                         size: 14,
-                        color: Colors.grey.shade500,
+                        color: AppColors.textTertiary,
                       ),
                       const SizedBox(width: 5),
                       Expanded(
@@ -669,9 +577,9 @@ class _TransaksiCard extends StatelessWidget {
                           transaksi.profile!.namaLengkap,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade500,
+                            color: AppColors.textTertiary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -738,84 +646,6 @@ class _TransaksiCard extends StatelessWidget {
                 ),
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty State
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  static const _blue900 = Color(0xFF0A2540);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(34),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFE3F2FD),
-          width: 1.3,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1565C0).withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFE3F2FD),
-                  Color(0xFFBBDEFB),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: const Icon(
-              Icons.receipt_long_outlined,
-              color: Color(0xFF1565C0),
-              size: 38,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          const Text(
-            'Belum Ada Transaksi',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: _blue900,
-              letterSpacing: -0.4,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            'Belum ada transaksi pengelolaan\nsampah pada bulan ini.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-              height: 1.6,
-            ),
-          ),
         ],
       ),
     );

@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/master_sampah_controller.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../models/kategori_model.dart';
 import '../../models/sub_kategori_model.dart';
 import '../../models/tipe_sampah_model.dart';
 import '../../models/satuan_model.dart';
 
 // ── Warna Utama (selaras dengan DashboardKelurahanView) ───────────────────────
-const _blue900 = Color(0xFF0A2540);
-const _blue800 = Color(0xFF0D3461);
-const _blue600 = Color(0xFF1565C0);
-const _blue500 = Color(0xFF1E88E5);
+const _blue900 = AppColors.kelurahanDark;
+const _blue800 = AppColors.kelurahanDark;
+const _blue600 = AppColors.kelurahanMain;
+const _blue500 = AppColors.kelurahanMain;
 const _blue400 = Color(0xFF42A5F5);
-const _blue50  = Color(0xFFE3F2FD);
-const _bg      = Color(0xFFF0F6FF);
+const _blue50  = AppColors.kelurahanLight;
+const _bg      = AppColors.scaffoldBg;
 const _purple  = Color(0xFF6A1B9A);
 const _purpleBg = Color(0xFFF3E5F5);
 
@@ -37,19 +41,19 @@ class MasterSampahView extends GetView<MasterSampahController> {
         child: Column(
           children: [
             // ── Header ──────────────────────────────────────────────────────
-            _buildHeader(),
+            AppPageHeader(
+              title: 'Jenis Sampah',
+              subtitle: 'Kelola kategori, jenis & satuan',
+              gradientColors: AppColors.kelurahanGradient,
+              showBack: true,
+            ),
             // ── Tab Scroll ──────────────────────────────────────────────────
             _buildTabBar(),
             // ── Body ────────────────────────────────────────────────────────
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: _blue500,
-                      strokeWidth: 2.5,
-                    ),
-                  );
+                  return const LoadingWidget();
                 }
                 return switch (controller.activeTab.value) {
                   0 => _KategoriTab(controller: controller),
@@ -64,109 +68,6 @@ class MasterSampahView extends GetView<MasterSampahController> {
           ],
         ),
       ),
-    );
-  }
-
-  // ── Header ─────────────────────────────────────────────────────────────────
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [_blue900, _blue800, Color(0xFF1040A0)],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(32),
-              bottomRight: Radius.circular(32),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top bar: back + title
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1.2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Jenis Sampah',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Text(
-                          'Kelola kategori, jenis & satuan',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.65),
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-        // Decorative circles
-        Positioned(
-          top: -30,
-          right: -20,
-          child: Container(
-            width: 150,
-            height: 150,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.04),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 30,
-          right: 50,
-          child: Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _blue400.withOpacity(0.08),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -208,14 +109,14 @@ class MasterSampahView extends GetView<MasterSampahController> {
                       boxShadow: isActive
                           ? [
                               BoxShadow(
-                                color: _blue500.withOpacity(0.3),
+                                color: _blue500.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               )
                             ]
                           : [
                               BoxShadow(
-                                color: _blue900.withOpacity(0.06),
+                                color: _blue900.withValues(alpha: 0.06),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               )
@@ -317,7 +218,7 @@ void _showAddSheet(
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: _blue500.withOpacity(0.3),
+                        color: _blue500.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -375,7 +276,7 @@ void _showAddSheet(
                         ? []
                         : [
                             BoxShadow(
-                              color: _blue500.withOpacity(0.35),
+                              color: _blue500.withValues(alpha: 0.35),
                               blurRadius: 14,
                               offset: const Offset(0, 6),
                             ),
@@ -973,7 +874,7 @@ class _ModernFAB extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: _blue500.withOpacity(0.4),
+              color: _blue500.withValues(alpha: 0.4),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -986,7 +887,7 @@ class _ModernFAB extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: Colors.white, size: 18),
@@ -1038,7 +939,7 @@ class _MasterItemCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE3F2FD), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: _blue900.withOpacity(0.06),
+            color: _blue900.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -1059,7 +960,7 @@ class _MasterItemCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                  color: iconGradient.first.withOpacity(0.3),
+                  color: iconGradient.first.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -1271,7 +1172,7 @@ class _ModernEmptyState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: _blue500.withOpacity(0.15),
+                    color: _blue500.withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -1340,7 +1241,7 @@ Future<void> _confirmHapus(
 }) async {
   final ok = await showDialog<bool>(
     context: context,
-    barrierColor: Colors.black.withOpacity(0.5),
+    barrierColor: Colors.black.withValues(alpha: 0.5),
     builder: (ctx) => Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
@@ -1433,7 +1334,7 @@ Future<void> _confirmHapus(
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.withOpacity(0.3),
+                            color: Colors.red.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),

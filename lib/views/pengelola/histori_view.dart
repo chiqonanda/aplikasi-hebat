@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
+import '../../app/themes/design_tokens.dart';
 import '../../controllers/pengelola/histori_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -9,44 +13,43 @@ import '../../models/pengelolaan_sampah_model.dart';
 class HistoriView extends GetView<HistoriController> {
   const HistoriView({super.key});
 
-  // ── Brand colors (sama persis dengan DashboardView) ──────────────────────
-  static const _green900 = Color(0xFF1B5E20);
-  static const _green800 = Color(0xFF2E7D32);
-  static const _green700 = Color(0xFF388E3C);
-  static const _greenBg  = Color(0xFFE8F5E9);
-  static const _surface  = Color(0xFFF5F7FA);
-  static const _ink      = Color(0xFF1A1A2E);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _surface,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controller.fetchHistori,
-          color: _green800,
+          color: AppColors.pengelolaMain,
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // ── Header ─────────────────────────────────────────────────
-              SliverToBoxAdapter(child: _buildHeader(context)),
+              // Header
+              SliverToBoxAdapter(
+                child: AppPageHeader(
+                  title: 'Histori Pengelolaan',
+                  subtitle: 'Data pengelolaan sampah',
+                  gradientColors: AppColors.pengelolaGradient,
+                  showBack: ModalRoute.of(context)?.canPop ?? false,
+                ),
+              ),
 
-              // ── Search ─────────────────────────────────────────────────
+              // Search
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: _SearchBar(controller: controller),
                 ),
               ),
 
-              // ── Summary ────────────────────────────────────────────────
+              // Summary
               SliverToBoxAdapter(
                 child: Obx(() {
                   if (controller.listHistori.isEmpty) {
                     return const SizedBox.shrink();
                   }
                   return Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                     child: _SummaryCard(
                       totalEntri: controller.listHistori.length,
                       totalNilai: controller.totalNilai,
@@ -55,10 +58,10 @@ class HistoriView extends GetView<HistoriController> {
                 }),
               ),
 
-              // ── Section header ─────────────────────────────────────────
+              // Section header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -67,19 +70,13 @@ class HistoriView extends GetView<HistoriController> {
                         children: [
                           const Text(
                             'Data Pengelolaan',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: _ink,
-                              letterSpacing: -0.3,
-                            ),
+                            style: AppTextStyles.titleLg,
                           ),
                           const SizedBox(height: 2),
                           Obx(() => Text(
                                 '${controller.listHistori.length} entri tercatat',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade500,
+                                style: AppTextStyles.bodySm.copyWith(
+                                  color: AppColors.textSecondary,
                                 ),
                               )),
                         ],
@@ -104,8 +101,8 @@ class HistoriView extends GetView<HistoriController> {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: _green800,
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: AppColors.pengelolaMain,
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -155,8 +152,8 @@ class HistoriView extends GetView<HistoriController> {
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isActive ? _green800 : _greenBg,
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: isActive ? AppColors.pengelolaMain : AppColors.pengelolaLight,
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                                 ),
                                 child: Row(
                                   children: [
@@ -165,7 +162,7 @@ class HistoriView extends GetView<HistoriController> {
                                       size: 14,
                                       color: isActive
                                           ? Colors.white
-                                          : _green800,
+                                          : AppColors.pengelolaMain,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
@@ -175,7 +172,7 @@ class HistoriView extends GetView<HistoriController> {
                                         fontWeight: FontWeight.w600,
                                         color: isActive
                                             ? Colors.white
-                                            : _green800,
+                                            : AppColors.pengelolaMain,
                                       ),
                                     ),
                                     if (isActive) ...[
@@ -201,18 +198,13 @@ class HistoriView extends GetView<HistoriController> {
                 ),
               ),
 
-              // ── List / Loading / Empty ──────────────────────────────────
+              // List / Loading / Empty
               Obx(() {
                 if (controller.isLoading.value) {
                   return const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(40),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: _green800,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
+                      child: AppLoadingState(message: 'Memuat histori pengelolaan...'),
                     ),
                   );
                 }
@@ -221,14 +213,21 @@ class HistoriView extends GetView<HistoriController> {
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: _EmptyCard(
-                        hasSearch:
-                            controller.searchQuery.value.isNotEmpty,
-                        isFilterActive: controller.isFilterActive,
-                        onReset: controller.isFilterActive
-                            ? controller.resetFilter
-                            : null,
+                          horizontal: 20, vertical: 8),
+                      child: AppEmptyState(
+                        title: controller.searchQuery.value.isNotEmpty
+                            ? 'Data Tidak Ditemukan'
+                            : controller.isFilterActive
+                                ? 'Filter Terlalu Spesifik'
+                                : 'Belum Ada Data',
+                        subtitle: controller.searchQuery.value.isNotEmpty
+                            ? 'Coba kata kunci lain atau hapus pencarian.'
+                            : controller.isFilterActive
+                                ? 'Ubah atau reset filter untuk melihat lebih banyak data.'
+                                : 'Data pengelolaan sampah yang dicatat akan muncul di sini.',
+                        icon: Icons.history_rounded,
+                        actionLabel: controller.isFilterActive ? 'Reset Filter' : null,
+                        onAction: controller.isFilterActive ? controller.resetFilter : null,
                       ),
                     ),
                   );
@@ -239,7 +238,7 @@ class HistoriView extends GetView<HistoriController> {
                     (context, index) {
                       final item = controller.listHistori[index];
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
                         child: _HistoriCard(
                           item: item,
                           index: index,
@@ -257,108 +256,6 @@ class HistoriView extends GetView<HistoriController> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // ── Header (same gradient style as DashboardView) ─────────────────────────
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_green900, _green800, _green700],
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Decorative circles — same as dashboard feel
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 110,
-              height: 110,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 50,
-            bottom: -10,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.07),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top bar: back + title
-              Row(
-                children: [
-                  if (ModalRoute.of(context)?.canPop ?? false) ...[
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Histori Pengelolaan',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        Text(
-                          'Data pengelolaan sampah',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withOpacity(0.75),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -383,11 +280,11 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLowest,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -401,8 +298,8 @@ class _SearchBar extends StatelessWidget {
         suffixIcon: Obx(
           () => controller.searchQuery.value.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.cancel_rounded,
-                      size: 18, color: Colors.grey.shade400),
+                  icon: const Icon(Icons.cancel_rounded,
+                      size: 18, color: AppColors.textTertiary),
                   onPressed: controller.clearSearch,
                 )
               : const SizedBox.shrink(),
@@ -423,9 +320,6 @@ class _SummaryCard extends StatelessWidget {
     required this.totalNilai,
   });
 
-  static const _green800 = Color(0xFF2E7D32);
-  static const _green600 = Color(0xFF43A047);
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -434,12 +328,12 @@ class _SummaryCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_green800, _green600],
+          colors: AppColors.pengelolaGradient,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _green800.withOpacity(0.3),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.3),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -452,7 +346,7 @@ class _SummaryCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFF1B5E20).withOpacity(0.4),
+              color: AppColors.pengelolaDark.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -472,7 +366,7 @@ class _SummaryCard extends StatelessWidget {
                   'Total Entri',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -493,7 +387,7 @@ class _SummaryCard extends StatelessWidget {
           Container(
             width: 1,
             height: 36,
-            color: Colors.white.withOpacity(0.25),
+            color: Colors.white.withValues(alpha: 0.25),
           ),
           const SizedBox(width: 16),
 
@@ -506,7 +400,7 @@ class _SummaryCard extends StatelessWidget {
                   'Total Nilai',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -544,16 +438,15 @@ class _HistoriCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  // Accent palette for variety (same feel as dashboard blue/orange)
   static const _accents = [
-    Color(0xFF2E7D32), // green  (brand)
-    Color(0xFF1565C0), // blue
-    Color(0xFFE65100), // orange
-    Color(0xFF37474F), // slate
+    AppColors.pengelolaMain,
+    AppColors.kelurahanMain,
+    Color(0xFFE65100),
+    Color(0xFF37474F),
   ];
   static const _accentBgs = [
-    Color(0xFFE8F5E9),
-    Color(0xFFE3F2FD),
+    AppColors.pengelolaLight,
+    AppColors.kelurahanLight,
     Color(0xFFFBE9E7),
     Color(0xFFECEFF1),
   ];
@@ -566,20 +459,14 @@ class _HistoriCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.surfaceLowest,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: DesignTokens.shadowSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Row: icon + title + menu ──────────────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -588,7 +475,7 @@ class _HistoriCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: accentBg,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Icon(Icons.recycling_rounded,
                     color: accent, size: 24),
@@ -603,7 +490,7 @@ class _HistoriCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColors.textPrimary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -611,16 +498,16 @@ class _HistoriCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Icon(Icons.folder_open_rounded,
+                        const Icon(Icons.folder_open_rounded,
                             size: 11,
-                            color: Colors.grey.shade400),
+                            color: AppColors.textTertiary),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             item.breadcrumb,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade500,
+                              color: AppColors.textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -637,17 +524,17 @@ class _HistoriCard extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FA),
+                    color: AppColors.background,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.more_horiz_rounded,
-                      color: Colors.grey.shade500, size: 18),
+                  child: const Icon(Icons.more_horiz_rounded,
+                      color: AppColors.textSecondary, size: 18),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 8,
-                shadowColor: Colors.black.withOpacity(0.12),
+                shadowColor: Colors.black.withValues(alpha: 0.12),
                 offset: const Offset(0, 40),
                 onSelected: (v) {
                   if (v == 'edit') onEdit();
@@ -663,11 +550,11 @@ class _HistoriCard extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE3F2FD),
+                            color: AppColors.kelurahanLight,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.edit_rounded,
-                              size: 16, color: Color(0xFF1565C0)),
+                              size: 16, color: AppColors.kelurahanMain),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -690,19 +577,19 @@ class _HistoriCard extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
+                            color: AppColors.errorContainer,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.delete_rounded,
-                              size: 16, color: Colors.red.shade600),
+                          child: const Icon(Icons.delete_rounded,
+                              size: 16, color: AppColors.error),
                         ),
                         const SizedBox(width: 12),
-                        Text(
+                        const Text(
                           'Hapus Data',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: Colors.red.shade600,
+                            color: AppColors.error,
                           ),
                         ),
                       ],
@@ -714,13 +601,12 @@ class _HistoriCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey.shade100),
+          const Divider(height: 1, color: AppColors.divider),
           const SizedBox(height: 12),
 
-          // ── Info chips + value ────────────────────────────────────────
+          // Info chips + value
           Row(
             children: [
-              // Left chips
               Expanded(
                 child: Wrap(
                   spacing: 6,
@@ -739,13 +625,12 @@ class _HistoriCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Right: harga badge (sama gaya dengan dashboard)
               if (item.totalHarga != null && item.totalHarga! > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
+                    color: AppColors.pengelolaLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -753,35 +638,35 @@ class _HistoriCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2E7D32),
+                      color: AppColors.pengelolaMain,
                     ),
                   ),
                 ),
             ],
           ),
 
-          // ── Catatan ───────────────────────────────────────────────────
+          // Catatan
           if (item.catatan != null && item.catatan!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F7FA),
+                color: AppColors.background,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.notes_rounded,
-                      size: 13, color: Colors.grey.shade400),
+                  const Icon(Icons.notes_rounded,
+                      size: 13, color: AppColors.textTertiary),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       item.catatan!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: AppColors.textSecondary,
                         height: 1.4,
                       ),
                       maxLines: 2,
@@ -811,138 +696,22 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.grey.shade500),
+          Icon(icon, size: 12, color: AppColors.textTertiary),
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+              color: AppColors.textSecondary,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Empty Card ────────────────────────────────────────────────────────────────
-
-class _EmptyCard extends StatelessWidget {
-  final bool hasSearch;
-  final bool isFilterActive;
-  final VoidCallback? onReset;
-
-  const _EmptyCard({
-    required this.hasSearch,
-    required this.isFilterActive,
-    this.onReset,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.history_rounded,
-              color: Color(0xFF2E7D32),
-              size: 32,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            hasSearch
-                ? 'Data Tidak Ditemukan'
-                : isFilterActive
-                    ? 'Filter Terlalu Spesifik'
-                    : 'Belum Ada Data',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1A2E),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            hasSearch
-                ? 'Coba kata kunci lain\natau hapus pencarian.'
-                : isFilterActive
-                    ? 'Ubah atau reset filter\nuntuk melihat lebih banyak data.'
-                    : 'Data pengelolaan sampah\nyang dicatat akan muncul di sini.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade500,
-              height: 1.5,
-            ),
-          ),
-          if (onReset != null) ...[
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: onReset,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2E7D32).withOpacity(0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.refresh_rounded,
-                        color: Colors.white, size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'Reset Filter',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -956,19 +725,16 @@ class _FilterSheet extends StatelessWidget {
 
   const _FilterSheet({required this.controller});
 
-  static const _green800 = Color(0xFF2E7D32);
-  static const _greenBg  = Color(0xFFE8F5E9);
-
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLowest,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 24,
             offset: const Offset(0, -4),
           ),
@@ -977,181 +743,183 @@ class _FilterSheet extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(
             20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(99),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // Header
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: _greenBg,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.tune_rounded,
-                      color: _green800, size: 18),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Filter Data',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Kategori
-            _SectionLabel(label: 'Kategori Sampah'),
-            const SizedBox(height: 10),
-            Obx(() => Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _FilterChip(
-                      label: 'Semua',
-                      isSelected:
-                          controller.filterKategoriId.value.isEmpty,
-                      onTap: () =>
-                          controller.filterKategoriId.value = '',
+              const SizedBox(height: 20),
+  
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.pengelolaLight,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    ...controller.listKategoriFilter.map(
-                      (k) => _FilterChip(
-                        label: k.nama,
+                    child: const Icon(Icons.tune_rounded,
+                        color: AppColors.pengelolaMain, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Filter Data',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+  
+              // Kategori
+              const _SectionLabel(label: 'Kategori Sampah'),
+              const SizedBox(height: 10),
+              Obx(() => Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _FilterChip(
+                        label: 'Semua',
                         isSelected:
-                            controller.filterKategoriId.value == k.id,
+                            controller.filterKategoriId.value.isEmpty,
                         onTap: () =>
-                            controller.filterKategoriId.value = k.id,
+                            controller.filterKategoriId.value = '',
                       ),
-                    ),
-                  ],
-                )),
-            const SizedBox(height: 24),
-
-            // Periode
-            _SectionLabel(label: 'Periode Waktu'),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Obx(() => _DatePickerField(
-                        label: 'Dari Tanggal',
-                        value: controller.filterTanggalMulai.value,
-                        onTap: () =>
-                            controller.pickTanggalMulai(context),
-                      )),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Obx(() => _DatePickerField(
-                        label: 'Sampai Tanggal',
-                        value: controller.filterTanggalAkhir.value,
-                        onTap: () =>
-                            controller.pickTanggalAkhir(context),
-                      )),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
-
-            // Buttons (same style as dashboard's empty-state button)
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      controller.resetFilter();
-                      Navigator.of(context).pop();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FA),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.refresh_rounded,
-                              size: 16, color: Colors.grey.shade700),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Reset',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      controller.applyFilter();
-                      Navigator.of(context).pop();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                      ...controller.listKategoriFilter.map(
+                        (k) => _FilterChip(
+                          label: k.nama,
+                          isSelected:
+                              controller.filterKategoriId.value == k.id,
+                          onTap: () =>
+                              controller.filterKategoriId.value = k.id,
                         ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2E7D32).withOpacity(0.35),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_rounded,
-                              size: 16, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            'Terapkan',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                    ],
+                  )),
+              const SizedBox(height: 24),
+  
+              // Periode
+              const _SectionLabel(label: 'Periode Waktu'),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: Obx(() => _DatePickerField(
+                          label: 'Dari Tanggal',
+                          value: controller.filterTanggalMulai.value,
+                          onTap: () =>
+                              controller.pickTanggalMulai(context),
+                        )),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Obx(() => _DatePickerField(
+                          label: 'Sampai Tanggal',
+                          value: controller.filterTanggalAkhir.value,
+                          onTap: () =>
+                              controller.pickTanggalAkhir(context),
+                        )),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+  
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        controller.resetFilter();
+                        Navigator.of(context).pop();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.outlineVariant),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.refresh_rounded,
+                                size: 16, color: AppColors.textPrimary),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Reset',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        controller.applyFilter();
+                        Navigator.of(context).pop();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: AppColors.pengelolaGradient,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.pengelolaMain.withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_rounded,
+                                size: 16, color: Colors.white),
+                            SizedBox(width: 6),
+                            Text(
+                              'Terapkan',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1172,7 +940,7 @@ class _SectionLabel extends StatelessWidget {
           width: 3,
           height: 14,
           decoration: BoxDecoration(
-            color: const Color(0xFF2E7D32),
+            color: AppColors.pengelolaMain,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -1182,7 +950,7 @@ class _SectionLabel extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A2E),
+            color: AppColors.textPrimary,
           ),
         ),
       ],
@@ -1213,18 +981,18 @@ class _FilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF2E7D32)
-              : const Color(0xFFF5F7FA),
+              ? AppColors.pengelolaMain
+              : AppColors.background,
           borderRadius: BorderRadius.circular(99),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF2E7D32)
-                : Colors.grey.shade200,
+                ? AppColors.pengelolaMain
+                : AppColors.outlineVariant,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF2E7D32).withOpacity(0.25),
+                    color: AppColors.pengelolaMain.withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -1236,7 +1004,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : Colors.grey.shade700,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
           ),
         ),
       ),
@@ -1267,13 +1035,13 @@ class _DatePickerField extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
         decoration: BoxDecoration(
           color: hasValue
-              ? const Color(0xFFE8F5E9)
-              : const Color(0xFFF5F7FA),
+              ? AppColors.pengelolaLight
+              : AppColors.background,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: hasValue
-                ? const Color(0xFF2E7D32).withOpacity(0.4)
-                : Colors.grey.shade200,
+                ? AppColors.pengelolaMain.withValues(alpha: 0.4)
+                : AppColors.outlineVariant,
             width: hasValue ? 1.5 : 1,
           ),
         ),
@@ -1283,8 +1051,8 @@ class _DatePickerField extends StatelessWidget {
               Icons.calendar_month_rounded,
               size: 16,
               color: hasValue
-                  ? const Color(0xFF2E7D32)
-                  : Colors.grey.shade400,
+                  ? AppColors.pengelolaMain
+                  : AppColors.textTertiary,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -1295,8 +1063,8 @@ class _DatePickerField extends StatelessWidget {
                   fontWeight:
                       hasValue ? FontWeight.w600 : FontWeight.w400,
                   color: hasValue
-                      ? const Color(0xFF2E7D32)
-                      : Colors.grey.shade500,
+                      ? AppColors.pengelolaMain
+                      : AppColors.textSecondary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

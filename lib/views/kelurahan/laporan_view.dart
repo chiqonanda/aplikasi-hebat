@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/laporan_controller.dart';
 import '../../core/utils/format_helper.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 
 class LaporanView extends GetView<LaporanController> {
   const LaporanView({super.key});
 
   // ── Theme Colors (Sama dengan Dashboard) ────────────────────────────────
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue800 = Color(0xFF0D3461);
-  static const _blue600 = Color(0xFF1565C0);
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue800 = AppColors.kelurahanDark;
+  static const _blue600 = AppColors.kelurahanMain;
+  static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);
-  static const _blue200 = Color(0xFFBBDEFB);
-  static const _blue50 = Color(0xFFE3F2FD);
-  static const _bg = Color(0xFFF0F6FF);
+  static const _blue200 = AppColors.kelurahanLight;
+  static const _blue50 = AppColors.kelurahanLight;
+  static const _bg = AppColors.scaffoldBg;
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +33,23 @@ class LaporanView extends GetView<LaporanController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Header ───────────────────────────────────────────────
-              _buildHeader(),
+              AppPageHeader(
+                title: 'Laporan',
+                subtitle: 'Export & Preview Data',
+                gradientColors: AppColors.kelurahanGradient,
+                showBack: true,
+              ),
 
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ── Info Banner ─────────────────────────────────────
+                    _buildInfoBanner(),
+
+                    const SizedBox(height: 24),
+
                     // ── Ringkasan ─────────────────────────────────────
                     _buildSectionTitle(
                       title: 'Generator Laporan',
@@ -72,7 +86,11 @@ class LaporanView extends GetView<LaporanController> {
                           const SizedBox(height: 16),
 
                           if (controller.previewData.isEmpty)
-                            _buildEmptyState()
+                            const EmptyState(
+                              message: 'Data Tidak Ditemukan',
+                              subtitle: 'Tidak ada data pada periode yang dipilih.',
+                              icon: Icons.receipt_long_outlined,
+                            )
                           else
                             Column(
                               children: controller.previewData.map((item) {
@@ -101,143 +119,50 @@ class LaporanView extends GetView<LaporanController> {
     );
   }
 
-  // ── Header ──────────────────────────────────────────────────────────────
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 34),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _blue900,
-                _blue800,
-                Color(0xFF1040A0),
-              ],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(36),
-              bottomRight: Radius.circular(36),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Top Bar ──────────────────────────────────────────
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Laporan',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.7,
-                          ),
-                        ),
-                        Text(
-                          'Export & Preview Data',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.72),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 28),
-
-              // ── Info Banner ─────────────────────────────────────
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.15),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [_blue500, _blue400],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.description_rounded,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        'Buat laporan pengelolaan sampah dengan tampilan modern dan mudah digunakan.',
-                        style: TextStyle(
-                          height: 1.5,
-                          fontSize: 13,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  // ── Info Banner ────────────────────────────────────────────────────────
+  Widget _buildInfoBanner() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: _blue50,
+          width: 1.2,
         ),
-
-        // Decorative Circle
-        Positioned(
-          top: -30,
-          right: -20,
-          child: Container(
-            width: 150,
-            height: 150,
+        boxShadow: AppTheme.cardShadowLight,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.04),
+              gradient: const LinearGradient(
+                colors: [_blue500, _blue400],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.description_rounded,
+              color: Colors.white,
+              size: 28,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Text(
+              'Buat laporan pengelolaan sampah dengan tampilan modern dan mudah digunakan.',
+              style: TextStyle(
+                height: 1.5,
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -300,7 +225,7 @@ class LaporanView extends GetView<LaporanController> {
         ),
         boxShadow: [
           BoxShadow(
-            color: _blue500.withOpacity(0.06),
+            color: _blue500.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -325,7 +250,7 @@ class LaporanView extends GetView<LaporanController> {
               Obx(
                 () => DropdownButtonFormField<BankSampahModel?>(
                   value: controller.selectedBankSampah.value,
-                  isExpanded: true, // ✅ WAJIB supaya tidak overflow
+                  isExpanded: true,
                   borderRadius: BorderRadius.circular(18),
                   icon: const Icon(
                     Icons.keyboard_arrow_down_rounded,
@@ -339,20 +264,16 @@ class LaporanView extends GetView<LaporanController> {
                       Icons.store_rounded,
                       color: _blue500,
                     ),
-
-                    // ✅ padding lebih aman
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 16,
                     ),
-
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(18),
                       borderSide: BorderSide(
-                        color: _blue200.withOpacity(0.7),
+                        color: _blue200.withValues(alpha: 0.7),
                       ),
                     ),
-
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(18),
                       borderSide: const BorderSide(
@@ -361,7 +282,6 @@ class LaporanView extends GetView<LaporanController> {
                       ),
                     ),
                   ),
-
                   items: [
                     const DropdownMenuItem<BankSampahModel?>(
                       value: null,
@@ -371,12 +291,9 @@ class LaporanView extends GetView<LaporanController> {
                         maxLines: 1,
                       ),
                     ),
-
                     ...controller.listBankSampah.map(
                       (b) => DropdownMenuItem<BankSampahModel?>(
                         value: b,
-
-                        // ✅ FIX overflow text
                         child: Text(
                           b.namaLengkap,
                           overflow: TextOverflow.ellipsis,
@@ -385,7 +302,6 @@ class LaporanView extends GetView<LaporanController> {
                       ),
                     ),
                   ],
-
                   onChanged: (v) {
                     controller.selectedBankSampah.value = v;
                   },
@@ -539,7 +455,7 @@ class LaporanView extends GetView<LaporanController> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _blue600,
                     side: BorderSide(
-                      color: _blue200.withOpacity(0.8),
+                      color: _blue200.withValues(alpha: 0.8),
                     ),
                     backgroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -567,7 +483,7 @@ class LaporanView extends GetView<LaporanController> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _blue600,
                     side: BorderSide(
-                      color: _blue200.withOpacity(0.8),
+                      color: _blue200.withValues(alpha: 0.8),
                     ),
                     backgroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -581,57 +497,6 @@ class LaporanView extends GetView<LaporanController> {
           ],
         ),
       ],
-    );
-  }
-
-  // ── Empty State ─────────────────────────────────────────────────────────
-  Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(34),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _blue50),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_blue50, _blue200],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.receipt_long_outlined,
-              size: 38,
-              color: _blue500,
-            ),
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'Data Tidak Ditemukan',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: _blue900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tidak ada data pada periode\nyang dipilih.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -653,7 +518,7 @@ class LaporanView extends GetView<LaporanController> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: _blue500.withOpacity(0.28),
+            color: _blue500.withValues(alpha: 0.28),
             blurRadius: 16,
             offset: const Offset(0, 7),
           ),
@@ -671,7 +536,7 @@ class LaporanView extends GetView<LaporanController> {
           Container(
             width: 1,
             height: 50,
-            color: Colors.white.withOpacity(0.25),
+            color: Colors.white.withValues(alpha: 0.25),
           ),
           Expanded(
             child: _SummaryItem(
@@ -691,9 +556,9 @@ class LaporanView extends GetView<LaporanController> {
 // ───────────────────────────────────────────────────────────────────────────
 
 class _DatePickerField extends StatelessWidget {
-  static const _blue500 = Color(0xFF1E88E5);
-  static const _blue200 = Color(0xFFBBDEFB);
-  static const _bg = Color(0xFFF0F6FF);
+  static const _blue500 = AppColors.kelurahanMain;
+  static const _blue200 = AppColors.kelurahanLight;
+  static const _bg = AppColors.kelurahanLight;
 
   final String label;
   final DateTime? value;
@@ -736,10 +601,10 @@ class _DatePickerField extends StatelessWidget {
           vertical: 16,
         ),
         decoration: BoxDecoration(
-          color: _bg,
+          color: _bg.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: _blue200.withOpacity(0.7),
+            color: _blue200.withValues(alpha: 0.7),
           ),
         ),
         child: Row(
@@ -800,9 +665,9 @@ class _DatePickerField extends StatelessWidget {
 // ───────────────────────────────────────────────────────────────────────────
 
 class _PreviewCard extends StatelessWidget {
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue500 = Color(0xFF1E88E5);
-  static const _blue50 = Color(0xFFE3F2FD);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
+  static const _blue50 = AppColors.kelurahanLight;
 
   final dynamic item;
 
@@ -823,7 +688,7 @@ class _PreviewCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: _blue500.withOpacity(0.06),
+            color: _blue500.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 5),
           ),
@@ -934,7 +799,7 @@ class _PreviewCard extends StatelessWidget {
 // ───────────────────────────────────────────────────────────────────────────
 
 class _InfoChip extends StatelessWidget {
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue500 = AppColors.kelurahanMain;
 
   final IconData icon;
   final String text;
@@ -952,7 +817,7 @@ class _InfoChip extends StatelessWidget {
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD),
+        color: AppColors.kelurahanLight,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -999,7 +864,7 @@ class _SummaryItem extends StatelessWidget {
       children: [
         Icon(
           icon,
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           size: 24,
         ),
         const SizedBox(height: 10),
@@ -1007,7 +872,7 @@ class _SummaryItem extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontWeight: FontWeight.w600,
           ),
         ),

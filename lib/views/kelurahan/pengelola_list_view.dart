@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -10,14 +13,14 @@ import '../../models/profile_model.dart';
 
 // ── Palet Warna (sama dengan dashboard & monitoring) ─────────────────────────
 class _C {
-  static const blue900 = Color(0xFF0A2540);
-  static const blue800 = Color(0xFF0D3461);
-  static const blue600 = Color(0xFF1565C0);
-  static const blue500 = Color(0xFF1E88E5);
+  static const blue900 = AppColors.kelurahanDark;
+  static const blue800 = AppColors.kelurahanDark;
+  static const blue600 = AppColors.kelurahanMain;
+  static const blue500 = AppColors.kelurahanMain;
   static const blue400 = Color(0xFF42A5F5);
-  static const blue200 = Color(0xFFBBDEFB);
-  static const blue50  = Color(0xFFE3F2FD);
-  static const bg      = Color(0xFFF0F6FF);
+  static const blue200 = AppColors.kelurahanLight;
+  static const blue50  = AppColors.kelurahanLight;
+  static const bg      = AppColors.scaffoldBg;
   static const warning = Color(0xFFF57F17);
   static const warnBg  = Color(0xFFFFF8E1);
   static const red     = Color(0xFFD32F2F);
@@ -40,18 +43,23 @@ class PengelolaListView extends GetView<PengelolaController> {
         body: SafeArea(
           child: Column(
             children: [
-              // ── Custom Header ───────────────────────────────────────────
-              _buildHeader(context),
+              // ── Header ───────────────────────────────────────────────────
+              AppPageHeader(
+                title: 'Manajemen',
+                subtitle: 'Pengelola Bank Sampah',
+                gradientColors: AppColors.kelurahanGradient,
+                showBack: true,
+              ),
+
+              // ── Tab Bar ───────────────────────────────────────────────────
+              _buildTabBar(),
 
               // ── Tab Content ─────────────────────────────────────────────
               Expanded(
                 child: Obx(() {
                   if (controller.isLoading.value) {
                     return const Center(
-                      child: CircularProgressIndicator(
-                        color: _C.blue500,
-                        strokeWidth: 2.5,
-                      ),
+                      child: LoadingWidget(),
                     );
                   }
                   return TabBarView(
@@ -92,152 +100,53 @@ class PengelolaListView extends GetView<PengelolaController> {
     );
   }
 
-  // ── Header ─────────────────────────────────────────────────────────────────
-  Widget _buildHeader(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [_C.blue900, _C.blue800, Color(0xFF1040A0)],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(30),
-              bottomRight: Radius.circular(30),
-            ),
-          ),
-          child: Column(
-            children: [
-              // ── Top bar ──────────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-                child: Row(
-                  children: [
-                    // Back
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1.2),
+  // ── Tab Bar Helper ─────────────────────────────────────────────────────────
+  Widget _buildTabBar() {
+    return Container(
+      color: Colors.white,
+      child: Obx(() {
+        final pendingCount = controller.listPending.length;
+        return TabBar(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          indicatorColor: _C.blue500,
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: AppColors.divider,
+          labelColor: _C.blue900,
+          unselectedLabelColor: AppColors.textSecondary,
+          labelStyle: AppTextStyles.titleSm.copyWith(fontWeight: FontWeight.w700),
+          unselectedLabelStyle: AppTextStyles.bodyMd,
+          tabs: [
+            const Tab(text: 'Pengelola Aktif'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Menunggu'),
+                  if (pendingCount > 0) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _C.warning,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$pendingCount',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
                         ),
-                        child: const Icon(Icons.arrow_back_rounded,
-                            color: Colors.white, size: 22),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    // Title
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Manajemen',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          Text(
-                            'Pengelola Bank Sampah',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: _C.blue200,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-
-              const SizedBox(height: 18),
-
-              // ── Tab Bar ───────────────────────────────────────────────────
-              Obx(() {
-                final pendingCount = controller.listPending.length;
-                return TabBar(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  indicator: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white.withOpacity(0.5),
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: [
-                    const Tab(text: 'Pengelola Aktif'),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Menunggu'),
-                          if (pendingCount > 0) ...[
-                            const SizedBox(width: 7),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: _C.warning,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '$pendingCount',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              }),
-
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-
-        // Decorative circle
-        Positioned(
-          top: -20,
-          right: -10,
-          child: Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.04),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      }),
     );
   }
 }
@@ -254,14 +163,10 @@ class _TabAktif extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.listPengelola.isEmpty) {
-        return _EmptyState(
+        return const EmptyState(
           icon: Icons.people_outline_rounded,
-          message: 'Belum ada pengelola aktif.',
-          actionLabel: 'Tambah Pengelola',
-          onAction: () {
-            controller.resetForm();
-            Get.toNamed(AppRoutes.formPengelola);
-          },
+          message: 'Belum Ada Pengelola Aktif',
+          subtitle: 'Silakan tambah pengelola baru melalui tombol di bawah.',
         );
       }
       return RefreshIndicator(
@@ -299,9 +204,10 @@ class _TabPending extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.listPending.isEmpty) {
-        return const _EmptyState(
+        return const EmptyState(
           icon: Icons.hourglass_empty_rounded,
-          message: 'Tidak ada pendaftaran\nyang menunggu verifikasi.',
+          message: 'Tidak Ada Pendaftaran',
+          subtitle: 'Tidak ada pendaftaran pengelola yang menunggu verifikasi.',
         );
       }
       return RefreshIndicator(
@@ -361,7 +267,7 @@ class _PengelolaCard extends StatelessWidget {
           border: Border.all(color: _C.blue50, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: _C.blue600.withOpacity(0.07),
+              color: _C.blue600.withValues(alpha: 0.07),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
@@ -382,7 +288,7 @@ class _PengelolaCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: _C.blue600.withOpacity(0.28),
+                    color: _C.blue600.withValues(alpha: 0.28),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -477,7 +383,7 @@ class _PengelolaCard extends StatelessWidget {
                   color: _C.redBg,
                   borderRadius: BorderRadius.circular(11),
                   border: Border.all(
-                      color: _C.red.withOpacity(0.2), width: 1),
+                      color: _C.red.withValues(alpha: 0.2), width: 1),
                 ),
                 child: const Icon(Icons.delete_outline_rounded,
                     color: _C.red, size: 20),
@@ -530,7 +436,7 @@ class _PendingCard extends StatelessWidget {
         border: Border.all(color: _C.warnBg, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: _C.warning.withOpacity(0.08),
+            color: _C.warning.withValues(alpha: 0.08),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -552,13 +458,13 @@ class _PendingCard extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       _C.warning,
-                      _C.warning.withOpacity(0.7),
+                      _C.warning.withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(
-                      color: _C.warning.withOpacity(0.28),
+                      color: _C.warning.withValues(alpha: 0.28),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -605,7 +511,7 @@ class _PendingCard extends StatelessWidget {
                             color: _C.warnBg,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                                color: _C.warning.withOpacity(0.3),
+                                color: _C.warning.withValues(alpha: 0.3),
                                 width: 1),
                           ),
                           child: Row(
@@ -724,7 +630,7 @@ class _PendingCard extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  _C.blue200.withOpacity(0.8),
+                  _C.blue200.withValues(alpha: 0.8),
                   Colors.transparent,
                 ],
               ),
@@ -750,7 +656,7 @@ class _PendingCard extends StatelessWidget {
                         border: Border.all(
                           color: isProcessing
                               ? Colors.grey.shade300
-                              : _C.red.withOpacity(0.3),
+                              : _C.red.withValues(alpha: 0.3),
                           width: 1.2,
                         ),
                       ),
@@ -800,7 +706,7 @@ class _PendingCard extends StatelessWidget {
                             ? []
                             : [
                                 BoxShadow(
-                                  color: _C.blue600.withOpacity(0.3),
+                                  color: _C.blue600.withValues(alpha: 0.3),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -843,107 +749,7 @@ class _PendingCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty State
-// ─────────────────────────────────────────────────────────────────────────────
 
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  const _EmptyState({
-    required this.icon,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Container(
-          padding: const EdgeInsets.all(36),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _C.blue50, width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: _C.blue600.withOpacity(0.07),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_C.blue50, _C.blue200],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(icon, color: _C.blue600, size: 36),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: _C.blue900,
-                  letterSpacing: -0.2,
-                  height: 1.5,
-                ),
-              ),
-              if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 20),
-                GestureDetector(
-                  onTap: onAction,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          colors: [_C.blue600, _C.blue400]),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _C.blue600.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      actionLabel!,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Bottom Sheet: Approve + Pilih Bank Sampah
@@ -1170,225 +976,227 @@ Future<void> _showInfoSheet(
     ),
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 44,
-              height: 4,
-              decoration: BoxDecoration(
-                color: _C.blue200,
-                borderRadius: BorderRadius.circular(4),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _C.blue200,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // Profile row
-          Row(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_C.blue600, _C.blue400],
+            // Profile row
+            Row(
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [_C.blue600, _C.blue400],
+                    ),
+                    borderRadius: BorderRadius.circular(17),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _C.blue600.withValues(alpha: 0.28),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  borderRadius: BorderRadius.circular(17),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _C.blue600.withOpacity(0.28),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                  child: Center(
+                    child: Text(
+                      pengelola.namaLengkap.isNotEmpty
+                          ? pengelola.namaLengkap[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        pengelola.namaLengkap,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: _C.blue900,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      if (pengelola.noHp != null &&
+                          pengelola.noHp!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone_outlined,
+                                size: 14, color: _C.blue400),
+                            const SizedBox(width: 5),
+                            Text(
+                              pengelola.noHp!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            // Divider
+            Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    _C.blue200.withValues(alpha: 0.8),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Section label
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [_C.blue500, _C.blue400],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Bank Sampah yang Dikelola',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: _C.blue900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            if (banks.isEmpty)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: _C.blue50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        size: 16, color: _C.blue400),
+                    SizedBox(width: 8),
+                    Text(
+                      'Belum ada bank sampah yang dikelola.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _C.blue600,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    pengelola.namaLengkap.isNotEmpty
-                        ? pengelola.namaLengkap[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      pengelola.namaLengkap,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: _C.blue900,
-                        letterSpacing: -0.3,
+              )
+            else
+              ...banks.map((b) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _C.blue50,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _C.blue200, width: 1),
                       ),
-                    ),
-                    if (pengelola.noHp != null &&
-                        pengelola.noHp!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
+                      child: Row(
                         children: [
-                          const Icon(Icons.phone_outlined,
-                              size: 14, color: _C.blue400),
-                          const SizedBox(width: 5),
-                          Text(
-                            pengelola.noHp!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade500,
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [_C.blue600, _C.blue400],
+                              ),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: const Icon(Icons.store_rounded,
+                                color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  b.nama,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: _C.blue900,
+                                  ),
+                                ),
+                                if ((b.rt?.isNotEmpty ?? false) ||
+                                    (b.rw?.isNotEmpty ?? false)) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    [
+                                      if (b.rt?.isNotEmpty ?? false)
+                                        'RT ${b.rt}',
+                                      if (b.rw?.isNotEmpty ?? false)
+                                        'RW ${b.rw}',
+                                    ].join(' / '),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          // Divider
-          Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  _C.blue200.withOpacity(0.8),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Section label
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 18,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [_C.blue500, _C.blue400],
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Bank Sampah yang Dikelola',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: _C.blue900,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          if (banks.isEmpty)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: _C.blue50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline_rounded,
-                      size: 16, color: _C.blue400),
-                  SizedBox(width: 8),
-                  Text(
-                    'Belum ada bank sampah yang dikelola.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: _C.blue600,
-                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                ],
-              ),
-            )
-          else
-            ...banks.map((b) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: _C.blue50,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _C.blue200, width: 1),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [_C.blue600, _C.blue400],
-                            ),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: const Icon(Icons.store_rounded,
-                              color: Colors.white, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                b.nama,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: _C.blue900,
-                                ),
-                              ),
-                              if ((b.rt?.isNotEmpty ?? false) ||
-                                  (b.rw?.isNotEmpty ?? false)) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  [
-                                    if (b.rt?.isNotEmpty ?? false)
-                                      'RT ${b.rt}',
-                                    if (b.rw?.isNotEmpty ?? false)
-                                      'RW ${b.rw}',
-                                  ].join(' / '),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )),
-        ],
+                  )),
+          ],
+        ),
       ),
     ),
   );
@@ -1569,7 +1377,7 @@ class _GradientButton extends StatelessWidget {
               ? []
               : [
                   BoxShadow(
-                    color: _C.blue600.withOpacity(0.3),
+                    color: _C.blue600.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 5),
                   ),

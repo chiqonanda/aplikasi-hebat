@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
+import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
+import '../../core/widgets/app_widgets.dart';
 
 class PengelolaFormView extends GetView<PengelolaController> {
   const PengelolaFormView({super.key});
 
   // ── Theme Colors (Sama dengan Dashboard) ────────────────────────────────
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue800 = Color(0xFF0D3461);
-  static const _blue600 = Color(0xFF1565C0);
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue800 = AppColors.kelurahanDark;
+  static const _blue600 = AppColors.kelurahanMain;
+  static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);
-  static const _blue200 = Color(0xFFBBDEFB);
-  static const _blue50 = Color(0xFFE3F2FD);
-  static const _bg = Color(0xFFF0F6FF);
+  static const _blue200 = AppColors.kelurahanLight;
+  static const _blue50 = AppColors.kelurahanLight;
+  static const _bg = AppColors.scaffoldBg;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +28,12 @@ class PengelolaFormView extends GetView<PengelolaController> {
         child: Column(
           children: [
             // ── Header ─────────────────────────────────────────────
-            _buildHeader(),
+            AppPageHeader(
+              title: 'Tambah Pengelola',
+              subtitle: 'Buat akun pengelola baru',
+              gradientColors: AppColors.kelurahanGradient,
+              showBack: true,
+            ),
 
             // ── Content ────────────────────────────────────────────
             Expanded(
@@ -145,7 +154,14 @@ class PengelolaFormView extends GetView<PengelolaController> {
                       // ── List Bank Sampah ──────────────────────
                       Obx(() {
                         if (controller.listBankSampah.isEmpty) {
-                          return _buildEmptyState();
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: EmptyState(
+                              message: 'Belum Ada Bank Sampah',
+                              subtitle: 'Silakan tambahkan bank sampah terlebih dahulu sebelum membuat akun pengelola.',
+                              icon: Icons.store_mall_directory_outlined,
+                            ),
+                          );
                         }
 
                         return Column(
@@ -187,8 +203,8 @@ class PengelolaFormView extends GetView<PengelolaController> {
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: _blue500.withOpacity(
-                                              selected ? 0.15 : 0.06,
+                                            color: _blue500.withValues(
+                                              alpha: selected ? 0.15 : 0.06,
                                             ),
                                             blurRadius: 14,
                                             offset: const Offset(0, 5),
@@ -319,7 +335,7 @@ class PengelolaFormView extends GetView<PengelolaController> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                               disabledBackgroundColor:
-                                  _blue500.withOpacity(0.6),
+                                  _blue500.withValues(alpha: 0.6),
                               shape: RoundedRectangleBorder(
                                 borderRadius:
                                     BorderRadius.circular(18),
@@ -366,106 +382,6 @@ class PengelolaFormView extends GetView<PengelolaController> {
           ],
         ),
       ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // HEADER
-  // ─────────────────────────────────────────────────────────────
-
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _blue900,
-                _blue800,
-                Color(0xFF1040A0),
-              ],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(34),
-              bottomRight: Radius.circular(34),
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius:
-                            BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.15),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Tambah Pengelola',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Buat akun pengelola baru',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.72),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 26),
-            ],
-          ),
-        ),
-
-        Positioned(
-          top: -30,
-          right: -20,
-          child: Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.04),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -649,66 +565,6 @@ class PengelolaFormView extends GetView<PengelolaController> {
           ),
         ),
       ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // EMPTY STATE
-  // ─────────────────────────────────────────────────────────────
-
-  Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFE3F2FD),
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_blue50, _blue200],
-              ),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: const Icon(
-              Icons.store_mall_directory_outlined,
-              color: _blue500,
-              size: 36,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          const Text(
-            'Belum Ada Bank Sampah',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: _blue900,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            'Silakan tambahkan bank sampah terlebih dahulu sebelum membuat akun pengelola.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.6,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

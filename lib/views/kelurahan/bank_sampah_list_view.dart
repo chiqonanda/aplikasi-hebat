@@ -3,20 +3,21 @@ import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
+import '../../app/themes/app_colors.dart';
 import '../../controllers/kelurahan/bank_sampah_controller.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 
 class BankSampahListView extends GetView<BankSampahController> {
   const BankSampahListView({super.key});
 
   // ── Theme Colors (Sama dengan Dashboard Kelurahan) ──────────────────────
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue800 = Color(0xFF0D3461);
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);
-  static const _blue50 = Color(0xFFE3F2FD);
+  static const _blue50 = AppColors.kelurahanLight;
 
-  static const _bg = Color(0xFFF0F6FF);
+  static const _bg = AppColors.scaffoldBg;
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +39,7 @@ class BankSampahListView extends GetView<BankSampahController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: _blue500,
-                strokeWidth: 2.6,
-              ),
-            );
+            return const LoadingWidget();
           }
 
           return RefreshIndicator(
@@ -56,7 +52,12 @@ class BankSampahListView extends GetView<BankSampahController> {
               slivers: [
                 // ── Header ─────────────────────────────────────
                 SliverToBoxAdapter(
-                  child: _buildHeader(),
+                  child: AppPageHeader(
+                    title: 'Manajemen',
+                    subtitle: 'Bank Sampah',
+                    gradientColors: AppColors.kelurahanGradient,
+                    showBack: true,
+                  ),
                 ),
 
                 // ── Search + Stats ────────────────────────────
@@ -99,8 +100,12 @@ class BankSampahListView extends GetView<BankSampahController> {
                 if (controller.listBankFiltered.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
-                    child: _ModernEmptyState(
-                      onAdd: () {
+                    child: EmptyState(
+                      message: 'Belum Ada Bank Sampah',
+                      subtitle: 'Tambahkan data bank sampah pertama untuk mulai mengelola aktivitas lingkungan.',
+                      icon: Icons.store_mall_directory_rounded,
+                      actionLabel: 'Tambah Bank Sampah',
+                      onAction: () {
                         controller.resetForm();
                         Get.toNamed(AppRoutes.formBankSampah);
                       },
@@ -163,7 +168,7 @@ class BankSampahListView extends GetView<BankSampahController> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: _blue500.withOpacity(0.35),
+                    color: _blue500.withValues(alpha: 0.35),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -196,90 +201,7 @@ class BankSampahListView extends GetView<BankSampahController> {
     );
   }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Header
-  // ────────────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _blue900,
-                _blue800,
-                Color(0xFF1040A0),
-              ],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(34),
-              bottomRight: Radius.circular(34),
-            ),
-          ),
-          child: Column(
-            children: [
-              // Top Bar
-              Row(
-                children: [
-                  _HeaderButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Get.back(),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Manajemen',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 1),
-                        Text(
-                          'Bank Sampah',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-
-        // Decorative Circle
-        Positioned(
-          top: -30,
-          right: -20,
-          child: Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.04),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   // ────────────────────────────────────────────────────────────────────────
   // Search Field
@@ -296,7 +218,7 @@ class BankSampahListView extends GetView<BankSampahController> {
         ),
         boxShadow: [
           BoxShadow(
-            color: _blue500.withOpacity(0.06),
+            color: _blue500.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -406,42 +328,7 @@ class BankSampahListView extends GetView<BankSampahController> {
   }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Header Button
-// ────────────────────────────────────────────────────────────────────────────
 
-class _HeaderButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HeaderButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 46,
-        height: 46,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.15),
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
-        ),
-      ),
-    );
-  }
-}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Mini Stat Card
@@ -471,7 +358,7 @@ class _MiniStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: gradient.first.withOpacity(0.25),
+            color: gradient.first.withValues(alpha: 0.25),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -499,7 +386,7 @@ class _MiniStatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.92),
+              color: Colors.white.withValues(alpha: 0.92),
             ),
           ),
         ],
@@ -518,10 +405,10 @@ class _ModernBankCard extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onToggleActive;
 
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue500 = Color(0xFF1E88E5);
+  static const _blue900 = AppColors.kelurahanDark;
+  static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);
-  static const _blue50 = Color(0xFFE3F2FD);
+  static const _blue50 = AppColors.kelurahanLight;
 
   static const _green = Color(0xFF2E7D32);
   static const _greenBg = Color(0xFFE8F5E9);
@@ -553,7 +440,7 @@ class _ModernBankCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: _blue500.withOpacity(0.06),
+              color: _blue500.withValues(alpha: 0.06),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -582,7 +469,7 @@ class _ModernBankCard extends StatelessWidget {
                     color: (bank.isActive
                             ? _blue500
                             : Colors.grey)
-                        .withOpacity(0.28),
+                        .withValues(alpha: 0.28),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -819,123 +706,4 @@ class _ModernBankCard extends StatelessWidget {
       ),
     );
   }
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// Empty State
-// ────────────────────────────────────────────────────────────────────────────
-
-class _ModernEmptyState extends StatelessWidget {
-  final VoidCallback onAdd;
-
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue500 = Color(0xFF1E88E5);
-  static const _blue400 = Color(0xFF42A5F5);
-
-  const _ModernEmptyState({
-    required this.onAdd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: _blue500.withOpacity(0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_blue500, _blue400],
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(28),
-                ),
-                child: const Icon(
-                  Icons.store_mall_directory_rounded,
-                  color: Colors.white,
-                  size: 46,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              const Text(
-                'Belum Ada Bank Sampah',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: _blue900,
-                  letterSpacing: -0.5,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Text(
-                'Tambahkan data bank sampah pertama untuk mulai mengelola aktivitas lingkungan.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.7,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: onAdd,
-                  icon: const Icon(
-                    Icons.add_rounded,
-                    size: 20,
-                  ),
-                  label: const Text(
-                    'Tambah Bank Sampah',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    backgroundColor: _blue500,
-                    foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(18),
-                    ),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+}

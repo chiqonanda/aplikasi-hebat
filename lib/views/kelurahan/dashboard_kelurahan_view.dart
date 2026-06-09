@@ -1,62 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../app/routes/app_routes.dart';
+import '../../app/themes/app_colors.dart';
+import '../../app/themes/app_text_styles.dart';
 import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/kelurahan/dashboard_kelurahan_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/utils/tooltip_helper.dart';
+import '../../core/widgets/app_widgets.dart';
 
 class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
   const DashboardKelurahanView({super.key});
 
-  // ── Warna Utama ──────────────────────────────────────────────────────────
-  static const _blue900 = Color(0xFF0A2540);
-  static const _blue800 = Color(0xFF0D3461);
-  static const _blue600 = Color(0xFF1565C0);
-  static const _blue500 = Color(0xFF1E88E5);
-  static const _blue400 = Color(0xFF42A5F5);
-  static const _blue200 = Color(0xFFBBDEFB);
-  static const _blue50  = Color(0xFFE3F2FD);
-  static const _teal    = Color(0xFF00ACC1);
-  static const _tealBg  = Color(0xFFE0F7FA);
-  static const _bg      = Color(0xFFF0F6FF);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controller.fetchDashboardData,
-          color: _blue500,
+          color: AppColors.kelurahanMain,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ──────────────────────────────────────────────────
+                // Header
                 _buildHeader(),
 
-                // ── Stat Cards ──────────────────────────────────────────────
+                // Stat Cards
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                   child: _buildStatGrid(),
                 ),
 
-                // ── Menu Utama ──────────────────────────────────────────────
+                // Menu Utama
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
                   child: _buildMenuGrid(),
                 ),
 
-                // ── Bank Sampah Teraktif ─────────────────────────────────────
+                // Bank Sampah Teraktif
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
                   child: _buildTopBankSampah(),
                 ),
 
-                // ── Aktivitas Terbaru Header ─────────────────────────────────
+                // Aktivitas Terbaru Header
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
                   child: Row(
@@ -67,19 +59,13 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                         children: [
                           const Text(
                             'Aktivitas Terbaru',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: _blue900,
-                              letterSpacing: -0.5,
-                            ),
+                            style: AppTextStyles.titleLg,
                           ),
                           const SizedBox(height: 3),
                           Text(
                             'Pengelolaan sampah hari ini',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade500,
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -91,12 +77,12 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                               horizontal: 16, vertical: 9),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [_blue500, _blue400],
+                              colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
                             ),
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                             boxShadow: [
                               BoxShadow(
-                                color: _blue500.withOpacity(0.3),
+                                color: AppColors.kelurahanMain.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -123,24 +109,23 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                   ),
                 ),
 
-                // ── Aktivitas List ───────────────────────────────────────────
+                // Aktivitas List
                 Obx(() {
                   if (controller.isLoading.value) {
                     return const Padding(
                       padding: EdgeInsets.all(48),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: _blue500,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
+                      child: LoadingWidget(message: 'Memuat aktivitas terbaru...'),
                     );
                   }
                   if (controller.aktivitasTerbaru.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(
                           horizontal: 20, vertical: 8),
-                      child: _EmptyState(),
+                      child: EmptyState(
+                        message: 'Belum Ada Aktivitas',
+                        subtitle: 'Belum ada aktivitas pengelolaan untuk hari ini.',
+                        icon: Icons.inbox_outlined,
+                      ),
                     );
                   }
                   return ListView.builder(
@@ -177,7 +162,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [_blue900, _blue800, Color(0xFF1040A0)],
+              colors: AppColors.kelurahanGradient,
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(36),
@@ -187,7 +172,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Top Bar ──────────────────────────────────────────────────
+              // Top Bar
               Row(
                 children: [
                   // Logo
@@ -218,7 +203,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                           'Dashboard Kelurahan',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.65),
+                            color: Colors.white.withValues(alpha: 0.65),
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -242,12 +227,12 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
 
               const SizedBox(height: 28),
 
-              // ── Greeting ─────────────────────────────────────────────────
+              // Greeting
               Text(
-                'Selamat Datang  👋',
+                'Selamat Datang 👋',
                 style: TextStyle(
                   fontSize: 14,
-                  color: _blue200.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                   letterSpacing: 0.3,
                 ),
               ),
@@ -264,28 +249,28 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
               ),
               const SizedBox(height: 12),
 
-              // ── Kelurahan Badge ───────────────────────────────────────────
+              // Kelurahan Badge
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                      color: Colors.white.withOpacity(0.22), width: 1.2),
+                      color: Colors.white.withValues(alpha: 0.22), width: 1.2),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.location_on_rounded,
-                        size: 14, color: _blue200.withOpacity(0.9)),
+                    const Icon(Icons.location_on_rounded,
+                        size: 14, color: AppColors.kelurahanLight),
                     const SizedBox(width: 6),
                     Text(
                       controller.namaKelurahan,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withValues(alpha: 0.95),
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -296,7 +281,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
           ),
         ),
 
-        // Decorative circles — IgnorePointer agar tidak block tap pada tombol
+        // Decorative circles
         Positioned(
           top: -30,
           right: -20,
@@ -306,21 +291,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
               height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.04),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 40,
-          right: 60,
-          child: IgnorePointer(
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _blue400.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.04),
               ),
             ),
           ),
@@ -334,7 +305,6 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section label with accent bar
         Row(
           children: [
             Container(
@@ -344,7 +314,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_blue500, _blue400],
+                  colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -352,12 +322,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
             const SizedBox(width: 10),
             const Text(
               'Ringkasan Bulan Ini',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: _blue900,
-                letterSpacing: -0.5,
-              ),
+              style: AppTextStyles.titleLg,
             ),
           ],
         ),
@@ -415,21 +380,21 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
     );
   }
 
-// ── Menu Grid ────────────────────────────────────────────────────────────
+  // ── Menu Grid ────────────────────────────────────────────────────────────
   Widget _buildMenuGrid() {
     final menus = [
       _MenuItem(
         icon: Icons.bar_chart_rounded,
         label: 'Monitoring',
-        color: _blue600,
-        bgColor: _blue50,
+        color: AppColors.kelurahanMain,
+        bgColor: AppColors.kelurahanLight,
         onTap: () => Get.toNamed(AppRoutes.monitoringBankSampah),
       ),
       _MenuItem(
         icon: Icons.store_rounded,
         label: 'Bank Sampah',
-        color: _teal,
-        bgColor: _tealBg,
+        color: const Color(0xFF00ACC1),
+        bgColor: const Color(0xFFE0F7FA),
         onTap: () => Get.toNamed(AppRoutes.manajemenBankSampah),
       ),
       _MenuItem(
@@ -474,7 +439,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_blue500, _blue400],
+                  colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -482,12 +447,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
             const SizedBox(width: 10),
             const Text(
               'Menu Utama',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: _blue900,
-                letterSpacing: -0.5,
-              ),
+              style: AppTextStyles.titleLg,
             ),
           ],
         ),
@@ -506,8 +466,6 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                 crossAxisCount: 3,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-
-                // ✅ FIX OVERFLOW
                 mainAxisExtent: itemWidth + 12,
               ),
               itemBuilder: (context, index) {
@@ -519,6 +477,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
       ],
     );
   }
+
   Widget _buildTopBankSampah() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,7 +491,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_blue500, _blue400],
+                  colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -540,12 +499,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
             const SizedBox(width: 10),
             const Text(
               'Bank Sampah Teraktif',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: _blue900,
-                letterSpacing: -0.5,
-              ),
+              style: AppTextStyles.titleLg,
             ),
           ],
         ),
@@ -556,17 +510,14 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surfaceLowest,
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: const Color(0xFFE3F2FD), width: 1.2),
+                border: Border.all(color: AppColors.outlineVariant, width: 1.2),
               ),
               child: Text(
                 'Belum ada data pengelolaan bulan ini',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade500,
-                ),
+                style: AppTextStyles.bodyMd.copyWith(color: AppColors.textSecondary),
               ),
             );
           }
@@ -575,17 +526,17 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surfaceLowest,
               borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1565C0).withOpacity(0.05),
+                  color: AppColors.kelurahanMain.withValues(alpha: 0.05),
                   blurRadius: 14,
                   offset: const Offset(0, 5),
                 ),
               ],
               border: Border.all(
-                color: const Color(0xFFE3F2FD),
+                color: AppColors.outlineVariant,
                 width: 1.2,
               ),
             ),
@@ -594,17 +545,16 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                 final item = controller.topBankSampah[index];
                 final rank = index + 1;
                 
-                // Rank specific colors & icons
                 Color rankColor;
                 IconData rankIcon;
                 if (rank == 1) {
-                  rankColor = const Color(0xFFFFD700); // Gold
+                  rankColor = const Color(0xFFFFD700);
                   rankIcon = Icons.emoji_events_rounded;
                 } else if (rank == 2) {
-                  rankColor = const Color(0xFFC0C0C0); // Silver
+                  rankColor = const Color(0xFFC0C0C0);
                   rankIcon = Icons.emoji_events_rounded;
                 } else {
-                  rankColor = const Color(0xFFCD7F32); // Bronze
+                  rankColor = const Color(0xFFCD7F32);
                   rankIcon = Icons.emoji_events_rounded;
                 }
 
@@ -617,7 +567,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: rankColor.withOpacity(0.15),
+                            color: rankColor.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -634,7 +584,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: _blue900,
+                              color: AppColors.kelurahanDark,
                             ),
                           ),
                         ),
@@ -642,7 +592,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _blue50,
+                            color: AppColors.kelurahanLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -650,7 +600,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
-                              color: _blue600,
+                              color: AppColors.kelurahanMain,
                             ),
                           ),
                         ),
@@ -660,7 +610,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Divider(
-                          color: Colors.grey.shade100,
+                          color: AppColors.divider,
                           height: 1,
                         ),
                       ),
@@ -674,10 +624,6 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Header Icon Button  (dipertahankan dari file lama — ada tooltip)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
@@ -703,13 +649,13 @@ class _HeaderIconBtn extends StatelessWidget {
           height: 44,
           decoration: BoxDecoration(
             color: isDestructive
-                ? Colors.red.withOpacity(0.15)
-                : Colors.white.withOpacity(0.12),
+                ? Colors.red.withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDestructive
-                  ? Colors.red.withOpacity(0.3)
-                  : Colors.white.withOpacity(0.2),
+                  ? Colors.red.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.2),
               width: 1.2,
             ),
           ),
@@ -723,10 +669,6 @@ class _HeaderIconBtn extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat Card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _StatCard extends StatelessWidget {
   final String label;
@@ -782,8 +724,12 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.noScaling,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -793,7 +739,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: gradientColors.first.withOpacity(0.38),
+            color: gradientColors.first.withValues(alpha: 0.38),
             blurRadius: 14,
             offset: const Offset(0, 7),
           ),
@@ -803,17 +749,15 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Icon box
           Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.45),
+              color: accentColor.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: Colors.white, size: 18),
           ),
-          // Value + label
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -841,7 +785,7 @@ class _StatCard extends StatelessWidget {
                         satuan,
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.white.withOpacity(0.75),
+                          color: Colors.white.withValues(alpha: 0.75),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -858,7 +802,7 @@ class _StatCard extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withOpacity(0.92),
+                  color: Colors.white.withValues(alpha: 0.92),
                   fontWeight: FontWeight.w700,
                 ),
                 maxLines: 1,
@@ -868,7 +812,7 @@ class _StatCard extends StatelessWidget {
                 sublabel,
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,
@@ -878,13 +822,10 @@ class _StatCard extends StatelessWidget {
           ),
         ],
       ),
+    )
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Menu Item Model
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MenuItem {
   final IconData icon;
@@ -901,10 +842,6 @@ class _MenuItem {
     required this.onTap,
   });
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Menu Card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MenuCard extends StatelessWidget {
   final _MenuItem item;
@@ -950,17 +887,17 @@ class _MenuCard extends StatelessWidget {
           horizontal: 8,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceLowest,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1565C0).withOpacity(0.07),
+              color: AppColors.kelurahanMain.withValues(alpha: 0.07),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
           ],
           border: Border.all(
-            color: const Color(0xFFE3F2FD),
+            color: AppColors.outlineVariant,
             width: 1.2,
           ),
         ),
@@ -996,7 +933,7 @@ class _MenuCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0A2540),
+                  color: AppColors.kelurahanDark,
                   height: 1.25,
                 ),
               ),
@@ -1008,76 +945,6 @@ class _MenuCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty State
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(36),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE3F2FD), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1565C0).withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.inbox_outlined,
-              color: Color(0xFF1565C0),
-              size: 36,
-            ),
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'Belum Ada Aktivitas',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF0A2540),
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Belum ada aktivitas pengelolaan\nuntuk hari ini.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-              height: 1.6,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Aktivitas Card
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _AktivitasKelurahanCard extends StatelessWidget {
   final Map<String, dynamic> item;
 
@@ -1088,12 +955,12 @@ class _AktivitasKelurahanCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLowest,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE3F2FD), width: 1.2),
+        border: Border.all(color: AppColors.outlineVariant, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1565C0).withOpacity(0.07),
+            color: AppColors.kelurahanMain.withValues(alpha: 0.07),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -1101,7 +968,7 @@ class _AktivitasKelurahanCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ── Icon ─────────────────────────────────────────────────────────
+          // Icon
           Container(
             width: 52,
             height: 52,
@@ -1109,12 +976,12 @@ class _AktivitasKelurahanCard extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
+                colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
               ),
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1565C0).withOpacity(0.3),
+                  color: AppColors.kelurahanMain.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -1128,7 +995,7 @@ class _AktivitasKelurahanCard extends StatelessWidget {
           ),
           const SizedBox(width: 14),
 
-          // ── Info ─────────────────────────────────────────────────────────
+          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1138,7 +1005,7 @@ class _AktivitasKelurahanCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0A2540),
+                    color: AppColors.kelurahanDark,
                     letterSpacing: -0.2,
                   ),
                   maxLines: 1,
@@ -1147,9 +1014,9 @@ class _AktivitasKelurahanCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   item['jenis_nama'] ?? '-',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade500,
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1160,7 +1027,7 @@ class _AktivitasKelurahanCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE3F2FD),
+                        color: AppColors.kelurahanLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -1168,7 +1035,7 @@ class _AktivitasKelurahanCard extends StatelessWidget {
                           const Icon(
                             Icons.calendar_today_outlined,
                             size: 11,
-                            color: Color(0xFF1565C0),
+                            color: AppColors.kelurahanMain,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -1176,7 +1043,7 @@ class _AktivitasKelurahanCard extends StatelessWidget {
                                 item['tanggal'] ?? ''),
                             style: const TextStyle(
                               fontSize: 11,
-                              color: Color(0xFF1565C0),
+                              color: AppColors.kelurahanMain,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1191,14 +1058,14 @@ class _AktivitasKelurahanCard extends StatelessWidget {
 
           const SizedBox(width: 10),
 
-          // ── Value Chip ───────────────────────────────────────────────────
+          // Value Chip
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+                colors: [AppColors.kelurahanLight, Color(0xFFBBDEFB)],
               ),
               borderRadius: BorderRadius.circular(14),
             ),
@@ -1210,7 +1077,7 @@ class _AktivitasKelurahanCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF1565C0),
+                color: AppColors.kelurahanMain,
                 letterSpacing: -0.3,
               ),
             ),

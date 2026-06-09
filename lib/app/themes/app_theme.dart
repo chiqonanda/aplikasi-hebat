@@ -12,12 +12,34 @@ class AppTheme {
   static const double radiusXl = 24;
   static const double radiusFull = 9999;
 
+  // Spacing tokens
+  static const double spacingXs = 4;
+  static const double spacingSm = 8;
+  static const double spacingMd = 12;
+  static const double spacingLg = 16;
+  static const double spacingXl = 20;
+  static const double spacingXxl = 24;
+  static const double spacingSection = 32;
+
+  // Page padding standar
+  static const EdgeInsets pagePadding = EdgeInsets.symmetric(horizontal: 20);
+  static const EdgeInsets pagePaddingAll = EdgeInsets.all(20);
+
   // Shadow green-tinted
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
           color: AppColors.shadow,
           blurRadius: 20,
           offset: const Offset(0, 4),
+        ),
+      ];
+
+  // Shadow ringan untuk card
+  static List<BoxShadow> get cardShadowLight => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
       ];
 
@@ -76,7 +98,7 @@ class AppTheme {
           foregroundColor: AppColors.onPrimary,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMd),
+            borderRadius: BorderRadius.circular(radiusLg),
           ),
           textStyle: AppTextStyles.labelLg,
           elevation: 0,
@@ -87,7 +109,7 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMd),
+            borderRadius: BorderRadius.circular(radiusLg),
           ),
           side: const BorderSide(color: AppColors.primary),
           textStyle: AppTextStyles.labelLg,
@@ -107,23 +129,23 @@ class AppTheme {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: AppColors.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: AppColors.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: AppColors.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
         labelStyle: AppTextStyles.bodyMd,

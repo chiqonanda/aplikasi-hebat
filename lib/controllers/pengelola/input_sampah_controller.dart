@@ -57,6 +57,99 @@ class InputSampahController extends GetxController {
   PengelolaanSampahModel? editData;
   bool get isEditMode => editData != null;
 
+  bool get isKategoriAnorganik {
+    if (selectedKategoriId.value.isEmpty) return false;
+    final kat = listKategori.firstWhereOrNull((k) => k.id == selectedKategoriId.value);
+    final nama = kat?.nama.toLowerCase() ?? '';
+    return nama.contains('an organik') || nama.contains('anorganik');
+  }
+
+  bool get isMinyakJelantah {
+    // 1. Kategori
+    if (selectedKategoriId.value.isNotEmpty) {
+      final kat = listKategori.firstWhereOrNull((k) => k.id == selectedKategoriId.value);
+      final nama = kat?.nama.toLowerCase() ?? '';
+      if (nama.contains('minyak jelantah') || nama.contains('jelantah')) return true;
+    }
+    // 2. Sub Kategori
+    if (selectedSubKategoriId.value.isNotEmpty) {
+      final sub = listSubKategori.firstWhereOrNull((s) => s.id == selectedSubKategoriId.value);
+      final nama = sub?.nama.toLowerCase() ?? '';
+      if (nama.contains('minyak jelantah') || nama.contains('jelantah')) return true;
+    }
+    // 3. Tipe
+    if (selectedTipeId.value.isNotEmpty) {
+      final tipe = listTipe.firstWhereOrNull((t) => t.id == selectedTipeId.value);
+      final nama = tipe?.nama.toLowerCase() ?? '';
+      if (nama.contains('minyak jelantah') || nama.contains('jelantah')) return true;
+    }
+    // 4. Jenis
+    if (selectedJenisId.value.isNotEmpty) {
+      final jenis = listJenisSampah.firstWhereOrNull((j) => j.id == selectedJenisId.value);
+      final nama = jenis?.nama.toLowerCase() ?? '';
+      if (nama.contains('minyak jelantah') || nama.contains('jelantah')) return true;
+    }
+    return false;
+  }
+
+  void _applyUnitLocks() {
+    if (isKategoriAnorganik) {
+      final kgUnit = listSatuan.firstWhereOrNull((s) => s.singkatan.toLowerCase() == 'kg');
+      if (kgUnit != null) {
+        selectedSatuanId.value = kgUnit.id;
+      }
+    } else if (isMinyakJelantah) {
+      final ltrUnit = listSatuan.firstWhereOrNull((s) =>
+          s.singkatan.toLowerCase() == 'ltr' || s.singkatan.toLowerCase() == 'liter');
+      if (ltrUnit != null) {
+        selectedSatuanId.value = ltrUnit.id;
+      }
+    }
+  }
+
+  bool get isSatuanAuto {
+    if (selectedJenisId.value.isEmpty) return false;
+    final jenis = listJenisSampah.firstWhereOrNull((j) => j.id == selectedJenisId.value);
+    return jenis?.satuanDefaultId != null;
+  }
+
+  String get jenisSampahBreadcrumb {
+    if (selectedKategoriId.value.isEmpty) return '-';
+    final kat = listKategori.firstWhereOrNull((k) => k.id == selectedKategoriId.value)?.nama ?? '';
+    if (kat.isEmpty) return '';
+    String breadcrumb = kat;
+    if (selectedSubKategoriId.value.isNotEmpty) {
+      final sub = listSubKategori.firstWhereOrNull((s) => s.id == selectedSubKategoriId.value)?.nama ?? '';
+      if (sub.isNotEmpty) breadcrumb += ' > $sub';
+    }
+    if (selectedTipeId.value.isNotEmpty) {
+      final tipe = listTipe.firstWhereOrNull((t) => t.id == selectedTipeId.value)?.nama ?? '';
+      if (tipe.isNotEmpty) breadcrumb += ' > $tipe';
+    }
+    if (selectedJenisId.value.isNotEmpty) {
+      final jenis = listJenisSampah.firstWhereOrNull((j) => j.id == selectedJenisId.value)?.nama ?? '';
+      if (jenis.isNotEmpty) breadcrumb += ' > $jenis';
+    }
+    return breadcrumb;
+  }
+
+  String get selectedSatuanSingkatan {
+    if (selectedSatuanId.value.isEmpty) return '';
+    return listSatuan.firstWhereOrNull((s) => s.id == selectedSatuanId.value)?.singkatan ?? '';
+  }
+
+  String get selectedTanggalFormat {
+    if (selectedTanggal.value == null) return '-';
+    return FormatHelper.date(selectedTanggal.value!);
+  }
+
+  double get activeHargaPerSatuan {
+    if (hargaSnapshot.value != null) {
+      return hargaSnapshot.value!.hargaPerSatuan;
+    }
+    return double.tryParse(hargaPerSatuanController.text.trim().replaceAll(',', '.')) ?? 0.0;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -254,11 +347,17 @@ class InputSampahController extends GetxController {
     hargaSnapshot.value = null;
 
     if (selectedKategoriId.value.isNotEmpty) {
+      _applyUnitLocks();
+
       _fetchSubKategori(selectedKategoriId.value).then((_) {
         // Jika tidak ada sub kategori → langsung fetch jenis dari kategori
         // (kasus Organik, Minyak Jelantah)
         if (listSubKategori.isEmpty) {
-          _fetchJenisByKategori(selectedKategoriId.value);
+          _fetchJenisByKategori(selectedKategoriId.value).then((_) {
+            _applyUnitLocks();
+          });
+        } else {
+          _applyUnitLocks();
         }
       });
       _fetchHargaOtomatis();
@@ -272,10 +371,15 @@ class InputSampahController extends GetxController {
     listJenisSampah.clear();
 
     if (selectedSubKategoriId.value.isNotEmpty) {
+      _applyUnitLocks();
       // Coba fetch tipe dulu; kalau kosong, langsung fetch jenis
       _fetchTipe(selectedSubKategoriId.value).then((_) {
         if (listTipe.isEmpty) {
-          _fetchJenisBySubKategori(selectedSubKategoriId.value);
+          _fetchJenisBySubKategori(selectedSubKategoriId.value).then((_) {
+            _applyUnitLocks();
+          });
+        } else {
+          _applyUnitLocks();
         }
       });
     }
@@ -287,7 +391,10 @@ class InputSampahController extends GetxController {
     listJenisSampah.clear();
 
     if (selectedTipeId.value.isNotEmpty) {
-      _fetchJenisByTipe(selectedTipeId.value);
+      _applyUnitLocks();
+      _fetchJenisByTipe(selectedTipeId.value).then((_) {
+        _applyUnitLocks();
+      });
     }
     _fetchHargaOtomatis();
   }
@@ -297,9 +404,10 @@ class InputSampahController extends GetxController {
       final jenis = listJenisSampah.firstWhereOrNull(
         (j) => j.id == selectedJenisId.value,
       );
-      if (jenis?.satuanDefaultId != null && selectedSatuanId.value.isEmpty) {
+      if (jenis?.satuanDefaultId != null) {
         selectedSatuanId.value = jenis!.satuanDefaultId!;
       }
+      _applyUnitLocks();
     }
     _fetchHargaOtomatis();
   }

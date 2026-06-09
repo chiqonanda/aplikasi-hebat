@@ -16,10 +16,23 @@ class DashboardKelurahanController extends GetxController {
   final totalJumlahBulanIni = 0.0.obs;
   final totalTransaksiBulanIni = 0.obs;
   final totalNilaiBulanIni = 0.0.obs;
+  final totalJumlahBulanLalu = 0.0.obs;
+
+  // Bank sampah teraktif (top 3)
+  final topBankSampah = <Map<String, dynamic>>[].obs;
 
   // Alias getter agar cocok dengan nama yang dipakai di view
   int get jumlahBankAktif => totalBankSampahAktif.value;
   double get totalSampahBulanIni => totalJumlahBulanIni.value;
+
+  double get persentasePerubahanJumlah {
+    final cur = totalJumlahBulanIni.value;
+    final prev = totalJumlahBulanLalu.value;
+    if (prev == 0.0) {
+      return cur > 0.0 ? 100.0 : 0.0;
+    }
+    return ((cur - prev) / prev) * 100.0;
+  }
 
   // Bank sampah aktif — untuk section aktivitas terbaru
   final bankSampahAktif = <BankSampahModel>[].obs;
@@ -47,6 +60,8 @@ class DashboardKelurahanController extends GetxController {
       await Future.wait([
         _fetchStatistikBankSampah(),
         _fetchStatistikBulanIni(),
+        _fetchStatistikBulanLalu(),
+        _fetchTopBankSampahBulanIni(),
         _fetchAktivitasTerbaru(),
       ]);
     } catch (e) {
@@ -125,6 +140,57 @@ class DashboardKelurahanController extends GetxController {
         'tanggal': e['tanggal_pengelolaan'],
       };
     }).toList();
+  }
+
+  Future<void> _fetchStatistikBulanLalu() async {
+    final now = DateTime.now();
+    final firstDayLastMonth = DateTime(now.year, now.month - 1, 1);
+    final lastDayLastMonth = DateTime(now.year, now.month, 0);
+
+    final data = await SupabaseService.client
+        .from(SupabaseConstants.tablePengelolaanSampah)
+        .select('jumlah')
+        .gte('tanggal_pengelolaan',
+            firstDayLastMonth.toIso8601String().split('T').first)
+        .lte('tanggal_pengelolaan',
+            lastDayLastMonth.toIso8601String().split('T').first);
+
+    final list = data as List;
+    totalJumlahBulanLalu.value = list.fold(
+      0.0,
+      (sum, e) => sum + (e['jumlah'] as num).toDouble(),
+    );
+  }
+
+  Future<void> _fetchTopBankSampahBulanIni() async {
+    final now = DateTime.now();
+    final firstDay = DateTime(now.year, now.month, 1);
+    final lastDay = DateTime(now.year, now.month + 1, 0);
+
+    final data = await SupabaseService.client
+        .from(SupabaseConstants.tablePengelolaanSampah)
+        .select('jumlah, bank_sampah(nama)')
+        .gte('tanggal_pengelolaan',
+            firstDay.toIso8601String().split('T').first)
+        .lte('tanggal_pengelolaan',
+            lastDay.toIso8601String().split('T').first);
+
+    final list = data as List;
+    final aggregates = <String, double>{};
+
+    for (final e in list) {
+      final bankMap = e['bank_sampah'] as Map?;
+      final bankNama = bankMap?['nama'] as String? ?? 'Tidak Diketahui';
+      final jumlah = (e['jumlah'] as num).toDouble();
+      aggregates[bankNama] = (aggregates[bankNama] ?? 0.0) + jumlah;
+    }
+
+    final sortedList = aggregates.entries
+        .map((entry) => {'nama': entry.key, 'total': entry.value})
+        .toList();
+    sortedList.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
+
+    topBankSampah.value = sortedList.take(3).toList();
   }
 
   // Navigasi

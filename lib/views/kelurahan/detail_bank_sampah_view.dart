@@ -11,12 +11,9 @@ class DetailBankSampahView extends GetView<MonitoringController> {
   // ── Theme Colors (Sama seperti Dashboard Kelurahan) ─────────────────────
   static const _blue900 = Color(0xFF0A2540);
   static const _blue800 = Color(0xFF0D3461);
-  static const _blue600 = Color(0xFF1565C0);
   static const _blue500 = Color(0xFF1E88E5);
   static const _blue400 = Color(0xFF42A5F5);
   static const _blue200 = Color(0xFFBBDEFB);
-  static const _blue50 = Color(0xFFE3F2FD);
-  static const _teal = Color(0xFF00ACC1);
   static const _bg = Color(0xFFF0F6FF);
 
   @override

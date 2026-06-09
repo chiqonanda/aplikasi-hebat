@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../controllers/session_controller.dart';
+import '../../controllers/pengelola/pengelola_main_controller.dart';
 import '../../controllers/pengelola/dashboard_controller.dart';
 import '../../controllers/pengelola/input_sampah_controller.dart';
 import '../../controllers/pengelola/histori_controller.dart';
@@ -17,6 +18,7 @@ import '../../views/auth/login_view.dart';
 import '../../views/auth/register_view.dart';
 import '../../views/auth/menunggu_verifikasi_view.dart';
 import '../../views/pilih_bank_sampah/pilih_bank_sampah_view.dart';
+import '../../views/pengelola/pengelola_main_view.dart';
 import '../../views/pengelola/dashboard_view.dart';
 import '../../views/pengelola/input_sampah_view.dart';
 import '../../views/pengelola/histori_view.dart';
@@ -69,9 +71,12 @@ class AppPages {
     // ── Pengelola ──────────────────────────────────────
     GetPage(
       name: AppRoutes.dashboardPengelola,
-      page: () => const DashboardView(),
+      page: () => const PengelolaMainView(),
       binding: BindingsBuilder(() {
+        Get.lazyPut(() => PengelolaMainController());
         Get.lazyPut(() => DashboardController());
+        Get.lazyPut(() => HistoriController());
+        Get.lazyPut(() => HargaController());
       }),
     ),
     GetPage(

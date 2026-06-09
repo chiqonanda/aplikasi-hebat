@@ -50,15 +50,18 @@ class HargaController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // FIX: guard jika bank sampah belum dipilih
-    if (_bankSampahId == null) {
-      Get.offAllNamed(AppRoutes.pilihBankSampah);
-      return;
-    }
-    fetchAll();
     ever(selectedKategoriId, (_) => _onKategoriChanged());
     ever(selectedSubKategoriId, (_) => _onSubKategoriChanged());
     ever(selectedTipeId, (_) => _onTipeChanged());
+
+    // FIX: guard jika bank sampah belum dipilih, defer ke post frame agar navigator tidak terkunci saat build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_bankSampahId == null) {
+        Get.offAllNamed(AppRoutes.pilihBankSampah);
+        return;
+      }
+      fetchAll();
+    });
   }
 
   Future<void> fetchAll() async {
@@ -256,7 +259,9 @@ class HargaController extends GetxController {
 
     final id = _bankSampahId;
     if (id == null) {
-      Get.offAllNamed(AppRoutes.pilihBankSampah);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAllNamed(AppRoutes.pilihBankSampah);
+      });
       return;
     }
 

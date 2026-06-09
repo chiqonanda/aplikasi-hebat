@@ -15,6 +15,11 @@ class DashboardController extends GetxController {
   final totalJumlahBulanIni = 0.0.obs;
   final totalTransaksiBulanIni = 0.obs;
   final totalNilaiBulanIni = 0.0.obs;
+  final totalKgBulanIni = 0.0.obs;
+  final totalLiterBulanIni = 0.0.obs;
+  final totalSatuanBulanIni = 0.0.obs;
+  final totalJumlahHariIni = 0.0.obs;
+  final totalTransaksiHariIni = 0.obs;
 
   String get bankSampahNama => SessionService.to.activeBankSampahNama;
   String get penggunaNama =>
@@ -47,6 +52,7 @@ class DashboardController extends GetxController {
       await Future.wait([
         _fetchAktivitasTerbaru(bankSampahId),
         _fetchStatistikBulanIni(bankSampahId),
+        _fetchStatistikHariIni(bankSampahId),
       ]);
     } catch (e) {
       debugPrint('ERROR FETCH DASHBOARD: $e');
@@ -83,7 +89,7 @@ class DashboardController extends GetxController {
 
     final data = await SupabaseService.client
         .from(SupabaseConstants.tablePengelolaanSampah)
-        .select('jumlah, total_harga')
+        .select('jumlah, total_harga, satuan(singkatan)')
         .eq('bank_sampah_id', bankSampahId)
         .gte('tanggal_pengelolaan',
             firstDay.toIso8601String().split('T').first)
@@ -92,13 +98,49 @@ class DashboardController extends GetxController {
 
     final list = data as List;
     totalTransaksiBulanIni.value = list.length;
-    totalJumlahBulanIni.value = list.fold(
+
+    double kgSum = 0.0;
+    double literSum = 0.0;
+    double satuanSum = 0.0;
+    double nilaiSum = 0.0;
+
+    for (final e in list) {
+      final jumlah = (e['jumlah'] as num).toDouble();
+      final totalHarga = (e['total_harga'] as num?)?.toDouble() ?? 0.0;
+      nilaiSum += totalHarga;
+
+      final satuanMap = e['satuan'] as Map?;
+      final singkatan = (satuanMap?['singkatan'] as String? ?? '').toLowerCase();
+
+      if (singkatan == 'kg') {
+        kgSum += jumlah;
+      } else if (singkatan == 'liter' || singkatan == 'lt' || singkatan == 'l' || singkatan == 'ltr') {
+        literSum += jumlah;
+      } else {
+        satuanSum += jumlah;
+      }
+    }
+
+    totalJumlahBulanIni.value = kgSum + literSum + satuanSum;
+    totalKgBulanIni.value = kgSum;
+    totalLiterBulanIni.value = literSum;
+    totalSatuanBulanIni.value = satuanSum;
+    totalNilaiBulanIni.value = nilaiSum;
+  }
+
+  Future<void> _fetchStatistikHariIni(String bankSampahId) async {
+    final todayStr = DateTime.now().toIso8601String().split('T').first;
+    final data = await SupabaseService.client
+        .from(SupabaseConstants.tablePengelolaanSampah)
+        .select('jumlah')
+        .eq('bank_sampah_id', bankSampahId)
+        .eq('tanggal_pengelolaan', todayStr);
+
+    final list = data as List;
+    totalTransaksiHariIni.value = list.length;
+    totalJumlahHariIni.value = list.fold(
       0.0,
       (sum, e) => sum + (e['jumlah'] as num).toDouble(),
-    );
-    totalNilaiBulanIni.value = list.fold(
-      0.0,
-      (sum, e) => sum + ((e['total_harga'] as num?)?.toDouble() ?? 0.0),
     );
   }
 

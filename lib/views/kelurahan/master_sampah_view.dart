@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/master_sampah_controller.dart';
-import '../../core/widgets/app_widgets.dart';
 import '../../models/kategori_model.dart';
 import '../../models/sub_kategori_model.dart';
 import '../../models/tipe_sampah_model.dart';
@@ -17,7 +13,6 @@ const _blue800 = Color(0xFF0D3461);
 const _blue600 = Color(0xFF1565C0);
 const _blue500 = Color(0xFF1E88E5);
 const _blue400 = Color(0xFF42A5F5);
-const _blue200 = Color(0xFFBBDEFB);
 const _blue50  = Color(0xFFE3F2FD);
 const _bg      = Color(0xFFF0F6FF);
 const _purple  = Color(0xFF6A1B9A);
@@ -172,32 +167,6 @@ class MasterSampahView extends GetView<MasterSampahController> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildHeaderBadge(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.22), width: 1.2),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: _blue200.withOpacity(0.9)),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.9),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

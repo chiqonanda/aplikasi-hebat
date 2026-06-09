@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../app/themes/app_colors.dart';
 import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/bank_sampah_controller.dart';
 import '../../core/utils/validator.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -19,7 +17,6 @@ class BankSampahFormView extends GetView<BankSampahController> {
   static const _blue200 = Color(0xFFBBDEFB);
   static const _blue50 = Color(0xFFE3F2FD);
   static const _bg = Color(0xFFF0F6FF);
-  static const _teal = Color(0xFF00ACC1);
 
   @override
   Widget build(BuildContext context) {

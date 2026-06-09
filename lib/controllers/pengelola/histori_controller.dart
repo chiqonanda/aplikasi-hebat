@@ -1,5 +1,8 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:excel/excel.dart' as excel;
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/services/session_service.dart';
@@ -17,6 +20,7 @@ class HistoriController extends GetxController {
   final _rawHistori = <PengelolaanSampahModel>[];
   final listKategoriFilter = <KategoriModel>[].obs;
   final isLoading = false.obs;
+  final isExporting = false.obs;
 
   // Filter
   final filterKategoriId = ''.obs;
@@ -34,14 +38,23 @@ class HistoriController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchHistori();
-    _fetchKategori();
     // Trigger filter lokal saat search berubah (tanpa fetch ulang ke server)
     debounce(
       searchQuery,
       (_) => _applySearchFilter(),
       time: const Duration(milliseconds: 300),
     );
+
+    // Defer navigasi dan fetch agar tidak dipanggil saat build berlangsung
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bankSampahId = SessionService.to.activeBankSampahIdOrNull;
+      if (bankSampahId == null) {
+        Get.offAllNamed(AppRoutes.pilihBankSampah);
+        return;
+      }
+      fetchHistori();
+      _fetchKategori();
+    });
   }
 
   // Filter lokal dari _rawHistori berdasarkan searchQuery
@@ -69,7 +82,9 @@ class HistoriController extends GetxController {
     // FIX: guard jika bank sampah belum dipilih
     final bankSampahId = SessionService.to.activeBankSampahIdOrNull;
     if (bankSampahId == null) {
-      Get.offAllNamed(AppRoutes.pilihBankSampah);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAllNamed(AppRoutes.pilihBankSampah);
+      });
       return;
     }
 
@@ -204,6 +219,164 @@ class HistoriController extends GetxController {
   }
 
   Future<void> refresh() => fetchHistori();
+
+  Future<void> exportExcel() async {
+    isExporting.value = true;
+    try {
+      if (_rawHistori.isEmpty) {
+        await fetchHistori();
+      }
+      if (_rawHistori.isEmpty) {
+        Get.snackbar('Info', 'Tidak ada data untuk diexport.');
+        return;
+      }
+
+      final namaBankSampah = SessionService.to.activeBankSampahNama;
+      
+      // Tentukan label periode filter aktif
+      String labelPeriode = 'Semua Data';
+      if (filterTanggalMulai.value != null || filterTanggalAkhir.value != null) {
+        if (filterTanggalMulai.value != null && filterTanggalAkhir.value != null) {
+          labelPeriode = 'Periode: ${FormatHelper.date(filterTanggalMulai.value)} - ${FormatHelper.date(filterTanggalAkhir.value)}';
+        } else if (filterTanggalMulai.value != null) {
+          labelPeriode = 'Mulai: ${FormatHelper.date(filterTanggalMulai.value)}';
+        } else {
+          labelPeriode = 'Sampai: ${FormatHelper.date(filterTanggalAkhir.value)}';
+        }
+      }
+
+      final excelFile = excel.Excel.createExcel();
+      
+      // Ambil sheet default bawaan (biasanya 'Sheet1') dan ganti namanya agar tidak tersisa sheet kosong
+      final defaultSheet = excelFile.sheets.keys.first;
+      excelFile.rename(defaultSheet, 'Laporan Pengelolaan');
+      final sheet = excelFile['Laporan Pengelolaan'];
+      
+      // Hapus sheet default bawaan lain jika ada
+      final sheetsToDelete = excelFile.sheets.keys.where((k) => k != 'Laporan Pengelolaan').toList();
+      for (final key in sheetsToDelete) {
+        excelFile.delete(key);
+      }
+
+      // ── Helper style ────────────────────────────────────────────
+      excel.CellStyle styleHeader() => excel.CellStyle(
+            bold: true,
+            horizontalAlign: excel.HorizontalAlign.Center,
+            verticalAlign: excel.VerticalAlign.Center,
+            backgroundColorHex: excel.ExcelColor.fromHexString('#D9D9D9'),
+            leftBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+            rightBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+            topBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+            bottomBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+          );
+
+      excel.CellStyle styleData() => excel.CellStyle(
+            leftBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+            rightBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+            topBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+            bottomBorder: excel.Border(borderStyle: excel.BorderStyle.Thin),
+          );
+
+      int rowIdx = 0;
+
+      // Baris 1: Judul
+      final cellJudul = sheet.cell(
+          excel.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIdx));
+      cellJudul.value = excel.TextCellValue('LAPORAN PENGELOLAAN SAMPAH - ${namaBankSampah.toUpperCase()}');
+      cellJudul.cellStyle = excel.CellStyle(bold: true);
+      rowIdx++;
+
+      // Baris 2: Periode
+      final cellPeriode = sheet.cell(
+          excel.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIdx));
+      cellPeriode.value = excel.TextCellValue(labelPeriode);
+      rowIdx++;
+
+      // Baris kosong
+      rowIdx++;
+
+      // Baris Header Kolom
+      final headerCols = [
+        'Tanggal',
+        'Kategori',
+        'Sub Kategori',
+        'Tipe',
+        'Jenis Sampah',
+        'Jumlah',
+        'Satuan',
+        'Harga/Satuan',
+        'Total Harga',
+        'Catatan'
+      ];
+
+      for (int i = 0; i < headerCols.length; i++) {
+        final cell = sheet.cell(
+            excel.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIdx));
+        cell.value = excel.TextCellValue(headerCols[i]);
+        cell.cellStyle = styleHeader();
+      }
+      rowIdx++;
+
+      // Tulis data (diurutkan tanggal ascending agar laporan kronologis)
+      final sortedData = List<PengelolaanSampahModel>.from(_rawHistori)
+        ..sort((a, b) => a.tanggalPengelolaan.compareTo(b.tanggalPengelolaan));
+
+      for (final item in sortedData) {
+        final dataRow = [
+          FormatHelper.date(item.tanggalPengelolaan),
+          item.kategori?.nama ?? '',
+          item.subKategori?.nama ?? '',
+          item.tipe?.nama ?? '',
+          item.jenisSampah?.nama ?? '',
+          FormatHelper.number(item.jumlah),
+          item.satuan?.nama ?? '',
+          FormatHelper.currency(item.hargaPerSatuan),
+          FormatHelper.currency(item.totalHarga),
+          item.catatan ?? ''
+        ];
+
+        for (int i = 0; i < dataRow.length; i++) {
+          final cell = sheet.cell(
+              excel.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIdx));
+          cell.value = excel.TextCellValue(dataRow[i]);
+          cell.cellStyle = styleData();
+        }
+        rowIdx++;
+      }
+
+      final bytes = excelFile.save();
+      if (bytes == null) throw Exception('Gagal membuat byte data Excel.');
+
+      final cleanBankNama = namaBankSampah
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '_')
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+      final timestamp = DateTime.now().toIso8601String().replaceAll(RegExp(r'[^0-9]'), '').substring(0, 14);
+      final fileName = 'laporan_${cleanBankNama}_$timestamp.xlsx';
+      final shareText = 'Laporan Pengelolaan Sampah - $namaBankSampah';
+
+      await Share.shareXFiles(
+        [
+          XFile.fromData(
+            Uint8List.fromList(bytes),
+            name: fileName,
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          )
+        ],
+        text: shareText,
+      );
+      
+      Get.snackbar(
+        'Sukses',
+        'Laporan Excel berhasil diexport dan siap dibagikan.',
+      );
+    } catch (e) {
+      Get.snackbar('Gagal', 'Export Excel gagal: $e');
+    } finally {
+      isExporting.value = false;
+    }
+  }
 
   @override
   void onClose() {

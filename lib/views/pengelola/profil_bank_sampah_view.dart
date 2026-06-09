@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
-import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/services/session_service.dart';
 import '../../core/utils/format_helper.dart';
-import '../../core/widgets/app_widgets.dart';
 import '../../core/services/supabase_service.dart';
 
 class ProfilBankSampahView extends StatelessWidget {
@@ -23,7 +19,7 @@ class ProfilBankSampahView extends StatelessWidget {
       body: Column(
         children: [
           // ── Header gradient ──────────────────────────
-          _buildHeader(),
+          _buildHeader(context),
 
           // ── Konten scrollable ────────────────────────
           Expanded(
@@ -63,7 +59,7 @@ class ProfilBankSampahView extends StatelessWidget {
 
   // ─── Header ───────────────────────────────────────────────────────────────
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(Get.context!).padding.top + 16,
@@ -85,27 +81,29 @@ class ProfilBankSampahView extends StatelessWidget {
       child: Row(
         children: [
           // Back button
-          GestureDetector(
-            onTap: () => Get.back(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 1,
+          if (ModalRoute.of(context)?.canPop ?? false) ...[
+            GestureDetector(
+              onTap: () => Get.back(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.25),
+                    width: 1,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: 20,
                 ),
               ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
             ),
-          ),
-          const SizedBox(width: 14),
+            const SizedBox(width: 14),
+          ],
           // Title
           Expanded(
             child: Column(

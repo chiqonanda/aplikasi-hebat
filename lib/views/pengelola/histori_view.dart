@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../app/routes/app_routes.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/pengelola/histori_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -15,7 +13,6 @@ class HistoriView extends GetView<HistoriController> {
   static const _green900 = Color(0xFF1B5E20);
   static const _green800 = Color(0xFF2E7D32);
   static const _green700 = Color(0xFF388E3C);
-  static const _green600 = Color(0xFF43A047);
   static const _greenBg  = Color(0xFFE8F5E9);
   static const _surface  = Color(0xFFF5F7FA);
   static const _ink      = Color(0xFF1A1A2E);
@@ -87,59 +84,118 @@ class HistoriView extends GetView<HistoriController> {
                               )),
                         ],
                       ),
-                      // Filter button
-                      Obx(() {
-                        final isActive =
-                            controller.filterKategoriId.value.isNotEmpty ||
-                                controller.filterTanggalMulai.value != null ||
-                                controller.filterTanggalAkhir.value != null;
-                        return GestureDetector(
-                          onTap: () => _showFilterSheet(context),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isActive ? _green800 : _greenBg,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.tune_rounded,
-                                  size: 14,
-                                  color: isActive
-                                      ? Colors.white
-                                      : _green800,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  isActive ? 'Terfilter' : 'Filter',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: isActive
-                                        ? Colors.white
-                                        : _green800,
+                      // Filter & Export buttons
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Export Excel button
+                          Obx(() {
+                            final isListEmpty = controller.listHistori.isEmpty;
+                            final isExporting = controller.isExporting.value;
+                            final isBtnDisabled = isListEmpty || isExporting;
+
+                            return GestureDetector(
+                              onTap: isBtnDisabled ? null : () => controller.exportExcel(),
+                              child: Opacity(
+                                opacity: isBtnDisabled ? 0.5 : 1.0,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _green800,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isExporting)
+                                        const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      else
+                                        const Icon(
+                                          Icons.table_chart_rounded,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      const SizedBox(width: 5),
+                                      const Text(
+                                        'Excel',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                if (isActive) ...[
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFFFD166),
-                                      shape: BoxShape.circle,
+                              ),
+                            );
+                          }),
+                          const SizedBox(width: 8),
+                          // Filter button
+                          Obx(() {
+                            final isActive =
+                                controller.filterKategoriId.value.isNotEmpty ||
+                                    controller.filterTanggalMulai.value != null ||
+                                    controller.filterTanggalAkhir.value != null;
+                            return GestureDetector(
+                              onTap: () => _showFilterSheet(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isActive ? _green800 : _greenBg,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.tune_rounded,
+                                      size: 14,
+                                      color: isActive
+                                          ? Colors.white
+                                          : _green800,
                                     ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      isActive ? 'Terfilter' : 'Filter',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isActive
+                                            ? Colors.white
+                                            : _green800,
+                                      ),
+                                    ),
+                                    if (isActive) ...[
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFFFD166),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -253,26 +309,28 @@ class HistoriView extends GetView<HistoriController> {
               // Top bar: back + title
               Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                  if (ModalRoute.of(context)?.canPop ?? false) ...[
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 20,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
+                    const SizedBox(width: 14),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +425,6 @@ class _SummaryCard extends StatelessWidget {
 
   static const _green800 = Color(0xFF2E7D32);
   static const _green600 = Color(0xFF43A047);
-  static const _greenBg  = Color(0xFFE8F5E9);
 
   @override
   Widget build(BuildContext context) {

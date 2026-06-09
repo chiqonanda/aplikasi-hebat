@@ -193,34 +193,51 @@ Future<void> exportExcel() async {
         : listBankSampah;
 
     var excelFile = Excel.createExcel();
-    if (excelFile.sheets.containsKey('Sheet1')) {
-      excelFile.delete('Sheet1');
-    }
+    final defaultSheet = excelFile.sheets.keys.first;
 
     final mulai = selectedTanggalMulai.value!;
     final akhir = selectedTanggalAkhir.value!;
     final selisihHari = akhir.difference(mulai).inDays;
 
+    final createdSheets = <String>[];
+
     if (selisihHari <= 31) {
       final label =
           '${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
-      final sheet = excelFile[label.length > 31 ? 'Laporan' : label];
+      final sheetName = label.length > 31 ? 'Laporan' : label;
+      createdSheets.add(sheetName);
+      
+      excelFile.rename(defaultSheet, sheetName);
+      final sheet = excelFile[sheetName];
       _buildSheet(sheet, label, data, bankKolom);
     } else {
       // Kelompokkan per bulan, urutkan
       final Map<String, List<PengelolaanSampahModel>> perBulan = {};
       for (final item in data) {
         final tgl = item.tanggalPengelolaan;
-        if (tgl == null) continue;
         final key =
             '${_namaBulan(tgl.month).toUpperCase()} ${tgl.year}';
         perBulan.putIfAbsent(key, () => []);
         perBulan[key]!.add(item);
       }
-      for (final entry in perBulan.entries) {
-        final sheet = excelFile[entry.key];
-        _buildSheet(sheet, entry.key, entry.value, bankKolom);
+      
+      final entries = perBulan.entries.toList();
+      if (entries.isNotEmpty) {
+        final firstKey = entries.first.key;
+        excelFile.rename(defaultSheet, firstKey);
+        
+        for (final entry in entries) {
+          createdSheets.add(entry.key);
+          final sheet = excelFile[entry.key];
+          _buildSheet(sheet, entry.key, entry.value, bankKolom);
+        }
       }
+    }
+
+    // Hapus sheet lain jika ada yang tersisa yang bukan merupakan bagian dari laporan yang dibuat
+    final sheetsToDelete = excelFile.sheets.keys.where((k) => !createdSheets.contains(k)).toList();
+    for (final key in sheetsToDelete) {
+      excelFile.delete(key);
     }
 
     final bytes = excelFile.save();
@@ -694,14 +711,13 @@ String _namaBulan(int bulan) {
     // Untuk single bulan, key bulan = '' (tidak dipakai)
     final Map<String, Map<String, Map<String, double>>> pivot = {};
     for (final item in data) {
-  final jId = item.jenisSampah?.id;
-    if (jId == null) continue;
-    final tgl = item.tanggalPengelolaan;
-    if (isMultiBulan && tgl == null) continue;
-    final bId = item.bankSampah?.id ?? '';
-    final bulanKey = (isMultiBulan && tgl != null)
-        ? '${_namaBulan(tgl.month).toUpperCase()} ${tgl.year}'
-        : '';
+      final jId = item.jenisSampah?.id;
+      if (jId == null) continue;
+      final tgl = item.tanggalPengelolaan;
+      final bId = item.bankSampah?.id ?? '';
+      final bulanKey = isMultiBulan
+          ? '${_namaBulan(tgl.month).toUpperCase()} ${tgl.year}'
+          : '';
 
   // Pakai variabel lokal agar analyzer tahu nilainya non-null
   final pivotBulan = pivot.putIfAbsent(bulanKey, () => {});

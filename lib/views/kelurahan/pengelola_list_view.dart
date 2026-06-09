@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
-import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -21,14 +18,10 @@ class _C {
   static const blue200 = Color(0xFFBBDEFB);
   static const blue50  = Color(0xFFE3F2FD);
   static const bg      = Color(0xFFF0F6FF);
-  static const teal    = Color(0xFF00ACC1);
-  static const tealBg  = Color(0xFFE0F7FA);
   static const warning = Color(0xFFF57F17);
   static const warnBg  = Color(0xFFFFF8E1);
   static const red     = Color(0xFFD32F2F);
   static const redBg   = Color(0xFFFFEBEE);
-  static const green   = Color(0xFF2E7D32);
-  static const greenBg = Color(0xFFE8F5E9);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

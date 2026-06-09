@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
 import '../../app/themes/app_theme.dart';
 import '../../controllers/pengelola/input_sampah_controller.dart';
 import '../../core/utils/format_helper.dart';
@@ -168,34 +167,134 @@ class InputSampahView extends GetView<InputSampahController> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Obx(
-                            () => _DropdownField<String>(
-                              label: 'Satuan *',
-                              hint: 'Satuan',
-                              value:
-                                  controller.selectedSatuanId.value.isEmpty
-                                      ? null
-                                      : controller.selectedSatuanId.value,
-                              items: controller.listSatuan
-                                  .map((s) => DropdownMenuItem(
-                                        value: s.id,
-                                        child: Text(s.singkatan),
-                                      ))
-                                  .toList(),
-                              validator: (v) => AppValidator.required(v,
-                                  fieldName: 'Satuan'),
-                              onChanged: (v) =>
-                                  controller.selectedSatuanId.value =
-                                      v ?? '',
+                            () => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _DropdownField<String>(
+                                  label: 'Satuan *',
+                                  hint: 'Satuan',
+                                  enabled: !controller.isKategoriAnorganik && !controller.isMinyakJelantah,
+                                  value:
+                                      controller.selectedSatuanId.value.isEmpty
+                                          ? null
+                                          : controller.selectedSatuanId.value,
+                                  items: controller.listSatuan
+                                      .map((s) => DropdownMenuItem(
+                                            value: s.id,
+                                            child: Text(s.singkatan),
+                                          ))
+                                      .toList(),
+                                  validator: (v) => AppValidator.required(v,
+                                      fieldName: 'Satuan'),
+                                  onChanged: (v) =>
+                                      controller.selectedSatuanId.value =
+                                          v ?? '',
+                                ),
+                                if (controller.isKategoriAnorganik) ...[
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.infoContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.lock_outline_rounded,
+                                            size: 12,
+                                            color: AppColors.info,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Kunci kg (An Organik)',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.info,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (controller.isMinyakJelantah) ...[
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.infoContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.lock_outline_rounded,
+                                            size: 12,
+                                            color: AppColors.info,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Kunci ltr (Minyak Jelantah)',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.info,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (controller.isSatuanAuto) ...[
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.secondaryContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.auto_awesome,
+                                            size: 12,
+                                            color: AppColors.onSecondaryContainer,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Otomatis dari jenis sampah',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  AppColors.onSecondaryContainer,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-
-                  // ── Harga Manual (WIP) ──────────────
-                  _HargaManualSection(),
                   const SizedBox(height: 14),
 
                   // ── Tanggal Pengelolaan ─────────────
@@ -238,20 +337,12 @@ class InputSampahView extends GetView<InputSampahController> {
                     return _buildHargaSnapshot();
                   }),
 
-                  // ── Catatan ─────────────────────────
-                  _SectionCard(
-                    icon: Icons.notes_rounded,
-                    iconColor: const Color(0xFF37474F),
-                    iconBg: const Color(0xFFECEFF1),
-                    title: 'Catatan',
-                    child: AppTextField(
-                      controller: controller.catatanController,
-                      label: 'Catatan (opsional)',
-                      hint: 'Tambahkan catatan jika perlu',
-                      prefixIcon: Icons.notes_rounded,
-                      maxLines: 3,
-                    ),
-                  ),
+                  // ── Summary Card (baru) ──────────────
+                  _SummaryCard(controller: controller),
+                  const SizedBox(height: 14),
+
+                  // ── Catatan Collapsible ─────────────
+                  _CollapsibleCatatanSection(controller: controller),
                   const SizedBox(height: 24),
 
                   // ── Tombol Simpan ───────────────────
@@ -617,199 +708,6 @@ class _SectionCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────
-// Harga Manual Section (WIP)
-// ─────────────────────────────────────────
-
-class _HargaManualSection extends StatelessWidget {
-  const _HargaManualSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF8E1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.sell_outlined,
-                          color: Color(0xFFE65100), size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Harga Manual',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // WIP badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3E0),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFFFB74D)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.construction_rounded,
-                              size: 10, color: Color(0xFFE65100)),
-                          SizedBox(width: 4),
-                          Text(
-                            'Segera Hadir',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFFE65100),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                height: 1,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                color: Colors.grey.shade100,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Info banner
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF8E1),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: const Color(0xFFFFD54F), width: 1),
-                      ),
-                      child: const Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.info_outline_rounded,
-                              size: 18, color: Color(0xFFF57F17)),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Fitur input harga manual masih dalam pengembangan dan akan segera tersedia pada versi berikutnya.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF5D4037),
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    // Disabled field
-                    IgnorePointer(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(14),
-                          border:
-                              Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.sell_outlined,
-                                color: Colors.grey.shade400, size: 18),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Harga per Satuan (Rp)',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade400),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Estimasi Total:',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade400)),
-                          Text('Rp —',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade400,
-                              )),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Absorb pointer overlay
-        Positioned.fill(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: AbsorbPointer(
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────
 // Dropdown Field
 // ─────────────────────────────────────────
 
@@ -883,6 +781,205 @@ class _DropdownField<T> extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       icon: Icon(Icons.keyboard_arrow_down_rounded,
           color: Colors.grey.shade400),
+    );
+  }
+}
+
+// ─────────────────────────────────────────
+// Summary Card
+// ─────────────────────────────────────────
+
+class _SummaryCard extends StatelessWidget {
+  final InputSampahController controller;
+
+  const _SummaryCard({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF81C784).withOpacity(0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2E7D32).withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFC8E6C9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.assignment_outlined, color: Color(0xFF2E7D32), size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Ringkasan Input',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1B5E20),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              height: 1,
+              color: const Color(0xFF81C784).withOpacity(0.25),
+            ),
+            const SizedBox(height: 12),
+            
+            // List info
+            _buildSummaryRow('Jenis Sampah', controller.jenisSampahBreadcrumb),
+            const SizedBox(height: 8),
+            _buildSummaryRow(
+              'Jumlah', 
+              '${FormatHelper.number(controller.rxJumlah.value)} ${controller.selectedSatuanSingkatan}',
+            ),
+            const SizedBox(height: 8),
+            _buildSummaryRow('Tanggal', controller.selectedTanggalFormat),
+            
+            if (controller.hargaSnapshot.value != null) ...[
+              const SizedBox(height: 8),
+              _buildSummaryRow(
+                'Harga/Satuan',
+                '${FormatHelper.currency(controller.hargaSnapshot.value!.hargaPerSatuan)} / ${controller.hargaSnapshot.value!.satuan?.singkatan ?? ''}',
+              ),
+              const SizedBox(height: 8),
+              _buildSummaryRow(
+                'Estimasi Total',
+                FormatHelper.currency(
+                  controller.rxJumlah.value * controller.hargaSnapshot.value!.hargaPerSatuan,
+                ),
+                isHighlight: true,
+              ),
+            ],
+          ],
+        ),
+      ),
+    ));
+  }
+
+  Widget _buildSummaryRow(String label, String value, {bool isHighlight = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: const Color(0xFF1B5E20).withOpacity(0.7),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const Text(
+          ': ',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF1B5E20),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              color: isHighlight ? const Color(0xFF1B5E20) : const Color(0xFF2E7D32),
+              fontWeight: isHighlight ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────
+// Collapsible Catatan Section
+// ─────────────────────────────────────────
+
+class _CollapsibleCatatanSection extends StatelessWidget {
+  final InputSampahController controller;
+
+  const _CollapsibleCatatanSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          leading: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: const Color(0xFFECEFF1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.notes_rounded, color: Color(0xFF37474F), size: 18),
+          ),
+          title: const Text(
+            'Tambah Catatan (Opsional)',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          children: [
+            Container(
+              height: 1,
+              color: Colors.grey.shade100,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: AppTextField(
+                controller: controller.catatanController,
+                label: 'Catatan (opsional)',
+                hint: 'Tambahkan catatan jika perlu',
+                prefixIcon: Icons.notes_rounded,
+                maxLines: 3,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

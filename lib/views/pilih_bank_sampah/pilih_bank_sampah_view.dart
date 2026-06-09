@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
 import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../core/services/session_service.dart';
-import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 
 class PilihBankSampahView extends GetView<SessionController> {

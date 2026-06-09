@@ -5,6 +5,7 @@ import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/kelurahan/dashboard_kelurahan_controller.dart';
 import '../../core/utils/format_helper.dart';
+import '../../core/utils/tooltip_helper.dart';
 
 class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
   const DashboardKelurahanView({super.key});
@@ -47,6 +48,12 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
                   child: _buildMenuGrid(),
+                ),
+
+                // ── Bank Sampah Teraktif ─────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+                  child: _buildTopBankSampah(),
                 ),
 
                 // ── Aktivitas Terbaru Header ─────────────────────────────────
@@ -359,7 +366,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
           crossAxisCount: 2,
           crossAxisSpacing: 14,
           mainAxisSpacing: 14,
-          childAspectRatio: 1.15,
+          childAspectRatio: 1.05,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
@@ -372,6 +379,7 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
                   icon: Icons.scale_outlined,
                   gradientColors: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
                   accentColor: const Color(0xFF0D47A1),
+                  percentChange: controller.persentasePerubahanJumlah,
                 )),
             Obx(() => _StatCard(
                   label: 'Bank Sampah',
@@ -511,6 +519,160 @@ class DashboardKelurahanView extends GetView<DashboardKelurahanController> {
       ],
     );
   }
+  Widget _buildTopBankSampah() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 22,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [_blue500, _blue400],
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Bank Sampah Teraktif',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: _blue900,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Obx(() {
+          if (controller.topBankSampah.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFE3F2FD), width: 1.2),
+              ),
+              child: Text(
+                'Belum ada data pengelolaan bulan ini',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            );
+          }
+
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1565C0).withOpacity(0.05),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+              border: Border.all(
+                color: const Color(0xFFE3F2FD),
+                width: 1.2,
+              ),
+            ),
+            child: Column(
+              children: List.generate(controller.topBankSampah.length, (index) {
+                final item = controller.topBankSampah[index];
+                final rank = index + 1;
+                
+                // Rank specific colors & icons
+                Color rankColor;
+                IconData rankIcon;
+                if (rank == 1) {
+                  rankColor = const Color(0xFFFFD700); // Gold
+                  rankIcon = Icons.emoji_events_rounded;
+                } else if (rank == 2) {
+                  rankColor = const Color(0xFFC0C0C0); // Silver
+                  rankIcon = Icons.emoji_events_rounded;
+                } else {
+                  rankColor = const Color(0xFFCD7F32); // Bronze
+                  rankIcon = Icons.emoji_events_rounded;
+                }
+
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        // Rank badge
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: rankColor.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            rankIcon,
+                            color: rankColor == const Color(0xFFC0C0C0) ? Colors.grey.shade600 : rankColor,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Bank Sampah Name
+                        Expanded(
+                          child: Text(
+                            item['nama'] as String,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: _blue900,
+                            ),
+                          ),
+                        ),
+                        // Total Managed Waste
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _blue50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${FormatHelper.number(item['total'] as double)} kg',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: _blue600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (index < controller.topBankSampah.length - 1)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Divider(
+                          color: Colors.grey.shade100,
+                          height: 1,
+                        ),
+                      ),
+                  ],
+                );
+              }),
+            ),
+          );
+        }),
+      ],
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -574,6 +736,7 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final List<Color> gradientColors;
   final Color accentColor;
+  final double? percentChange;
 
   const _StatCard({
     required this.label,
@@ -583,12 +746,44 @@ class _StatCard extends StatelessWidget {
     required this.icon,
     required this.gradientColors,
     required this.accentColor,
+    this.percentChange,
   });
+
+  Widget _buildComparisonBadge(double pct) {
+    final isUp = pct >= 0;
+    final text = '${isUp ? '+' : ''}${pct.toStringAsFixed(1)}%';
+    final icon = isUp ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+    final color = isUp ? const Color(0xFFC6FFD8) : const Color(0xFFFFDAD6);
+    final textColor = isUp ? const Color(0xFF216140) : const Color(0xFFBA1A1A);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: textColor),
+          const SizedBox(width: 2),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -629,7 +824,7 @@ class _StatCard extends StatelessWidget {
                     child: Text(
                       value,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
                         letterSpacing: -0.5,
@@ -655,21 +850,29 @@ class _StatCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
+              if (percentChange != null) ...[
+                _buildComparisonBadge(percentChange!),
+                const SizedBox(height: 4),
+              ],
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: Colors.white.withOpacity(0.92),
                   fontWeight: FontWeight.w700,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               Text(
                 sublabel,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   color: Colors.white.withOpacity(0.6),
                   fontWeight: FontWeight.w500,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -708,10 +911,39 @@ class _MenuCard extends StatelessWidget {
 
   const _MenuCard({required this.item});
 
+  void _showTooltip() {
+    final title = item.label;
+    String description = '';
+    switch (item.label) {
+      case 'Monitoring':
+        description = 'Pantau aktivitas semua bank sampah dalam kelurahan';
+        break;
+      case 'Bank Sampah':
+        description = 'Kelola informasi dan status keaktifan bank sampah';
+        break;
+      case 'Pengelola':
+        description = 'Kelola akun petugas pengelola bank sampah';
+        break;
+      case 'Jenis Sampah':
+        description = 'Kelola kategori, jenis, dan satuan sampah';
+        break;
+      case 'Laporan':
+        description = 'Generate dan export laporan dalam format Excel atau CSV';
+        break;
+      case 'Profil':
+        description = 'Atur profil kelurahan Anda';
+        break;
+      default:
+        description = 'Keterangan fitur belum ditambahkan.';
+    }
+    showFeatureTooltip(title, description);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: item.onTap,
+      onLongPress: _showTooltip,
       child: Container(
         padding: const EdgeInsets.symmetric(
           vertical: 14,

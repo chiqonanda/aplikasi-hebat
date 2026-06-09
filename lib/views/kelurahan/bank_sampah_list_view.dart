@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
 import '../../controllers/kelurahan/bank_sampah_controller.dart';
-import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 
 class BankSampahListView extends GetView<BankSampahController> {
@@ -13,16 +12,9 @@ class BankSampahListView extends GetView<BankSampahController> {
   // ── Theme Colors (Sama dengan Dashboard Kelurahan) ──────────────────────
   static const _blue900 = Color(0xFF0A2540);
   static const _blue800 = Color(0xFF0D3461);
-  static const _blue600 = Color(0xFF1565C0);
   static const _blue500 = Color(0xFF1E88E5);
   static const _blue400 = Color(0xFF42A5F5);
-  static const _blue200 = Color(0xFFBBDEFB);
   static const _blue50 = Color(0xFFE3F2FD);
-
-  static const _teal = Color(0xFF00ACC1);
-  static const _green = Color(0xFF2E7D32);
-  static const _orange = Color(0xFFF57C00);
-  static const _red = Color(0xFFD32F2F);
 
   static const _bg = Color(0xFFF0F6FF);
 

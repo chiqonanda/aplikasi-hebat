@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
-import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/monitoring_controller.dart';
 import '../../core/utils/format_helper.dart';
-import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 
 class MonitoringView extends GetView<MonitoringController> {

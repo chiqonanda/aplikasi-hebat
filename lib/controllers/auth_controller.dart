@@ -8,11 +8,17 @@ import '../core/constants/supabase_constants.dart';
 import '../models/profile_model.dart';
 import '../models/bank_sampah_model.dart';
 import '../app/routes/app_routes.dart';
+import '../core/utils/validator.dart';
+import '../core/widgets/app_widgets.dart';
+import '../app/themes/app_colors.dart';
+import '../app/themes/app_text_styles.dart';
+import '../app/themes/app_theme.dart';
 
 class AuthController extends GetxController {
   // Form keys
   final loginFormKey = GlobalKey<FormState>();
   final registerFormKey = GlobalKey<FormState>();
+  final forgotPasswordFormKey = GlobalKey<FormState>();
 
   // Text controllers — login
   final emailController = TextEditingController();
@@ -25,11 +31,15 @@ class AuthController extends GetxController {
   final regConfirmPasswordController = TextEditingController();
   final regNoHpController = TextEditingController();
 
+  // Text controllers — forgot password
+  final forgotEmailController = TextEditingController();
+
   // State
   final isLoading = false.obs;
   final isLoadingBankSampah = false.obs;
   final isPasswordVisible = false.obs;
   final isConfirmPasswordVisible = false.obs;
+  final isResetting = false.obs;
 
   // Daftar bank sampah untuk pilihan saat registrasi
   final listBankSampahRegister = <BankSampahModel>[].obs;
@@ -207,6 +217,118 @@ class AuthController extends GetxController {
   void goToRegister() => Get.toNamed(AppRoutes.register);
   void goToLogin() => Get.back();
 
+  // ─── Forgot Password ────────────────────────────────────────────────────────
+  Future<void> forgotPassword() async {
+    forgotEmailController.clear();
+    isResetting.value = false;
+
+    Get.dialog(
+      Dialog(
+        backgroundColor: AppColors.surfaceLowest,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: forgotPasswordFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Reset Password',
+                    style: AppTextStyles.titleLg.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Masukkan alamat email terdaftar untuk menerima instruksi pengaturan ulang kata sandi.',
+                    style: AppTextStyles.bodyMd,
+                  ),
+                  const SizedBox(height: 20),
+                  AppTextField(
+                    controller: forgotEmailController,
+                    label: 'Email',
+                    hint: 'Masukkan email terdaftar',
+                    prefixIcon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: AppValidator.email,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          if (!isResetting.value) {
+                            Get.back();
+                          }
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.outline,
+                        ),
+                        child: const Text('Batal'),
+                      ),
+                      const SizedBox(width: 12),
+                      Obx(
+                        () => _GradientResetButton(
+                          label: 'Kirim',
+                          isLoading: isResetting.value,
+                          onPressed: () async {
+                            if (!forgotPasswordFormKey.currentState!.validate()) return;
+                            
+                            isResetting.value = true;
+                            try {
+                              await SupabaseService.client.auth.resetPasswordForEmail(
+                                forgotEmailController.text.trim(),
+                              );
+                              Get.back();
+                              AppSnackbar.success(
+                                'Email reset password telah dikirim. Periksa inbox kamu.',
+                              );
+                            } on AuthException catch (e) {
+                              AppSnackbar.error(
+                                _mapResetPasswordError(e.message),
+                              );
+                            } catch (e) {
+                              AppSnackbar.error(
+                                'Terjadi kesalahan sistem. Silakan coba lagi.',
+                              );
+                            } finally {
+                              isResetting.value = false;
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  String _mapResetPasswordError(String message) {
+    if (message.toLowerCase().contains('user not found')) {
+      return 'Email tidak terdaftar.';
+    }
+    if (message.toLowerCase().contains('too many requests') ||
+        message.toLowerCase().contains('rate limit')) {
+      return 'Terlalu banyak permintaan reset. Silakan coba beberapa saat lagi.';
+    }
+    if (message.toLowerCase().contains('invalid email')) {
+      return 'Format email tidak valid.';
+    }
+    return message;
+  }
+
   @override
   void onClose() {
     emailController.dispose();
@@ -216,6 +338,69 @@ class AuthController extends GetxController {
     regPasswordController.dispose();
     regConfirmPasswordController.dispose();
     regNoHpController.dispose();
+    forgotEmailController.dispose();
     super.onClose();
+  }
+}
+
+class _GradientResetButton extends StatelessWidget {
+  final String label;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  const _GradientResetButton({
+    required this.label,
+    required this.isLoading,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.secondary, AppColors.primary],
+          ),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            ),
+          ),
+          onPressed: isLoading ? null : onPressed,
+          child: isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.onPrimary,
+                  ),
+                )
+              : Text(
+                  label,
+                  style: AppTextStyles.labelLg.copyWith(
+                    color: AppColors.onPrimary,
+                  ),
+                ),
+        ),
+      ),
+    );
   }
 }

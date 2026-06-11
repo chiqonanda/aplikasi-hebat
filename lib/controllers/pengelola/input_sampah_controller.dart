@@ -22,6 +22,7 @@ class InputSampahController extends GetxController {
   final catatanController         = TextEditingController();
   final tanggalController         = TextEditingController();
   final totalHargaController      = TextEditingController();
+  final nasabahController         = TextEditingController();
 
   // Data list
   final listKategori    = <KategoriModel>[].obs;
@@ -29,6 +30,7 @@ class InputSampahController extends GetxController {
   final listTipe        = <TipeSampahModel>[].obs;   // ← BARU
   final listJenisSampah = <JenisSampahModel>[].obs;
   final listSatuan      = <SatuanModel>[].obs;
+  final listNamaNasabah = <String>[].obs;
 
   // State dropdown
   final selectedKategoriId    = ''.obs;
@@ -176,7 +178,7 @@ class InputSampahController extends GetxController {
   Future<void> _fetchMasterData() async {
     isLoading.value = true;
     try {
-      await Future.wait([_fetchKategori(), _fetchSatuan()]);
+      await Future.wait([_fetchKategori(), _fetchSatuan(), fetchNamaNasabah()]);
       if (isEditMode) {
         _populateEditData();
       } else {
@@ -270,6 +272,29 @@ class InputSampahController extends GetxController {
         .order('nama');
     listSatuan.value =
         (data as List).map((e) => SatuanModel.fromJson(e)).toList();
+  }
+
+  Future<void> fetchNamaNasabah() async {
+    final bankSampahId = SessionService.to.activeBankSampahId;
+    if (bankSampahId.isEmpty) return;
+    try {
+      final data = await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaanSampah)
+          .select('nama_nasabah')
+          .eq('bank_sampah_id', bankSampahId);
+
+      final names = (data as List)
+          .map((e) => e['nama_nasabah'] as String?)
+          .where((name) => name != null && name.trim().isNotEmpty)
+          .map((name) => name!.trim())
+          .toSet()
+          .toList();
+
+      names.sort((a, b) => a.compareTo(b));
+      listNamaNasabah.value = names;
+    } catch (e) {
+      debugPrint('ERROR FETCH NASABAH: $e');
+    }
   }
 
   Future<void> _fetchHargaOtomatis() async {
@@ -432,6 +457,7 @@ class InputSampahController extends GetxController {
         d.hargaPerSatuan != null ? d.hargaPerSatuan.toString() : '';
     catatanController.text  = d.catatan ?? '';
     selectedSatuanId.value  = d.satuanId;
+    nasabahController.text  = d.namaNasabah ?? '';
 
     // Kategori
     if (d.kategoriId.isNotEmpty) {
@@ -568,6 +594,9 @@ class InputSampahController extends GetxController {
         'catatan': catatanController.text.trim().isEmpty
             ? null
             : catatanController.text.trim(),
+        'nama_nasabah': nasabahController.text.trim().isEmpty
+            ? null
+            : nasabahController.text.trim(),
       };
 
       debugPrint('PAYLOAD PENYIMPANAN: $payload');
@@ -617,6 +646,7 @@ class InputSampahController extends GetxController {
     catatanController.dispose();
     tanggalController.dispose();
     totalHargaController.dispose();
+    nasabahController.dispose();
     super.onClose();
   }
 }

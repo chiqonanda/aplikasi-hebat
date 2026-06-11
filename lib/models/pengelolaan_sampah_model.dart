@@ -20,6 +20,7 @@ class PengelolaanSampahModel {
   final double? totalHarga;
   final DateTime tanggalPengelolaan;
   final String? catatan;
+  final String? namaNasabah;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -46,6 +47,7 @@ class PengelolaanSampahModel {
     this.totalHarga,
     required this.tanggalPengelolaan,
     this.catatan,
+    this.namaNasabah,
     required this.createdAt,
     required this.updatedAt,
     this.kategori,
@@ -96,6 +98,7 @@ class PengelolaanSampahModel {
       tanggalPengelolaan:
           DateTime.parse(json['tanggal_pengelolaan'] as String),
       catatan: json['catatan'] as String?,
+      namaNasabah: json['nama_nasabah'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       kategori: json['kategori_sampah'] != null
@@ -140,5 +143,6 @@ class PengelolaanSampahModel {
         'tanggal_pengelolaan':
             tanggalPengelolaan.toIso8601String().split('T').first,
         'catatan': catatan,
+        'nama_nasabah': namaNasabah,
       };
 }

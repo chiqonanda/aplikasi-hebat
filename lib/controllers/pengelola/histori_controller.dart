@@ -19,6 +19,7 @@ class HistoriController extends GetxController {
   final listHistori = <PengelolaanSampahModel>[].obs;
   final _rawHistori = <PengelolaanSampahModel>[];
   final listKategoriFilter = <KategoriModel>[].obs;
+  final listNamaNasabah = <String>[].obs;
   final isLoading = false.obs;
   final isExporting = false.obs;
 
@@ -26,11 +27,13 @@ class HistoriController extends GetxController {
   final filterKategoriId = ''.obs;
   final filterTanggalMulai = Rx<DateTime?>(null);
   final filterTanggalAkhir = Rx<DateTime?>(null);
+  final filterNamaNasabah = ''.obs;
 
   bool get isFilterActive =>
       filterKategoriId.value.isNotEmpty ||
       filterTanggalMulai.value != null ||
-      filterTanggalAkhir.value != null;
+      filterTanggalAkhir.value != null ||
+      filterNamaNasabah.value.isNotEmpty;
 
   double get totalNilai =>
       listHistori.fold(0.0, (sum, e) => sum + (e.totalHarga ?? 0.0));
@@ -54,6 +57,7 @@ class HistoriController extends GetxController {
       }
       fetchHistori();
       _fetchKategori();
+      fetchNamaNasabah();
     });
   }
 
@@ -105,6 +109,9 @@ class HistoriController extends GetxController {
       if (filterKategoriId.value.isNotEmpty) {
         query = query.eq('kategori_id', filterKategoriId.value);
       }
+      if (filterNamaNasabah.value.isNotEmpty) {
+        query = query.eq('nama_nasabah', filterNamaNasabah.value);
+      }
       if (filterTanggalMulai.value != null) {
         query = query.gte(
           'tanggal_pengelolaan',
@@ -148,6 +155,29 @@ class HistoriController extends GetxController {
     } catch (_) {}
   }
 
+  Future<void> fetchNamaNasabah() async {
+    final bankSampahId = SessionService.to.activeBankSampahIdOrNull;
+    if (bankSampahId == null) return;
+    try {
+      final data = await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaanSampah)
+          .select('nama_nasabah')
+          .eq('bank_sampah_id', bankSampahId);
+
+      final names = (data as List)
+          .map((e) => e['nama_nasabah'] as String?)
+          .where((name) => name != null && name.trim().isNotEmpty)
+          .map((name) => name!.trim())
+          .toSet()
+          .toList();
+
+      names.sort((a, b) => a.compareTo(b));
+      listNamaNasabah.value = names;
+    } catch (e) {
+      debugPrint('ERROR FETCH NASABAH IN HISTORI: $e');
+    }
+  }
+
   Future<void> pickTanggalMulai(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
@@ -174,6 +204,7 @@ class HistoriController extends GetxController {
     filterKategoriId.value = '';
     filterTanggalMulai.value = null;
     filterTanggalAkhir.value = null;
+    filterNamaNasabah.value = '';
     searchController.clear();
     searchQuery.value = '';
     fetchHistori();
@@ -243,6 +274,9 @@ class HistoriController extends GetxController {
         } else {
           labelPeriode = 'Sampai: ${FormatHelper.date(filterTanggalAkhir.value)}';
         }
+      }
+      if (filterNamaNasabah.value.isNotEmpty) {
+        labelPeriode += ' | Nasabah: ${filterNamaNasabah.value}';
       }
 
       final excelFile = excel.Excel.createExcel();

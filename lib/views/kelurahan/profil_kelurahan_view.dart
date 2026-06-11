@@ -3,22 +3,17 @@ import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
+import '../../app/themes/design_tokens.dart';
 import '../../core/services/session_service.dart';
 import '../../core/utils/format_helper.dart';
 import '../../controllers/auth_controller.dart';
-import '../../core/widgets/app_widgets.dart';
 
 class ProfilKelurahanView extends StatelessWidget {
   const ProfilKelurahanView({super.key});
 
-  // ── Warna Utama (sama persis dengan DashboardKelurahanView) ──────────────
+  // ── Warna Utama ──────────────────────────────────────────────────────────
   static const _blue900 = AppColors.kelurahanDark;
-  static const _blue800 = AppColors.kelurahanDark;
   static const _blue600 = AppColors.kelurahanMain;
-  static const _blue400 = Color(0xFF42A5F5);
-  static const _blue200 = AppColors.kelurahanLight;
   static const _blue50  = AppColors.kelurahanLight;
   static const _teal    = Color(0xFF00ACC1);
   static const _tealBg  = Color(0xFFE0F7FA);
@@ -30,152 +25,180 @@ class ProfilKelurahanView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: _bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Header ───────────────────────────────────────────────────
-              AppPageHeader(
-                title: 'Profil',
-                subtitle: 'Informasi Akun Kelurahan',
-                gradientColors: AppColors.kelurahanGradient,
-                showBack: true,
-              ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Combined Gradient Header & Overlapping Avatar ───────────────
+            _buildCombinedHeader(context, session),
 
-              // ── Avatar & Profile Info Card ──────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: _buildProfileCard(session),
+            // ── Profile Name & Verified Badge ────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.only(top: 56),
+              child: Column(
+                children: [
+                  Obx(
+                    () => Text(
+                      session.profile.value?.namaLengkap ?? '-',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: _blue900,
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F4FD),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.verified_rounded,
+                          size: 14,
+                          color: _blue600,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Pengelola Kelurahan',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _blue600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+            ),
 
-              // ── Informasi Akun ───────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: _buildInfoAkun(session),
-              ),
+            // ── Informasi Akun ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+              child: _buildInfoAkun(session),
+            ),
 
-              // ── Menu Kelola Sistem ───────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: _buildMenuKelola(),
-              ),
+            // ── Menu Kelola Sistem ───────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+              child: _buildMenuKelola(),
+            ),
 
-              // ── Tombol Keluar ────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 48),
-                child: _buildLogoutButton(context),
-              ),
-            ],
-          ),
+            // ── Tombol Keluar ────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 36, 20, 48),
+              child: _buildLogoutButton(context),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ── Profile Card ─────────────────────────────────────────────────────────
-  Widget _buildProfileCard(SessionService session) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.spacingLg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: _blue50,
-          width: 1.2,
-        ),
-        boxShadow: AppTheme.cardShadowLight,
-      ),
-      child: Column(
-        children: [
-          // Avatar
-          Obx(() {
-            final nama = session.profile.value?.namaLengkap ?? 'Kelurahan';
-            final initial = nama.isNotEmpty ? nama[0].toUpperCase() : 'K';
-            return Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: AppColors.kelurahanGradient,
-                ),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 3,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: _blue600.withValues(alpha: 0.2),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
+  // ── Combined Header Widget (Gradient Banner + Overlapping Avatar) ────────
+  Widget _buildCombinedHeader(BuildContext context, SessionService session) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Gradient banner
+        Container(
+          height: 180,
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: AppColors.kelurahanGradient,
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                    onPressed: () => Get.back(),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Profil',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        // Overlapping Avatar Card
+        Positioned(
+          bottom: -44,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Obx(() {
+              final nama = session.profile.value?.namaLengkap ?? 'Kelurahan';
+              final initial = nama.isNotEmpty ? nama[0].toUpperCase() : 'K';
+              return Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: AppColors.kelurahanGradient,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
                     color: Colors.white,
+                    width: 4,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0A2540).withValues(alpha: 0.15),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
-
-          const SizedBox(height: 14),
-
-          // Nama Lengkap
-          Obx(
-            () => Text(
-              session.profile.value?.namaLengkap ?? '-',
-              style: AppTextStyles.titleLg.copyWith(
-                color: _blue900,
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
+              );
+            }),
           ),
-
-          const SizedBox(height: 8),
-
-          // Badge Role
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: _blue50,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.verified_rounded,
-                  size: 14,
-                  color: _blue600,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Pengelola Kelurahan',
-                  style: AppTextStyles.bodySm.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: _blue600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -184,7 +207,7 @@ class ProfilKelurahanView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title: 'Informasi Akun'),
+        const _SectionHeader(title: 'Informasi Akun'),
         const SizedBox(height: 16),
 
         // Card info
@@ -192,14 +215,8 @@ class ProfilKelurahanView extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _blue50, width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: _blue600.withValues(alpha: 0.07),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
+            boxShadow: DesignTokens.kelurahanShadowSm,
           ),
           child: Column(
             children: [
@@ -213,7 +230,7 @@ class ProfilKelurahanView extends StatelessWidget {
                 ),
               ),
               _Divider(),
-              _InfoRow(
+              const _InfoRow(
                 icon: Icons.admin_panel_settings_outlined,
                 label: 'Role',
                 value: 'Pengelola Kelurahan',
@@ -275,7 +292,7 @@ class ProfilKelurahanView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title: 'Kelola Sistem'),
+        const _SectionHeader(title: 'Kelola Sistem'),
         const SizedBox(height: 16),
 
         LayoutBuilder(
@@ -302,59 +319,59 @@ class ProfilKelurahanView extends StatelessWidget {
 
   // ── Tombol Keluar ─────────────────────────────────────────────────────────
   Widget _buildLogoutButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _confirmLogout(context),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.red.shade200, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withValues(alpha: 0.08),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEF5350), Color(0xFFD32F2F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(
-                Icons.logout_rounded,
-                color: Colors.red.shade400,
-                size: 20,
-              ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD32F2F).withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _confirmLogout(context),
+          borderRadius: BorderRadius.circular(18),
+          child: const Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.logout_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Keluar dari Akun',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              'Keluar dari Akun',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.red.shade500,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   void _confirmLogout(BuildContext context) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Dialog(
+    final ok = await Get.dialog<bool>(
+      Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(28),
@@ -412,7 +429,7 @@ class ProfilKelurahanView extends StatelessWidget {
                   // Tombol Batal
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => Navigator.of(ctx).pop(false),
+                      onTap: () => Get.back(result: false),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         decoration: BoxDecoration(
@@ -436,7 +453,7 @@ class ProfilKelurahanView extends StatelessWidget {
                   // Tombol Keluar
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => Navigator.of(ctx).pop(true),
+                      onTap: () => Get.back(result: true),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         decoration: BoxDecoration(
@@ -482,10 +499,7 @@ class ProfilKelurahanView extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Section Header  — accent bar biru, sama persis dengan dashboard
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Section Header Widget ───────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
   final String title;
 
@@ -502,7 +516,7 @@ class _SectionHeader extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF1E88E5), Color(0xFF42A5F5)],
+              colors: AppColors.kelurahanGradient,
             ),
             borderRadius: BorderRadius.circular(4),
           ),
@@ -511,7 +525,7 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w800,
             color: Color(0xFF0A2540),
             letterSpacing: -0.5,
@@ -522,25 +536,21 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Divider tipis
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Divider Widget ──────────────────────────────────────────────────────────
 class _Divider extends StatelessWidget {
+  const _Divider();
+
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      color: const Color(0xFFE3F2FD),
+      color: const Color(0xFFEBF2FA),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Info Row  — baris informasi dengan icon box berwarna
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Info Row Widget ─────────────────────────────────────────────────────────
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -578,10 +588,10 @@ class _InfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade500,
+                    color: AppColors.textSecondary,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -604,10 +614,7 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Menu Data Model
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Menu Data Model ─────────────────────────────────────────────────────────
 class _MenuData {
   final IconData icon;
   final String label;
@@ -624,10 +631,7 @@ class _MenuData {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Menu Card  — identik dengan _MenuCard di dashboard
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Menu Card Widget ────────────────────────────────────────────────────────
 class _MenuCard extends StatelessWidget {
   final _MenuData data;
 
@@ -644,16 +648,10 @@ class _MenuCard extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF1565C0).withValues(alpha: 0.07),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: DesignTokens.kelurahanShadowSm,
           border: Border.all(
-            color: const Color(0xFFE3F2FD),
+            color: const Color(0xFFEBF2FA),
             width: 1.2,
           ),
         ),
@@ -676,9 +674,7 @@ class _MenuCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 10),
-
             Flexible(
               flex: 2,
               child: Text(

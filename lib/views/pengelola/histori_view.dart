@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../app/themes/app_colors.dart';
 import '../../app/themes/app_text_styles.dart';
 import '../../app/themes/app_theme.dart';
-import '../../app/themes/design_tokens.dart';
 import '../../controllers/pengelola/histori_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -15,6 +14,8 @@ class HistoriView extends GetView<HistoriController> {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -28,9 +29,9 @@ class HistoriView extends GetView<HistoriController> {
               SliverToBoxAdapter(
                 child: AppPageHeader(
                   title: 'Histori Pengelolaan',
-                  subtitle: 'Data pengelolaan sampah',
+                  subtitle: 'Data riwayat pencatatan sampah',
                   gradientColors: AppColors.pengelolaGradient,
-                  showBack: ModalRoute.of(context)?.canPop ?? false,
+                  showBack: canPop,
                 ),
               ),
 
@@ -42,7 +43,7 @@ class HistoriView extends GetView<HistoriController> {
                 ),
               ),
 
-              // Summary
+              // Summary Banner
               SliverToBoxAdapter(
                 child: Obx(() {
                   if (controller.listHistori.isEmpty) {
@@ -75,8 +76,11 @@ class HistoriView extends GetView<HistoriController> {
                           const SizedBox(height: 2),
                           Obx(() => Text(
                                 '${controller.listHistori.length} entri tercatat',
-                                style: AppTextStyles.bodySm.copyWith(
+                                style: TextStyle(
+                                  fontSize: 12,
                                   color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'PlusJakartaSans',
                                 ),
                               )),
                         ],
@@ -129,6 +133,7 @@ class HistoriView extends GetView<HistoriController> {
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.white,
+                                          fontFamily: 'PlusJakartaSans',
                                         ),
                                       ),
                                     ],
@@ -140,11 +145,8 @@ class HistoriView extends GetView<HistoriController> {
                           const SizedBox(width: 8),
                           // Filter button
                           Obx(() {
-                            final isActive =
-                                controller.filterKategoriId.value.isNotEmpty ||
-                                    controller.filterTanggalMulai.value != null ||
-                                    controller.filterTanggalAkhir.value != null;
-                            return GestureDetector(
+                             final isActive = controller.isFilterActive;
+                             return GestureDetector(
                               onTap: () => _showFilterSheet(context),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
@@ -173,6 +175,7 @@ class HistoriView extends GetView<HistoriController> {
                                         color: isActive
                                             ? Colors.white
                                             : AppColors.pengelolaMain,
+                                        fontFamily: 'PlusJakartaSans',
                                       ),
                                     ),
                                     if (isActive) ...[
@@ -237,13 +240,47 @@ class HistoriView extends GetView<HistoriController> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final item = controller.listHistori[index];
+                      void onEdit() => controller.editItem(item);
+                      void onDelete() => controller.deleteItem(item);
+
                       return Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                        child: _HistoriCard(
-                          item: item,
-                          index: index,
-                          onEdit: () => controller.editItem(item),
-                          onDelete: () => controller.deleteItem(item),
+                        child: Dismissible(
+                          key: Key(item.id),
+                          direction: DismissDirection.horizontal,
+                          confirmDismiss: (direction) async {
+                            if (direction == DismissDirection.endToStart) {
+                              onDelete();
+                              return false; // let controller handle deletion and reactively trigger update
+                            } else {
+                              onEdit();
+                              return false; // let edit screen handle edit, don't dismiss on UI manually
+                            }
+                          },
+                          background: Container(
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.only(left: 20),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade600,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(Icons.edit_rounded, color: Colors.white),
+                          ),
+                          secondaryBackground: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(Icons.delete_rounded, color: Colors.white),
+                          ),
+                          child: _HistoriCard(
+                            item: item,
+                            index: index,
+                            onEdit: onEdit,
+                            onDelete: onDelete,
+                          ),
                         ),
                       );
                     },
@@ -279,30 +316,52 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 52,
       decoration: BoxDecoration(
-        color: AppColors.surfaceLowest,
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: AppTextField(
+      child: TextField(
         controller: controller.searchController,
-        label: 'Cari data pengelolaan...',
-        prefixIcon: Icons.search_rounded,
         onChanged: controller.onSearch,
-        suffixIcon: Obx(
-          () => controller.searchQuery.value.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.cancel_rounded,
-                      size: 18, color: AppColors.textTertiary),
-                  onPressed: controller.clearSearch,
-                )
-              : const SizedBox.shrink(),
+        style: const TextStyle(
+          fontSize: 14,
+          color: AppColors.textPrimary,
+          fontFamily: 'PlusJakartaSans',
+        ),
+        decoration: InputDecoration(
+          hintText: 'Cari data pengelolaan, catatan...',
+          hintStyle: const TextStyle(
+            fontSize: 14,
+            color: AppColors.textTertiary,
+            fontFamily: 'PlusJakartaSans',
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+          suffixIcon: Obx(
+            () => controller.searchQuery.value.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.cancel_rounded,
+                        size: 18, color: AppColors.textTertiary),
+                    onPressed: controller.clearSearch,
+                  )
+                : const SizedBox.shrink(),
+          ),
+          border: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );
@@ -323,96 +382,110 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppColors.pengelolaGradient,
+          colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.pengelolaMain.withValues(alpha: 0.3),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.pengelolaDark.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.bar_chart_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Total Entri
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Total Entri',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'RINGKASAN KEUANGAN',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  letterSpacing: 1.0,
+                  fontFamily: 'PlusJakartaSans',
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Aktif',
                   style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    fontFamily: 'PlusJakartaSans',
                   ),
                 ),
-                const SizedBox(height: 2),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            FormatHelper.currency(totalNilai),
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -0.5,
+              fontFamily: 'PlusJakartaSans',
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Total Nilai Sampah Dikelola',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.75),
+              fontWeight: FontWeight.w500,
+              fontFamily: 'PlusJakartaSans',
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.receipt_long_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Total Volume Catatan:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'PlusJakartaSans',
+                  ),
+                ),
+                const Spacer(),
                 Text(
                   '$totalEntri data',
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
                     color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Divider
-          Container(
-            width: 1,
-            height: 36,
-            color: Colors.white.withValues(alpha: 0.25),
-          ),
-          const SizedBox(width: 16),
-
-          // Total Nilai
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Total Nilai',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  FormatHelper.currency(totalNilai),
-                  style: const TextStyle(
-                    fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    fontFamily: 'PlusJakartaSans',
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -438,49 +511,54 @@ class _HistoriCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  static const _accents = [
-    AppColors.pengelolaMain,
-    AppColors.kelurahanMain,
+  static const _colors = [
+    Color(0xFF2E7D32),
+    Color(0xFF1565C0),
     Color(0xFFE65100),
-    Color(0xFF37474F),
-  ];
-  static const _accentBgs = [
-    AppColors.pengelolaLight,
-    AppColors.kelurahanLight,
-    Color(0xFFFBE9E7),
-    Color(0xFFECEFF1),
+    Color(0xFF6A1B9A),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final accent   = _accents[index % _accents.length];
-    final accentBg = _accentBgs[index % _accentBgs.length];
+    final themeColor = _colors[index % _colors.length];
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLowest,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: DesignTokens.shadowSm,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Icon Category
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: accentBg,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  color: themeColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.recycling_rounded,
-                    color: accent, size: 24),
+                child: Icon(
+                  Icons.recycling_rounded,
+                  color: themeColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
+
+              // Title and Breadcrumb
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,226 +569,169 @@ class _HistoriCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
+                        fontFamily: 'PlusJakartaSans',
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        const Icon(Icons.folder_open_rounded,
-                            size: 11,
-                            color: AppColors.textTertiary),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            item.breadcrumb,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Action menu
-              PopupMenuButton<String>(
-                icon: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.more_horiz_rounded,
-                      color: AppColors.textSecondary, size: 18),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-                shadowColor: Colors.black.withValues(alpha: 0.12),
-                offset: const Offset(0, 40),
-                onSelected: (v) {
-                  if (v == 'edit') onEdit();
-                  if (v == 'delete') onDelete();
-                },
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    height: 48,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: AppColors.kelurahanLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.edit_rounded,
-                              size: 16, color: AppColors.kelurahanMain),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Edit Data',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuDivider(height: 1),
-                  PopupMenuItem(
-                    value: 'delete',
-                    height: 48,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: AppColors.errorContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.delete_rounded,
-                              size: 16, color: AppColors.error),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Hapus Data',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.divider),
-          const SizedBox(height: 12),
-
-          // Info chips + value
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    _InfoChip(
-                      icon: Icons.scale_outlined,
-                      label: FormatHelper.jumlahSatuan(
-                          item.jumlah, item.satuan?.singkatan),
-                    ),
-                    _InfoChip(
-                      icon: Icons.calendar_today_outlined,
-                      label: FormatHelper.dateFromString(
-                          item.tanggalPengelolaan.toIso8601String()),
-                    ),
-                  ],
-                ),
-              ),
-              if (item.totalHarga != null && item.totalHarga! > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.pengelolaLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    FormatHelper.currency(item.totalHarga),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.pengelolaMain,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          // Catatan
-          if (item.catatan != null && item.catatan!.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.notes_rounded,
-                      size: 13, color: AppColors.textTertiary),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      item.catatan!,
+                    Text(
+                      item.breadcrumb,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: AppColors.textSecondary,
-                        height: 1.4,
+                        fontFamily: 'PlusJakartaSans',
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Total Harga (Right Side)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (item.totalHarga != null && item.totalHarga! > 0)
+                    Text(
+                      FormatHelper.currency(item.totalHarga),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.pengelolaMain,
+                        fontFamily: 'PlusJakartaSans',
+                      ),
+                    )
+                  else
+                    const Text(
+                      'Rp 0',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textTertiary,
+                        fontFamily: 'PlusJakartaSans',
+                      ),
+                    ),
+                  const SizedBox(height: 2),
+                  // Small action menu trigger
+                  PopupMenuButton<String>(
+                    icon: const Icon(
+                      Icons.more_horiz_rounded,
+                      color: AppColors.textTertiary,
+                      size: 20,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    offset: const Offset(0, 24),
+                    onSelected: (v) {
+                      if (v == 'edit') onEdit();
+                      if (v == 'delete') onDelete();
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        height: 38,
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_rounded, size: 16, color: Colors.blue.shade700),
+                            const SizedBox(width: 8),
+                            const Text('Edit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        height: 38,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_rounded, size: 16, color: AppColors.error),
+                            const SizedBox(width: 8),
+                            const Text('Hapus', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.error)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: 10),
 
-// ── Info Chip ─────────────────────────────────────────────────────────────────
+          // Metadata row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Quantity & Date
+              Expanded(
+                child: Row(
+                  children: [
+                    // Quantity
+                    const Icon(Icons.scale_outlined, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      FormatHelper.jumlahSatuan(item.jumlah, item.satuan?.singkatan),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'PlusJakartaSans',
+                      ),
+                    ),
+                    const SizedBox(width: 14),
 
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
+                    // Date
+                    const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      FormatHelper.dateFromString(item.tanggalPengelolaan.toIso8601String()),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                        fontFamily: 'PlusJakartaSans',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: AppColors.textTertiary),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-            ),
+              // Note Badge (if note exists)
+              if (item.catatan != null && item.catatan!.isNotEmpty)
+                Tooltip(
+                  message: item.catatan!,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.notes_rounded, size: 11, color: AppColors.textSecondary),
+                        SizedBox(width: 4),
+                        Text(
+                          'Catatan',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                            fontFamily: 'PlusJakartaSans',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -760,7 +781,7 @@ class _FilterSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-  
+
               // Header
               Row(
                 children: [
@@ -781,12 +802,13 @@ class _FilterSheet extends StatelessWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
+                      fontFamily: 'PlusJakartaSans',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-  
+
               // Kategori
               const _SectionLabel(label: 'Kategori Sampah'),
               const SizedBox(height: 10),
@@ -813,7 +835,33 @@ class _FilterSheet extends StatelessWidget {
                     ],
                   )),
               const SizedBox(height: 24),
-  
+
+              // Nasabah
+              const _SectionLabel(label: 'Nasabah / Pelanggan'),
+              const SizedBox(height: 10),
+              Obx(() => _DropdownField<String>(
+                    label: 'Pilih Nasabah',
+                    value: controller.filterNamaNasabah.value.isEmpty
+                        ? null
+                        : controller.filterNamaNasabah.value,
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: '',
+                        child: Text('Semua Nasabah'),
+                      ),
+                      ...controller.listNamaNasabah.map(
+                        (name) => DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(name),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      controller.filterNamaNasabah.value = val ?? '';
+                    },
+                  )),
+              const SizedBox(height: 24),
+
               // Periode
               const _SectionLabel(label: 'Periode Waktu'),
               const SizedBox(height: 10),
@@ -839,7 +887,7 @@ class _FilterSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 28),
-  
+
               // Buttons
               Row(
                 children: [
@@ -861,13 +909,14 @@ class _FilterSheet extends StatelessWidget {
                           children: [
                             Icon(Icons.refresh_rounded,
                                 size: 16, color: AppColors.textPrimary),
-                            const SizedBox(width: 6),
+                            SizedBox(width: 6),
                             Text(
                               'Reset',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
+                                fontFamily: 'PlusJakartaSans',
                               ),
                             ),
                           ],
@@ -909,6 +958,7 @@ class _FilterSheet extends StatelessWidget {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
+                                fontFamily: 'PlusJakartaSans',
                               ),
                             ),
                           ],
@@ -951,6 +1001,7 @@ class _SectionLabel extends StatelessWidget {
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
+            fontFamily: 'PlusJakartaSans',
           ),
         ),
       ],
@@ -1005,6 +1056,7 @@ class _FilterChip extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: isSelected ? Colors.white : AppColors.textSecondary,
+            fontFamily: 'PlusJakartaSans',
           ),
         ),
       ),
@@ -1065,14 +1117,73 @@ class _DatePickerField extends StatelessWidget {
                   color: hasValue
                       ? AppColors.pengelolaMain
                       : AppColors.textSecondary,
+                  fontFamily: 'PlusJakartaSans',
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Dropdown Field ─────────────────────────────────────────────────────────────
+
+class _DropdownField<T> extends StatelessWidget {
+  final String label;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final void Function(T?) onChanged;
+
+  const _DropdownField({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<T>(
+      initialValue: value,
+      items: items,
+      onChanged: onChanged,
+      isExpanded: true,
+      style: const TextStyle(
+        fontSize: 13,
+        color: AppColors.textPrimary,
+        fontFamily: 'PlusJakartaSans',
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          fontSize: 12,
+          color: AppColors.textTertiary,
+          fontFamily: 'PlusJakartaSans',
+        ),
+        filled: true,
+        fillColor: AppColors.background,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
+        ),
+      ),
+      dropdownColor: AppColors.surfaceLowest,
+      borderRadius: BorderRadius.circular(12),
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.outline),
     );
   }
 }

@@ -3,13 +3,13 @@ import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/services/session_service.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../models/bank_sampah_model.dart';
+import '../../models/profile_model.dart';
 
 class ProfilBankSampahView extends StatelessWidget {
   const ProfilBankSampahView({super.key});
@@ -17,6 +17,7 @@ class ProfilBankSampahView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionService.to;
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -26,15 +27,15 @@ class ProfilBankSampahView extends StatelessWidget {
             // Custom AppPageHeader replacing default header
             AppPageHeader(
               title: 'Profil Bank Sampah',
-              subtitle: 'Informasi & pengaturan',
+              subtitle: 'Informasi bank sampah & akun pengelola',
               gradientColors: AppColors.pengelolaGradient,
-              showBack: ModalRoute.of(context)?.canPop ?? false,
+              showBack: canPop,
             ),
 
             // Konten scrollable
             Expanded(
               child: ListView(
-                padding: AppTheme.pagePaddingAll,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 physics: const BouncingScrollPhysics(),
                 children: [
                   // Hero card bank sampah
@@ -55,7 +56,7 @@ class ProfilBankSampahView extends StatelessWidget {
 
                   // Menu navigasi
                   _buildMenuCard(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Logout button
                   _buildLogoutButton(),
@@ -70,19 +71,19 @@ class ProfilBankSampahView extends StatelessWidget {
 
   // ─── Bank Hero Card ────────────────────────────────────────────────────────
 
-  Widget _buildBankHeroCard(bank) {
+  Widget _buildBankHeroCard(BankSampahModel bank) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppColors.pengelolaGradient,
+          colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.pengelolaMain.withValues(alpha: 0.35),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.2),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -105,7 +106,7 @@ class ProfilBankSampahView extends StatelessWidget {
                   ),
                 ),
                 child: const Icon(
-                  Icons.store_rounded,
+                  Icons.storefront_rounded,
                   color: Colors.white,
                   size: 28,
                 ),
@@ -119,13 +120,14 @@ class ProfilBankSampahView extends StatelessWidget {
                       bank.nama,
                       style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: Colors.white,
                         letterSpacing: -0.3,
+                        fontFamily: 'PlusJakartaSans',
                       ),
                     ),
                     if (bank.rt != null || bank.rw != null) ...[
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         [
                           if (bank.rt != null) 'RT ${bank.rt}',
@@ -134,6 +136,8 @@ class ProfilBankSampahView extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.white.withValues(alpha: 0.75),
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'PlusJakartaSans',
                         ),
                       ),
                     ],
@@ -147,21 +151,20 @@ class ProfilBankSampahView extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: bank.isActive
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.red.withValues(alpha: 0.3),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
-                child: Text(
-                  bank.isActive ? 'Aktif' : 'Nonaktif',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                child: const Text(
+                  'Aktif',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
+                    fontFamily: 'PlusJakartaSans',
                   ),
                 ),
               ),
@@ -193,6 +196,7 @@ class ProfilBankSampahView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.white.withValues(alpha: 0.85),
+                      fontFamily: 'PlusJakartaSans',
                     ),
                   ),
                 ),
@@ -215,6 +219,7 @@ class ProfilBankSampahView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.6),
+                  fontFamily: 'PlusJakartaSans',
                 ),
               ),
             ],
@@ -226,15 +231,16 @@ class ProfilBankSampahView extends StatelessWidget {
 
   // ─── Pengelola Card ────────────────────────────────────────────────────────
 
-  Widget _buildPengelolaCard(profil) {
+  Widget _buildPengelolaCard(ProfileModel profil) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLowest,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -246,8 +252,8 @@ class ProfilBankSampahView extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: AppColors.pengelolaLight,
                   borderRadius: BorderRadius.circular(10),
@@ -265,31 +271,32 @@ class ProfilBankSampahView extends StatelessWidget {
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
+                  fontFamily: 'PlusJakartaSans',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           const Divider(height: 1, color: AppColors.divider),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Info rows
           _InfoRow(
-            icon: Icons.person_outline_rounded,
+            icon: Icons.assignment_ind_outlined,
             label: 'Nama Lengkap',
             value: profil.namaLengkap,
           ),
           const SizedBox(height: 14),
           _InfoRow(
             icon: Icons.email_outlined,
-            label: 'Email',
+            label: 'Email Terdaftar',
             value: SupabaseService.currentUser?.email ?? '-',
           ),
-          if (profil.noHp != null) ...[
+          if (profil.noHp != null && profil.noHp!.isNotEmpty) ...[
             const SizedBox(height: 14),
             _InfoRow(
-              icon: Icons.phone_outlined,
-              label: 'No. HP',
+              icon: Icons.phone_android_outlined,
+              label: 'Nomor WhatsApp',
               value: profil.noHp!,
             ),
           ],
@@ -303,11 +310,12 @@ class ProfilBankSampahView extends StatelessWidget {
   Widget _buildMenuCard() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceLowest,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -320,7 +328,7 @@ class ProfilBankSampahView extends StatelessWidget {
             iconBg: AppColors.kelurahanLight,
             iconColor: AppColors.kelurahanMain,
             label: 'Histori Pengelolaan',
-            sublabel: 'Lihat riwayat data sampah',
+            sublabel: 'Lihat data riwayat timbangan sampah',
             onTap: () => Get.toNamed(AppRoutes.historiSampah),
             isFirst: true,
           ),
@@ -330,10 +338,10 @@ class ProfilBankSampahView extends StatelessWidget {
           ),
           _MenuTile(
             icon: Icons.swap_horiz_rounded,
-            iconBg: const Color(0xFFFBE9E7),
+            iconBg: const Color(0xFFFFF3E0),
             iconColor: const Color(0xFFE65100),
             label: 'Ganti Bank Sampah',
-            sublabel: 'Kelola bank sampah lain',
+            sublabel: 'Beralih ke kelola bank sampah lain',
             onTap: () => Get.toNamed(AppRoutes.pilihBankSampah),
             isLast: true,
           ),
@@ -351,15 +359,15 @@ class ProfilBankSampahView extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLowest,
+          color: const Color(0xFFFFEBEE),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.error.withValues(alpha: 0.5),
+            color: const Color(0xFFFFCDD2),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.error.withValues(alpha: 0.06),
+              color: Colors.red.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -368,14 +376,15 @@ class ProfilBankSampahView extends StatelessWidget {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
+            Icon(Icons.logout_rounded, color: Color(0xFFC62828), size: 20),
             SizedBox(width: 8),
             Text(
               'Keluar dari Akun',
               style: TextStyle(
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.error,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFC62828),
+                fontFamily: 'PlusJakartaSans',
               ),
             ),
           ],
@@ -425,6 +434,7 @@ class _InfoRow extends StatelessWidget {
                   fontSize: 11,
                   color: AppColors.textTertiary,
                   fontWeight: FontWeight.w500,
+                  fontFamily: 'PlusJakartaSans',
                 ),
               ),
               const SizedBox(height: 2),
@@ -432,8 +442,9 @@ class _InfoRow extends StatelessWidget {
                 value,
                 style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
+                  fontFamily: 'PlusJakartaSans',
                 ),
               ),
             ],
@@ -481,11 +492,11 @@ class _MenuTile extends StatelessWidget {
         ),
         child: ListTile(
           leading: Container(
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: iconBg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: iconColor, size: 22),
           ),
@@ -493,33 +504,35 @@ class _MenuTile extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
+              fontFamily: 'PlusJakartaSans',
             ),
           ),
           subtitle: Text(
             sublabel,
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: AppColors.textTertiary,
+              fontFamily: 'PlusJakartaSans',
             ),
           ),
           trailing: Container(
-            width: 30,
-            height: 30,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: AppColors.background,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.chevron_right_rounded,
               color: AppColors.pengelolaMain,
-              size: 18,
+              size: 20,
             ),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 4,
+            vertical: 8,
           ),
         ),
       ),

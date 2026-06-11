@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/master_sampah_controller.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/kategori_model.dart';
@@ -11,9 +9,8 @@ import '../../models/sub_kategori_model.dart';
 import '../../models/tipe_sampah_model.dart';
 import '../../models/satuan_model.dart';
 
-// ── Warna Utama (selaras dengan DashboardKelurahanView) ───────────────────────
+// ── Local Theme Colors ───────────────────────────────────────────────────────
 const _blue900 = AppColors.kelurahanDark;
-const _blue800 = AppColors.kelurahanDark;
 const _blue600 = AppColors.kelurahanMain;
 const _blue500 = AppColors.kelurahanMain;
 const _blue400 = Color(0xFF42A5F5);
@@ -26,34 +23,37 @@ class MasterSampahView extends GetView<MasterSampahController> {
   const MasterSampahView({super.key});
 
   static const _tabs = [
-    _TabInfo('Kategori',    Icons.category_outlined,        _blue600,  _blue50),
-    _TabInfo('Sub Kategori',Icons.layers_outlined,           Color(0xFF00838F), Color(0xFFE0F7FA)),
-    _TabInfo('Tipe',        Icons.style_outlined,            Color(0xFF283593), Color(0xFFE8EAF6)),
-    _TabInfo('Jenis',       Icons.eco_outlined,              Color(0xFF00695C), Color(0xFFE0F2F1)),
-    _TabInfo('Satuan',      Icons.straighten_rounded,        _purple,   _purpleBg),
+    _TabInfo('Kategori', Icons.category_outlined, _blue600, _blue50),
+    _TabInfo('Sub Kategori', Icons.layers_outlined, Color(0xFF00838F), Color(0xFFE0F7FA)),
+    _TabInfo('Tipe', Icons.style_outlined, Color(0xFF283593), Color(0xFFE8EAF6)),
+    _TabInfo('Jenis', Icons.eco_outlined, Color(0xFF00695C), Color(0xFFE0F2F1)),
+    _TabInfo('Satuan', Icons.straighten_rounded, _purple, _purpleBg),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
+      bottomNavigationBar: const KelurahanBottomNavBar(currentIndex: 3),
       body: SafeArea(
         child: Column(
           children: [
-            // ── Header ──────────────────────────────────────────────────────
+            // Header Page
             AppPageHeader(
               title: 'Jenis Sampah',
               subtitle: 'Kelola kategori, jenis & satuan',
               gradientColors: AppColors.kelurahanGradient,
-              showBack: true,
+              showBack: false,
             ),
-            // ── Tab Scroll ──────────────────────────────────────────────────
+
+            // Tab bar horizontal pill slider
             _buildTabBar(),
-            // ── Body ────────────────────────────────────────────────────────
+
+            // Tab Content
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const LoadingWidget();
+                  return const AppLoadingState(message: 'Memuat data master sampah...');
                 }
                 return switch (controller.activeTab.value) {
                   0 => _KategoriTab(controller: controller),
@@ -71,7 +71,7 @@ class MasterSampahView extends GetView<MasterSampahController> {
     );
   }
 
-  // ── Tab Bar ────────────────────────────────────────────────────────────────
+  // ── Tab Bar Widget ──────────────────────────────────────────────────────────
   Widget _buildTabBar() {
     return Container(
       color: _bg,
@@ -79,6 +79,7 @@ class MasterSampahView extends GetView<MasterSampahController> {
       child: Obx(
         () => SingleChildScrollView(
           scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
           child: Row(
             children: List.generate(_tabs.length, (i) {
               final tab = _tabs[i];
@@ -90,33 +91,32 @@ class MasterSampahView extends GetView<MasterSampahController> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeInOut,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
                       gradient: isActive
                           ? const LinearGradient(
                               colors: [_blue600, _blue500],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             )
                           : null,
                       color: isActive ? null : Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: isActive
-                            ? _blue500
-                            : const Color(0xFFE3F2FD),
-                        width: 1.5,
+                        color: isActive ? _blue500 : const Color(0xFFEBF2FA),
+                        width: 1.2,
                       ),
                       boxShadow: isActive
                           ? [
                               BoxShadow(
-                                color: _blue500.withValues(alpha: 0.3),
+                                color: _blue500.withValues(alpha: 0.25),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               )
                             ]
                           : [
                               BoxShadow(
-                                color: _blue900.withValues(alpha: 0.06),
+                                color: Colors.black.withValues(alpha: 0.02),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               )
@@ -130,14 +130,14 @@ class MasterSampahView extends GetView<MasterSampahController> {
                           size: 16,
                           color: isActive ? Colors.white : tab.color,
                         ),
-                        const SizedBox(width: 7),
+                        const SizedBox(width: 8),
                         Text(
                           tab.label,
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
                             color: isActive ? Colors.white : _blue900,
-                            letterSpacing: -0.2,
+                            letterSpacing: -0.1,
                           ),
                         ),
                       ],
@@ -162,7 +162,7 @@ class _TabInfo {
   const _TabInfo(this.label, this.icon, this.color, this.bgColor);
 }
 
-// ── Generic Add Form Sheet ─────────────────────────────────────────────────────
+// ── Generic Add Form Sheet Widget ──────────────────────────────────────────────
 void _showAddSheet(
   BuildContext context, {
   required String title,
@@ -192,7 +192,6 @@ void _showAddSheet(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
             const SizedBox(height: 14),
             Center(
               child: Container(
@@ -205,7 +204,6 @@ void _showAddSheet(
               ),
             ),
             const SizedBox(height: 20),
-            // Title row
             Row(
               children: [
                 Container(
@@ -215,96 +213,92 @@ void _showAddSheet(
                     gradient: const LinearGradient(
                       colors: [_blue600, _blue500],
                     ),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: _blue500.withValues(alpha: 0.3),
+                        color: _blue500.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: Icon(titleIcon, color: Colors.white, size: 22),
+                  child: Icon(titleIcon, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: _blue900,
-                    letterSpacing: -0.5,
+                    letterSpacing: -0.4,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.only(left: 58),
               child: Text(
                 'Isi form berikut dengan benar',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            // Divider
-            Container(
-              height: 1,
-              color: const Color(0xFFE3F2FD),
-              margin: const EdgeInsets.only(bottom: 20),
-            ),
+            const SizedBox(height: 18),
+            const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+            const SizedBox(height: 18),
             formContent,
             const SizedBox(height: 24),
-            // Tombol Simpan
+
+            // Submit Button
             Obx(
               () => GestureDetector(
                 onTap: controller.isSaving.value ? null : onSimpan,
                 child: Container(
                   width: double.infinity,
-                  height: 56,
+                  height: 52,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: controller.isSaving.value
                           ? [Colors.grey.shade400, Colors.grey.shade400]
                           : const [_blue600, _blue500],
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: controller.isSaving.value
                         ? []
                         : [
                             BoxShadow(
-                              color: _blue500.withValues(alpha: 0.35),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
+                              color: _blue500.withValues(alpha: 0.25),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
                             ),
                           ],
                   ),
                   child: Center(
                     child: controller.isSaving.value
                         ? const SizedBox(
-                            width: 22,
-                            height: 22,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                               color: Colors.white,
-                              strokeWidth: 2.5,
+                              strokeWidth: 2,
                             ),
                           )
                         : const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.save_rounded,
-                                  color: Colors.white, size: 20),
+                              Icon(Icons.save_rounded, color: Colors.white, size: 20),
                               SizedBox(width: 8),
                               Text(
                                 'Simpan Data',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
-                                  letterSpacing: -0.3,
                                 ),
                               ),
                             ],
@@ -320,31 +314,31 @@ void _showAddSheet(
   ).then((_) => controller.resetForm());
 }
 
-// ── Shared Dropdown Decoration ─────────────────────────────────────────────────
+// ── Shared Dropdown Decoration Helper ───────────────────────────────────────────
 InputDecoration _dropdownDecoration(String label, IconData icon) {
   return InputDecoration(
     labelText: label,
-    labelStyle: const TextStyle(color: _blue600, fontWeight: FontWeight.w600),
-    prefixIcon: Icon(icon, size: 20, color: _blue500),
+    labelStyle: const TextStyle(color: _blue600, fontWeight: FontWeight.w700, fontSize: 13),
+    prefixIcon: Icon(icon, size: 18, color: _blue500),
     filled: true,
     fillColor: _blue50,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+      borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+      borderSide: BorderSide.none,
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: _blue500, width: 2),
+      borderSide: const BorderSide(color: _blue500, width: 1.5),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   );
 }
 
-// ── Tab Kategori ──────────────────────────────────────────────────────────────
+// ── Tab Kategori Widget ────────────────────────────────────────────────────────
 class _KategoriTab extends StatelessWidget {
   final MasterSampahController controller;
   const _KategoriTab({required this.controller});
@@ -369,8 +363,7 @@ class _KategoriTab extends StatelessWidget {
               label: 'Nama Kategori',
               hint: 'Contoh: Plastik, Kertas, Logam',
               icon: Icons.label_outline_rounded,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+              validator: (v) => v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
             const SizedBox(height: 14),
             _ModernTextField(
@@ -385,10 +378,10 @@ class _KategoriTab extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.listKategori.isEmpty) {
-          return _ModernEmptyState(
+          return const AppEmptyState(
             icon: Icons.category_outlined,
             title: 'Belum Ada Kategori',
-            message: 'Tambahkan kategori sampah pertama Anda',
+            subtitle: 'Tambahkan kategori sampah pertama Anda.',
           );
         }
         return RefreshIndicator(
@@ -397,7 +390,7 @@ class _KategoriTab extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listKategori.length,
-            itemBuilder: (_, i) {
+            itemBuilder: (context, i) {
               final item = controller.listKategori[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -407,9 +400,11 @@ class _KategoriTab extends StatelessWidget {
                   icon: Icons.category_outlined,
                   iconGradient: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
                   index: i,
-                  onDelete: () => _confirmHapus(context,
-                      nama: item.nama,
-                      onConfirm: () => controller.hapusKategori(item.id)),
+                  onDelete: () => _confirmHapus(
+                    context,
+                    nama: item.nama,
+                    onConfirm: () => controller.hapusKategori(item.id),
+                  ),
                 ),
               );
             },
@@ -420,7 +415,7 @@ class _KategoriTab extends StatelessWidget {
   }
 }
 
-// ── Tab Sub Kategori ──────────────────────────────────────────────────────────
+// ── Tab Sub Kategori Widget ─────────────────────────────────────────────────────
 class _SubKategoriTab extends StatelessWidget {
   final MasterSampahController controller;
   const _SubKategoriTab({required this.controller});
@@ -442,10 +437,10 @@ class _SubKategoriTab extends StatelessWidget {
           formContent: Column(children: [
             Obx(
               () => DropdownButtonFormField<KategoriModel>(
-                value: controller.selectedKategoriForm.value,
+                initialValue: controller.selectedKategoriForm.value,
                 decoration: _dropdownDecoration('Kategori *', Icons.category_outlined),
                 items: controller.listKategoriDropdown
-                    .map((k) => DropdownMenuItem(value: k, child: Text(k.nama)))
+                    .map((k) => DropdownMenuItem(value: k, child: Text(k.nama, style: const TextStyle(fontWeight: FontWeight.w600))))
                     .toList(),
                 onChanged: (v) => controller.selectedKategoriForm.value = v,
                 validator: (v) => v == null ? 'Pilih kategori' : null,
@@ -457,8 +452,7 @@ class _SubKategoriTab extends StatelessWidget {
               label: 'Nama Sub Kategori',
               hint: 'Contoh: Plastik Keras, Kertas Bekas',
               icon: Icons.label_outline_rounded,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+              validator: (v) => v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
             const SizedBox(height: 14),
             _ModernTextField(
@@ -473,10 +467,10 @@ class _SubKategoriTab extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.listSubKategori.isEmpty) {
-          return _ModernEmptyState(
+          return const AppEmptyState(
             icon: Icons.layers_outlined,
             title: 'Belum Ada Sub Kategori',
-            message: 'Tambahkan sub kategori untuk mengklasifikasikan sampah',
+            subtitle: 'Tambahkan sub kategori untuk mengklasifikasikan sampah.',
           );
         }
         return RefreshIndicator(
@@ -485,21 +479,21 @@ class _SubKategoriTab extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listSubKategori.length,
-            itemBuilder: (_, i) {
+            itemBuilder: (context, i) {
               final item = controller.listSubKategori[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MasterItemCard(
                   nama: item.nama,
-                  subtitle: item.kategori != null
-                      ? 'Kategori: ${item.kategori!.nama}'
-                      : null,
+                  subtitle: item.kategori != null ? 'Kategori: ${item.kategori!.nama}' : null,
                   icon: Icons.layers_outlined,
                   iconGradient: const [Color(0xFF00838F), Color(0xFF26C6DA)],
                   index: i,
-                  onDelete: () => _confirmHapus(context,
-                      nama: item.nama,
-                      onConfirm: () => controller.hapusSubKategori(item.id)),
+                  onDelete: () => _confirmHapus(
+                    context,
+                    nama: item.nama,
+                    onConfirm: () => controller.hapusSubKategori(item.id),
+                  ),
                 ),
               );
             },
@@ -510,7 +504,7 @@ class _SubKategoriTab extends StatelessWidget {
   }
 }
 
-// ── Tab Tipe ──────────────────────────────────────────────────────────────────
+// ── Tab Tipe Widget ─────────────────────────────────────────────────────────────
 class _TipeTab extends StatelessWidget {
   final MasterSampahController controller;
   const _TipeTab({required this.controller});
@@ -532,10 +526,10 @@ class _TipeTab extends StatelessWidget {
           formContent: Column(children: [
             Obx(
               () => DropdownButtonFormField<KategoriModel>(
-                value: controller.selectedKategoriForm.value,
+                initialValue: controller.selectedKategoriForm.value,
                 decoration: _dropdownDecoration('Kategori *', Icons.category_outlined),
                 items: controller.listKategoriDropdown
-                    .map((k) => DropdownMenuItem(value: k, child: Text(k.nama)))
+                    .map((k) => DropdownMenuItem(value: k, child: Text(k.nama, style: const TextStyle(fontWeight: FontWeight.w600))))
                     .toList(),
                 onChanged: (v) => controller.selectedKategoriForm.value = v,
                 validator: (v) => v == null ? 'Pilih kategori' : null,
@@ -544,10 +538,10 @@ class _TipeTab extends StatelessWidget {
             const SizedBox(height: 14),
             Obx(
               () => DropdownButtonFormField<SubKategoriModel>(
-                value: controller.selectedSubKategoriForm.value,
+                initialValue: controller.selectedSubKategoriForm.value,
                 decoration: _dropdownDecoration('Sub Kategori *', Icons.layers_outlined),
                 items: controller.listSubKategoriDropdown
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s.nama)))
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s.nama, style: const TextStyle(fontWeight: FontWeight.w600))))
                     .toList(),
                 onChanged: (v) => controller.selectedSubKategoriForm.value = v,
                 validator: (v) => v == null ? 'Pilih sub kategori' : null,
@@ -559,8 +553,7 @@ class _TipeTab extends StatelessWidget {
               label: 'Nama Tipe',
               hint: 'Contoh: PET, PP, HDPE, ABS',
               icon: Icons.label_outline_rounded,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+              validator: (v) => v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
             const SizedBox(height: 14),
             _ModernTextField(
@@ -575,10 +568,10 @@ class _TipeTab extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.listTipe.isEmpty) {
-          return _ModernEmptyState(
+          return const AppEmptyState(
             icon: Icons.style_outlined,
             title: 'Belum Ada Tipe',
-            message: 'Tambahkan tipe sampah seperti PET, PP, HDPE',
+            subtitle: 'Tambahkan tipe sampah seperti PET, PP, HDPE.',
           );
         }
         return RefreshIndicator(
@@ -587,21 +580,21 @@ class _TipeTab extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listTipe.length,
-            itemBuilder: (_, i) {
+            itemBuilder: (context, i) {
               final item = controller.listTipe[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MasterItemCard(
                   nama: item.nama,
-                  subtitle: item.subKategori != null
-                      ? 'Sub Kategori: ${item.subKategori!.nama}'
-                      : null,
+                  subtitle: item.subKategori != null ? 'Sub Kategori: ${item.subKategori!.nama}' : null,
                   icon: Icons.style_outlined,
                   iconGradient: const [Color(0xFF283593), Color(0xFF5C6BC0)],
                   index: i,
-                  onDelete: () => _confirmHapus(context,
-                      nama: item.nama,
-                      onConfirm: () => controller.hapusTipe(item.id)),
+                  onDelete: () => _confirmHapus(
+                    context,
+                    nama: item.nama,
+                    onConfirm: () => controller.hapusTipe(item.id),
+                  ),
                 ),
               );
             },
@@ -612,7 +605,7 @@ class _TipeTab extends StatelessWidget {
   }
 }
 
-// ── Tab Jenis ─────────────────────────────────────────────────────────────────
+// ── Tab Jenis Widget ────────────────────────────────────────────────────────────
 class _JenisTab extends StatelessWidget {
   final MasterSampahController controller;
   const _JenisTab({required this.controller});
@@ -635,10 +628,10 @@ class _JenisTab extends StatelessWidget {
             child: Column(children: [
               Obx(
                 () => DropdownButtonFormField<KategoriModel>(
-                  value: controller.selectedKategoriForm.value,
+                  initialValue: controller.selectedKategoriForm.value,
                   decoration: _dropdownDecoration('Kategori *', Icons.category_outlined),
                   items: controller.listKategoriDropdown
-                      .map((k) => DropdownMenuItem(value: k, child: Text(k.nama)))
+                      .map((k) => DropdownMenuItem(value: k, child: Text(k.nama, style: const TextStyle(fontWeight: FontWeight.w600))))
                       .toList(),
                   onChanged: (v) {
                     controller.selectedKategoriForm.value = v;
@@ -651,19 +644,17 @@ class _JenisTab extends StatelessWidget {
               const SizedBox(height: 14),
               Obx(
                 () => DropdownButtonFormField<SubKategoriModel>(
-                  value: controller.selectedSubKategoriForm.value,
-                  decoration: _dropdownDecoration(
-                      'Sub Kategori (opsional)', Icons.layers_outlined),
+                  initialValue: controller.selectedSubKategoriForm.value,
+                  decoration: _dropdownDecoration('Sub Kategori (opsional)', Icons.layers_outlined),
                   items: [
                     const DropdownMenuItem<SubKategoriModel>(
                       value: null,
-                      child: Text('— Tidak ada —'),
+                      child: Text('— Tidak ada —', style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
                     ...controller.listSubKategoriDropdown.map((s) =>
-                        DropdownMenuItem(value: s, child: Text(s.nama))),
+                        DropdownMenuItem(value: s, child: Text(s.nama, style: const TextStyle(fontWeight: FontWeight.w600)))),
                   ],
-                  onChanged: (v) =>
-                      controller.selectedSubKategoriForm.value = v,
+                  onChanged: (v) => controller.selectedSubKategoriForm.value = v,
                 ),
               ),
               const SizedBox(height: 14),
@@ -673,16 +664,15 @@ class _JenisTab extends StatelessWidget {
                 }
                 return Column(children: [
                   DropdownButtonFormField<TipeSampahModel>(
-                    value: controller.selectedTipeForm.value,
-                    decoration: _dropdownDecoration(
-                        'Tipe (opsional)', Icons.style_outlined),
+                    initialValue: controller.selectedTipeForm.value,
+                    decoration: _dropdownDecoration('Tipe (opsional)', Icons.style_outlined),
                     items: [
                       const DropdownMenuItem<TipeSampahModel>(
                         value: null,
-                        child: Text('— Tidak ada —'),
+                        child: Text('— Tidak ada —', style: TextStyle(fontWeight: FontWeight.w600)),
                       ),
                       ...controller.listTipeDropdown.map((t) =>
-                          DropdownMenuItem(value: t, child: Text(t.nama))),
+                          DropdownMenuItem(value: t, child: Text(t.nama, style: const TextStyle(fontWeight: FontWeight.w600)))),
                     ],
                     onChanged: (v) => controller.selectedTipeForm.value = v,
                   ),
@@ -694,18 +684,16 @@ class _JenisTab extends StatelessWidget {
                 label: 'Nama Jenis',
                 hint: 'Contoh: Botol Air Mineral, Koran Bekas',
                 icon: Icons.label_outline_rounded,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Nama wajib diisi' : null,
               ),
               const SizedBox(height: 14),
               Obx(
                 () => DropdownButtonFormField<SatuanModel>(
-                  value: controller.selectedSatuanForm.value,
-                  decoration: _dropdownDecoration(
-                      'Satuan Default (opsional)', Icons.straighten_rounded),
+                  initialValue: controller.selectedSatuanForm.value,
+                  decoration: _dropdownDecoration('Satuan Default (opsional)', Icons.straighten_rounded),
                   items: controller.listSatuan
                       .map((s) => DropdownMenuItem(
-                          value: s, child: Text('${s.nama} (${s.singkatan})')))
+                          value: s, child: Text('${s.nama} (${s.singkatan})', style: const TextStyle(fontWeight: FontWeight.w600))))
                       .toList(),
                   onChanged: (v) => controller.selectedSatuanForm.value = v,
                 ),
@@ -724,10 +712,10 @@ class _JenisTab extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.listJenis.isEmpty) {
-          return _ModernEmptyState(
+          return const AppEmptyState(
             icon: Icons.eco_outlined,
             title: 'Belum Ada Jenis Sampah',
-            message: 'Tambahkan jenis sampah yang diterima bank sampah',
+            subtitle: 'Tambahkan jenis sampah yang diterima bank sampah.',
           );
         }
         return RefreshIndicator(
@@ -736,7 +724,7 @@ class _JenisTab extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listJenis.length,
-            itemBuilder: (_, i) {
+            itemBuilder: (context, i) {
               final item = controller.listJenis[i];
               final parts = <String>[];
               if (item.subKategori?.kategori != null) {
@@ -756,12 +744,12 @@ class _JenisTab extends StatelessWidget {
                   icon: Icons.eco_outlined,
                   iconGradient: const [Color(0xFF00695C), Color(0xFF26A69A)],
                   index: i,
-                  trailing: item.satuanDefault != null
-                      ? _SatuanBadge(satuan: item.satuanDefault!.singkatan)
-                      : null,
-                  onDelete: () => _confirmHapus(context,
-                      nama: item.nama,
-                      onConfirm: () => controller.hapusJenis(item.id)),
+                  trailing: item.satuanDefault != null ? _SatuanBadge(satuan: item.satuanDefault!.singkatan) : null,
+                  onDelete: () => _confirmHapus(
+                    context,
+                    nama: item.nama,
+                    onConfirm: () => controller.hapusJenis(item.id),
+                  ),
                 ),
               );
             },
@@ -772,7 +760,7 @@ class _JenisTab extends StatelessWidget {
   }
 }
 
-// ── Tab Satuan ────────────────────────────────────────────────────────────────
+// ── Tab Satuan Widget ──────────────────────────────────────────────────────────
 class _SatuanTab extends StatelessWidget {
   final MasterSampahController controller;
   const _SatuanTab({required this.controller});
@@ -797,8 +785,7 @@ class _SatuanTab extends StatelessWidget {
               label: 'Nama Satuan',
               hint: 'Contoh: Kilogram, Liter, Buah',
               icon: Icons.straighten_rounded,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+              validator: (v) => v == null || v.isEmpty ? 'Nama wajib diisi' : null,
             ),
             const SizedBox(height: 14),
             _ModernTextField(
@@ -806,18 +793,17 @@ class _SatuanTab extends StatelessWidget {
               label: 'Singkatan',
               hint: 'Contoh: kg, L, bh',
               icon: Icons.short_text_rounded,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Singkatan wajib diisi' : null,
+              validator: (v) => v == null || v.isEmpty ? 'Singkatan wajib diisi' : null,
             ),
           ]),
         ),
       ),
       body: Obx(() {
         if (controller.listSatuan.isEmpty) {
-          return _ModernEmptyState(
+          return const AppEmptyState(
             icon: Icons.straighten_outlined,
             title: 'Belum Ada Satuan',
-            message: 'Tambahkan satuan pengukuran seperti kg, liter, dll',
+            subtitle: 'Tambahkan satuan pengukuran seperti kg, liter, dll.',
           );
         }
         return RefreshIndicator(
@@ -826,7 +812,7 @@ class _SatuanTab extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             itemCount: controller.listSatuan.length,
-            itemBuilder: (_, i) {
+            itemBuilder: (context, i) {
               final item = controller.listSatuan[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -836,9 +822,11 @@ class _SatuanTab extends StatelessWidget {
                   iconGradient: const [_purple, Color(0xFFAB47BC)],
                   index: i,
                   trailing: _SatuanBadge(satuan: item.singkatan),
-                  onDelete: () => _confirmHapus(context,
-                      nama: item.nama,
-                      onConfirm: () => controller.hapusSatuan(item.id)),
+                  onDelete: () => _confirmHapus(
+                    context,
+                    nama: item.nama,
+                    onConfirm: () => controller.hapusSatuan(item.id),
+                  ),
                 ),
               );
             },
@@ -849,7 +837,7 @@ class _SatuanTab extends StatelessWidget {
   }
 }
 
-// ── Modern FAB ────────────────────────────────────────────────────────────────
+// ── Redesigned FAB Widget ────────────────────────────────────────────────────
 class _ModernFAB extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -870,13 +858,15 @@ class _ModernFAB extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [_blue600, _blue500],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: _blue500.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: _blue500.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -884,22 +874,21 @@ class _ModernFAB extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 28,
-              height: 28,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(icon, color: Colors.white, size: 18),
+              child: Icon(icon, color: Colors.white, size: 16),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Text(
               label,
               style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
                 color: Colors.white,
-                letterSpacing: -0.2,
               ),
             ),
           ],
@@ -909,7 +898,7 @@ class _ModernFAB extends StatelessWidget {
   }
 }
 
-// ── Master Item Card (Modernized) ─────────────────────────────────────────────
+// ── Redesigned Item Card Widget ──────────────────────────────────────────────
 class _MasterItemCard extends StatelessWidget {
   final String nama;
   final String? subtitle;
@@ -932,45 +921,37 @@ class _MasterItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE3F2FD), width: 1.2),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: _blue900.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          // ── Icon ─────────────────────────────────────────────────────────
           Container(
-            width: 50,
-            height: 50,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: iconGradient,
               ),
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: iconGradient.first.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 14),
 
-          // ── Info ─────────────────────────────────────────────────────────
+          // Main Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -978,7 +959,7 @@ class _MasterItemCard extends StatelessWidget {
                 Text(
                   nama,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w800,
                     color: _blue900,
                     letterSpacing: -0.2,
@@ -990,16 +971,15 @@ class _MasterItemCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.subdirectory_arrow_right_rounded,
-                          size: 12, color: _blue400),
+                      const Icon(Icons.subdirectory_arrow_right_rounded, size: 12, color: _blue400),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           subtitle!,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11.5,
                             color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1012,26 +992,27 @@ class _MasterItemCard extends StatelessWidget {
             ),
           ),
 
-          // ── Trailing + Delete ─────────────────────────────────────────────
           if (trailing != null) ...[
             const SizedBox(width: 8),
             trailing!,
           ],
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
+
+          // Delete Action Button
           GestureDetector(
             onTap: onDelete,
             child: Container(
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.shade100, width: 1.2),
+                color: const Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.delete_outline_rounded,
-                color: Colors.red.shade400,
-                size: 20,
+                color: Color(0xFFD32F2F),
+                size: 18,
               ),
             ),
           ),
@@ -1041,7 +1022,7 @@ class _MasterItemCard extends StatelessWidget {
   }
 }
 
-// ── Modern Text Field ─────────────────────────────────────────────────────────
+// ── Redesigned Text Form Field Widget ─────────────────────────────────────────
 class _ModernTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -1066,7 +1047,7 @@ class _ModernTextField extends StatelessWidget {
       maxLines: maxLines,
       validator: validator,
       style: const TextStyle(
-        fontSize: 15,
+        fontSize: 14.5,
         fontWeight: FontWeight.w600,
         color: _blue900,
       ),
@@ -1075,35 +1056,35 @@ class _ModernTextField extends StatelessWidget {
         hintText: hint,
         labelStyle: const TextStyle(
           color: _blue600,
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
         ),
         hintStyle: TextStyle(
           color: Colors.grey.shade400,
-          fontSize: 14,
+          fontSize: 13.5,
         ),
-        prefixIcon: Icon(icon, size: 20, color: _blue500),
+        prefixIcon: Icon(icon, size: 18, color: _blue500),
         filled: true,
         fillColor: _blue50,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _blue500, width: 2),
+          borderSide: const BorderSide(color: _blue500, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -1111,7 +1092,7 @@ class _ModernTextField extends StatelessWidget {
   }
 }
 
-// ── Satuan Badge ──────────────────────────────────────────────────────────────
+// ── Redesigned Satuan Badge Widget ────────────────────────────────────────────
 class _SatuanBadge extends StatelessWidget {
   final String satuan;
   const _SatuanBadge({required this.satuan});
@@ -1119,121 +1100,25 @@ class _SatuanBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFBBDEFB), width: 1.2),
+        color: const Color(0xFFE3F2FD),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFBBDEFB), width: 1),
       ),
       child: Text(
         satuan,
         style: const TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           color: _blue600,
-          letterSpacing: 0.3,
         ),
       ),
     );
   }
 }
 
-// ── Modern Empty State ─────────────────────────────────────────────────────────
-class _ModernEmptyState extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String message;
-
-  const _ModernEmptyState({
-    required this.icon,
-    required this.title,
-    required this.message,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-                ),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: _blue500.withValues(alpha: 0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: _blue600, size: 42),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: _blue900,
-                letterSpacing: -0.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade500,
-                height: 1.6,
-              ),
-            ),
-            const SizedBox(height: 28),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: _blue50,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFBBDEFB), width: 1.5),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_circle_outline_rounded,
-                      size: 16, color: _blue600),
-                  SizedBox(width: 8),
-                  Text(
-                    'Gunakan tombol di bawah untuk menambah',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _blue600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Confirm Hapus Dialog ───────────────────────────────────────────────────────
+// ── Redesigned Confirm Hapus Dialog ───────────────────────────────────────────
 Future<void> _confirmHapus(
   BuildContext context, {
   required String nama,
@@ -1249,48 +1134,46 @@ Future<void> _confirmHapus(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon warning
             Container(
-              width: 64,
-              height: 64,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.red.shade100, width: 1.5),
+                color: const Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFFCDD2), width: 1.2),
               ),
-              child: Icon(Icons.warning_amber_rounded,
-                  color: Colors.red.shade400, size: 34),
+              child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFD32F2F), size: 30),
             ),
             const SizedBox(height: 18),
             const Text(
               'Hapus Data?',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: _blue900,
-                letterSpacing: -0.5,
+                letterSpacing: -0.4,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13.5,
                   color: Colors.grey.shade600,
-                  height: 1.6,
+                  height: 1.5,
+                  fontWeight: FontWeight.w500,
                 ),
                 children: [
                   const TextSpan(text: 'Yakin ingin menghapus\n'),
                   TextSpan(
                     text: '"$nama"',
                     style: const TextStyle(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: _blue900,
                     ),
                   ),
-                  const TextSpan(
-                      text: '?\nData yang terhubung mungkin ikut terpengaruh.'),
+                  const TextSpan(text: '?\nData terhubung mungkin terpengaruh.'),
                 ],
               ),
             ),
@@ -1299,21 +1182,20 @@ Future<void> _confirmHapus(
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => Navigator.of(ctx).pop(false),
+                    onTap: () => Get.back(result: false),
                     child: Container(
-                      height: 50,
+                      height: 46,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0F6FF),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: const Color(0xFFBBDEFB), width: 1.5),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
                       ),
                       child: const Center(
                         child: Text(
                           'Batal',
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
                             color: _blue600,
                           ),
                         ),
@@ -1324,18 +1206,18 @@ Future<void> _confirmHapus(
                 const SizedBox(width: 12),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => Navigator.of(ctx).pop(true),
+                    onTap: () => Get.back(result: true),
                     child: Container(
-                      height: 50,
+                      height: 46,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.red.shade500, Colors.red.shade400],
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFD32F2F), Color(0xFFEF5350)],
                         ),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.withValues(alpha: 0.3),
-                            blurRadius: 10,
+                            color: const Color(0xFFD32F2F).withValues(alpha: 0.25),
+                            blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                         ],
@@ -1344,13 +1226,12 @@ Future<void> _confirmHapus(
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.delete_rounded,
-                                color: Colors.white, size: 18),
+                            Icon(Icons.delete_rounded, color: Colors.white, size: 16),
                             SizedBox(width: 6),
                             Text(
                               'Hapus',
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,
                               ),

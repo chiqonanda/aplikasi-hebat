@@ -4,18 +4,16 @@ import 'package:get/get.dart';
 import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
 import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
+import '../../app/themes/design_tokens.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 import '../../models/profile_model.dart';
 
-// ── Palet Warna (sama dengan dashboard & monitoring) ─────────────────────────
+// ── Palet Warna Lokal ────────────────────────────────────────────────────────
 class _C {
   static const blue900 = AppColors.kelurahanDark;
-  static const blue800 = AppColors.kelurahanDark;
-  static const blue600 = AppColors.kelurahanMain;
   static const blue500 = AppColors.kelurahanMain;
   static const blue400 = Color(0xFF42A5F5);
   static const blue200 = AppColors.kelurahanLight;
@@ -27,10 +25,6 @@ class _C {
   static const redBg   = Color(0xFFFFEBEE);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main View
-// ─────────────────────────────────────────────────────────────────────────────
-
 class PengelolaListView extends GetView<PengelolaController> {
   const PengelolaListView({super.key});
 
@@ -40,27 +34,26 @@ class PengelolaListView extends GetView<PengelolaController> {
       length: 2,
       child: Scaffold(
         backgroundColor: _C.bg,
+        bottomNavigationBar: const KelurahanBottomNavBar(currentIndex: 2),
         body: SafeArea(
           child: Column(
             children: [
-              // ── Header ───────────────────────────────────────────────────
+              // Header Page
               AppPageHeader(
                 title: 'Manajemen',
                 subtitle: 'Pengelola Bank Sampah',
                 gradientColors: AppColors.kelurahanGradient,
-                showBack: true,
+                showBack: false,
               ),
 
-              // ── Tab Bar ───────────────────────────────────────────────────
+              // Tab Bar
               _buildTabBar(),
 
-              // ── Tab Content ─────────────────────────────────────────────
+              // Tab Content
               Expanded(
                 child: Obx(() {
                   if (controller.isLoading.value) {
-                    return const Center(
-                      child: LoadingWidget(),
-                    );
+                    return const AppLoadingState(message: 'Memuat data pengelola...');
                   }
                   return TabBarView(
                     children: [
@@ -74,33 +67,34 @@ class PengelolaListView extends GetView<PengelolaController> {
           ),
         ),
 
-        // ── FAB ────────────────────────────────────────────────────────────
+        // FAB Tambah Pengelola
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
             controller.resetForm();
             Get.toNamed(AppRoutes.formPengelola);
           },
-          backgroundColor: _C.blue600,
+          backgroundColor: _C.blue500,
           foregroundColor: Colors.white,
-          elevation: 4,
+          elevation: 0,
+          highlightElevation: 0,
           icon: const Icon(Icons.person_add_rounded, size: 22),
           label: const Text(
-            'Tambah',
+            'Tambah Pengelola',
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.1,
             ),
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),
     );
   }
 
-  // ── Tab Bar Helper ─────────────────────────────────────────────────────────
+  // ── Tab Bar Widget ─────────────────────────────────────────────────────────
   Widget _buildTabBar() {
     return Container(
       color: Colors.white,
@@ -113,8 +107,8 @@ class PengelolaListView extends GetView<PengelolaController> {
           dividerColor: AppColors.divider,
           labelColor: _C.blue900,
           unselectedLabelColor: AppColors.textSecondary,
-          labelStyle: AppTextStyles.titleSm.copyWith(fontWeight: FontWeight.w700),
-          unselectedLabelStyle: AppTextStyles.bodyMd,
+          labelStyle: AppTextStyles.titleSm.copyWith(fontWeight: FontWeight.w800),
+          unselectedLabelStyle: AppTextStyles.bodyMd.copyWith(fontWeight: FontWeight.w600),
           tabs: [
             const Tab(text: 'Pengelola Aktif'),
             Tab(
@@ -125,17 +119,16 @@ class PengelolaListView extends GetView<PengelolaController> {
                   if (pendingCount > 0) ...[
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: _C.warning,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '$pendingCount',
                         style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
                           color: Colors.white,
                         ),
                       ),
@@ -151,10 +144,7 @@ class PengelolaListView extends GetView<PengelolaController> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab Aktif
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Tab Aktif Widget ─────────────────────────────────────────────────────────
 class _TabAktif extends StatelessWidget {
   final PengelolaController controller;
   const _TabAktif({required this.controller});
@@ -163,9 +153,9 @@ class _TabAktif extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.listPengelola.isEmpty) {
-        return const EmptyState(
+        return const AppEmptyState(
           icon: Icons.people_outline_rounded,
-          message: 'Belum Ada Pengelola Aktif',
+          title: 'Belum Ada Pengelola Aktif',
           subtitle: 'Silakan tambah pengelola baru melalui tombol di bawah.',
         );
       }
@@ -175,15 +165,14 @@ class _TabAktif extends StatelessWidget {
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
           itemCount: controller.listPengelola.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, i) {
             final pengelola = controller.listPengelola[i];
             return _PengelolaCard(
               pengelola: pengelola,
               controller: controller,
               onHapus: () => _confirmHapus(context, pengelola, controller),
-              onAturBankSampah: () =>
-                  _showAturBankSampahSheet(context, pengelola, controller),
+              onAturBankSampah: () => _showAturBankSampahSheet(context, pengelola, controller),
             );
           },
         ),
@@ -192,10 +181,7 @@ class _TabAktif extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab Pending
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Tab Pending Widget ────────────────────────────────────────────────────────
 class _TabPending extends StatelessWidget {
   final PengelolaController controller;
   const _TabPending({required this.controller});
@@ -204,9 +190,9 @@ class _TabPending extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.listPending.isEmpty) {
-        return const EmptyState(
+        return const AppEmptyState(
           icon: Icons.hourglass_empty_rounded,
-          message: 'Tidak Ada Pendaftaran',
+          title: 'Tidak Ada Pendaftaran',
           subtitle: 'Tidak ada pendaftaran pengelola yang menunggu verifikasi.',
         );
       }
@@ -216,15 +202,14 @@ class _TabPending extends StatelessWidget {
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
           itemCount: controller.listPending.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => const SizedBox(height: 14),
           itemBuilder: (context, i) {
             final pengelola = controller.listPending[i];
             return _PendingCard(
               pengelola: pengelola,
               listBankSampah: controller.listBankSampah,
               controller: controller,
-              onApprove: () =>
-                  _showApproveSheet(context, pengelola, controller),
+              onApprove: () => _showApproveSheet(context, pengelola, controller),
               onTolak: () => _confirmTolak(context, pengelola, controller),
             );
           },
@@ -234,10 +219,7 @@ class _TabPending extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Card Pengelola Aktif
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Card Pengelola Aktif ─────────────────────────────────────────
 class _PengelolaCard extends StatelessWidget {
   final ProfileModel pengelola;
   final VoidCallback onHapus;
@@ -253,9 +235,7 @@ class _PengelolaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = pengelola.namaLengkap.isNotEmpty
-        ? pengelola.namaLengkap[0].toUpperCase()
-        : '?';
+    final initial = pengelola.namaLengkap.isNotEmpty ? pengelola.namaLengkap[0].toUpperCase() : '?';
 
     return GestureDetector(
       onTap: () => _showInfoSheet(context, pengelola, controller),
@@ -263,33 +243,27 @@ class _PengelolaCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: _C.blue50, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: _C.blue600.withValues(alpha: 0.07),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
+          boxShadow: DesignTokens.kelurahanShadowSm,
         ),
         child: Row(
           children: [
             // Avatar
             Container(
-              width: 52,
-              height: 52,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [_C.blue600, _C.blue400],
+                  colors: [_C.blue500, _C.blue400],
                 ),
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: _C.blue600.withValues(alpha: 0.28),
-                    blurRadius: 8,
+                    color: _C.blue500.withValues(alpha: 0.25),
+                    blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
@@ -307,7 +281,7 @@ class _PengelolaCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
 
-            // Info
+            // Info Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,29 +297,26 @@ class _PengelolaCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (pengelola.noHp != null &&
-                      pengelola.noHp!.isNotEmpty) ...[
+                  if (pengelola.noHp != null && pengelola.noHp!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.phone_outlined,
-                            size: 13, color: _C.blue400),
-                        const SizedBox(width: 5),
+                        const Icon(Icons.phone_outlined, size: 12, color: _C.blue500),
+                        const SizedBox(width: 6),
                         Text(
                           pengelola.noHp!,
                           style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ],
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: _C.blue50,
                       borderRadius: BorderRadius.circular(8),
@@ -353,15 +324,14 @@ class _PengelolaCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            size: 11, color: _C.blue500),
+                        const Icon(Icons.calendar_today_rounded, size: 10, color: _C.blue500),
                         const SizedBox(width: 4),
                         Text(
                           'Bergabung ${FormatHelper.date(pengelola.createdAt)}',
                           style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: _C.blue600,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: _C.blue500,
                           ),
                         ),
                       ],
@@ -370,10 +340,9 @@ class _PengelolaCard extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
 
-            const SizedBox(width: 6),
-
-            // Hapus button
+            // Delete Action Button
             GestureDetector(
               onTap: onHapus,
               child: Container(
@@ -381,12 +350,10 @@ class _PengelolaCard extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: _C.redBg,
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(
-                      color: _C.red.withValues(alpha: 0.2), width: 1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _C.red.withValues(alpha: 0.2), width: 1),
                 ),
-                child: const Icon(Icons.delete_outline_rounded,
-                    color: _C.red, size: 20),
+                child: const Icon(Icons.delete_outline_rounded, color: _C.red, size: 18),
               ),
             ),
           ],
@@ -396,10 +363,7 @@ class _PengelolaCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Card Pending
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Card Pending ─────────────────────────────────────────────────
 class _PendingCard extends StatelessWidget {
   final ProfileModel pengelola;
   final List<BankSampahModel> listBankSampah;
@@ -417,9 +381,7 @@ class _PendingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = pengelola.namaLengkap.isNotEmpty
-        ? pengelola.namaLengkap[0].toUpperCase()
-        : '?';
+    final initial = pengelola.namaLengkap.isNotEmpty ? pengelola.namaLengkap[0].toUpperCase() : '?';
 
     final namaPilihan = pengelola.bankSampahPilihan.isEmpty
         ? null
@@ -432,40 +394,36 @@ class _PendingCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _C.warnBg, width: 1.5),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFFFECB3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: _C.warning.withValues(alpha: 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: _C.warning.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row ────────────────────────────────────────────────────
+          // Basic Info
           Row(
             children: [
-              // Avatar (warning style)
               Container(
-                width: 52,
-                height: 52,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      _C.warning,
-                      _C.warning.withValues(alpha: 0.7),
-                    ],
+                    colors: [_C.warning, const Color(0xFFFFB300)],
                   ),
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: _C.warning.withValues(alpha: 0.28),
-                      blurRadius: 8,
+                      color: _C.warning.withValues(alpha: 0.25),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -482,7 +440,6 @@ class _PendingCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 14),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,14 +462,11 @@ class _PendingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         // Badge "Menunggu"
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 9, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: _C.warnBg,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                                color: _C.warning.withValues(alpha: 0.3),
-                                width: 1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFFFD54F), width: 1),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -525,12 +479,12 @@ class _PendingCard extends StatelessWidget {
                                   shape: BoxShape.circle,
                                 ),
                               ),
-                              const SizedBox(width: 5),
+                              const SizedBox(width: 4),
                               const Text(
                                 'Menunggu',
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
                                   color: _C.warning,
                                 ),
                               ),
@@ -539,29 +493,26 @@ class _PendingCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (pengelola.noHp != null &&
-                        pengelola.noHp!.isNotEmpty) ...[
+                    if (pengelola.noHp != null && pengelola.noHp!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.phone_outlined,
-                              size: 13, color: _C.blue400),
-                          const SizedBox(width: 5),
+                          const Icon(Icons.phone_outlined, size: 12, color: _C.blue500),
+                          const SizedBox(width: 6),
                           Text(
                             pengelola.noHp!,
                             style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade500,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ],
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: _C.blue50,
                         borderRadius: BorderRadius.circular(8),
@@ -569,15 +520,14 @@ class _PendingCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 11, color: _C.blue500),
+                          const Icon(Icons.calendar_today_rounded, size: 10, color: _C.blue500),
                           const SizedBox(width: 4),
                           Text(
                             'Daftar ${FormatHelper.date(pengelola.createdAt)}',
                             style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: _C.blue600,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: _C.blue500,
                             ),
                           ),
                         ],
@@ -589,30 +539,28 @@ class _PendingCard extends StatelessWidget {
             ],
           ),
 
-          // ── Pilihan Bank Sampah ─────────────────────────────────────────
+          // Bank Sampah Pilihan
           if (namaPilihan != null) ...[
             const SizedBox(height: 12),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: _C.blue50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _C.blue200, width: 1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFBBDEFB), width: 1),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.store_outlined,
-                      size: 15, color: _C.blue500),
+                  const Icon(Icons.storefront_rounded, size: 16, color: _C.blue500),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Pilihan: $namaPilihan',
+                      'Pengajuan Bank: $namaPilihan',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: _C.blue600,
-                        fontWeight: FontWeight.w600,
+                        color: _C.blue500,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -622,61 +570,39 @@ class _PendingCard extends StatelessWidget {
           ],
 
           const SizedBox(height: 14),
-
-          // ── Divider ────────────────────────────────────────────────────
-          Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  _C.blue200.withValues(alpha: 0.8),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
+          const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
           const SizedBox(height: 14),
 
-          // ── Action Buttons ─────────────────────────────────────────────
+          // Action Buttons
           Obx(() {
-            final isProcessing =
-                controller.isApprovingId.value == pengelola.id;
+            final isProcessing = controller.isApprovingId.value == pengelola.id;
             return Row(
               children: [
-                // Tolak
+                // Tolak Button
                 Expanded(
                   child: GestureDetector(
                     onTap: isProcessing ? null : onTolak,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      height: 44,
                       decoration: BoxDecoration(
                         color: isProcessing ? Colors.grey.shade100 : _C.redBg,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isProcessing
-                              ? Colors.grey.shade300
-                              : _C.red.withValues(alpha: 0.3),
+                          color: isProcessing ? Colors.grey.shade300 : _C.red.withValues(alpha: 0.3),
                           width: 1.2,
                         ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.close_rounded,
-                              size: 18,
-                              color: isProcessing
-                                  ? Colors.grey
-                                  : _C.red),
+                          Icon(Icons.close_rounded, size: 18, color: isProcessing ? Colors.grey : _C.red),
                           const SizedBox(width: 6),
                           Text(
                             'Tolak',
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: isProcessing
-                                  ? Colors.grey
-                                  : _C.red,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: isProcessing ? Colors.grey : _C.red,
                             ),
                           ),
                         ],
@@ -685,29 +611,25 @@ class _PendingCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                // Setujui
+
+                // Setujui & Atur Button
                 Expanded(
                   flex: 2,
                   child: GestureDetector(
                     onTap: isProcessing ? null : onApprove,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      height: 44,
                       decoration: BoxDecoration(
                         gradient: isProcessing
-                            ? LinearGradient(colors: [
-                                Colors.grey.shade300,
-                                Colors.grey.shade400,
-                              ])
-                            : const LinearGradient(
-                                colors: [_C.blue600, _C.blue400],
-                              ),
-                        borderRadius: BorderRadius.circular(14),
+                            ? LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400])
+                            : const LinearGradient(colors: [_C.blue500, _C.blue400]),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: isProcessing
                             ? []
                             : [
                                 BoxShadow(
-                                  color: _C.blue600.withValues(alpha: 0.3),
-                                  blurRadius: 10,
+                                  color: _C.blue500.withValues(alpha: 0.25),
+                                  blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
@@ -717,21 +639,20 @@ class _PendingCard extends StatelessWidget {
                         children: [
                           isProcessing
                               ? const SizedBox(
-                                  width: 17,
-                                  height: 17,
+                                  width: 16,
+                                  height: 16,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Icon(Icons.check_rounded,
-                                  size: 18, color: Colors.white),
+                              : const Icon(Icons.check_rounded, size: 18, color: Colors.white),
                           const SizedBox(width: 6),
                           const Text(
                             'Setujui & Atur',
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
                               color: Colors.white,
                             ),
                           ),
@@ -749,12 +670,7 @@ class _PendingCard extends StatelessWidget {
   }
 }
 
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Bottom Sheet: Approve + Pilih Bank Sampah
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Bottom Sheet: Approve + Pilih Bank Sampah ───────────────────
 Future<void> _showApproveSheet(
   BuildContext context,
   ProfileModel pengelola,
@@ -778,7 +694,6 @@ Future<void> _showApproveSheet(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 44,
@@ -791,32 +706,28 @@ Future<void> _showApproveSheet(
             ),
             const SizedBox(height: 20),
 
-            // Title
             _SheetTitle(
               title: 'Setujui Pendaftaran',
               subtitle: pengelola.namaLengkap,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             const Text(
               'Pilih bank sampah yang akan dikelola:',
               style: TextStyle(
-                fontSize: 14,
-                color: _C.blue600,
-                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 14),
 
-            // List checkbox
+            // Waste Bank Selector List
             Expanded(
               child: Obx(() => ListView.separated(
                     controller: scrollCtrl,
                     itemCount: controller.listBankSampah.length,
-                    separatorBuilder: (_, __) => Container(
-                      height: 1,
-                      color: _C.blue50,
-                    ),
-                    itemBuilder: (_, i) {
+                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    itemBuilder: (context, i) {
                       final bank = controller.listBankSampah[i];
                       return Obx(() => _BankCheckTile(
                             bank: bank,
@@ -835,20 +746,17 @@ Future<void> _showApproveSheet(
 
             const SizedBox(height: 14),
 
-            // Submit button
             Obx(() => _GradientButton(
                   label: 'Setujui Pengelola',
                   icon: Icons.check_circle_outline_rounded,
-                  isLoading:
-                      controller.isApprovingId.value == pengelola.id,
+                  isLoading: controller.isApprovingId.value == pengelola.id,
                   onPressed: () async {
                     await controller.approvePengelola(
                       pengelola.id,
                       selected.toList(),
                     );
-                    if (!controller.listPending
-                        .any((p) => p.id == pengelola.id)) {
-                      Navigator.of(ctx).pop();
+                    if (!controller.listPending.any((p) => p.id == pengelola.id)) {
+                      Get.back();
                     }
                   },
                 )),
@@ -859,10 +767,7 @@ Future<void> _showApproveSheet(
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Bottom Sheet: Atur Bank Sampah (pengelola aktif)
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Bottom Sheet: Atur Bank Sampah ──────────────────────────────
 Future<void> _showAturBankSampahSheet(
   BuildContext context,
   ProfileModel pengelola,
@@ -870,6 +775,8 @@ Future<void> _showAturBankSampahSheet(
 ) async {
   final existing = await controller.getBankSampahPengelola(pengelola.id);
   final selected = existing.obs;
+
+  if (!context.mounted) return;
 
   await showModalBottomSheet(
     context: context,
@@ -909,11 +816,8 @@ Future<void> _showAturBankSampahSheet(
               child: Obx(() => ListView.separated(
                     controller: scrollCtrl,
                     itemCount: controller.listBankSampah.length,
-                    separatorBuilder: (_, __) => Container(
-                      height: 1,
-                      color: _C.blue50,
-                    ),
-                    itemBuilder: (_, i) {
+                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    itemBuilder: (context, i) {
                       final bank = controller.listBankSampah[i];
                       return Obx(() => _BankCheckTile(
                             bank: bank,
@@ -942,7 +846,7 @@ Future<void> _showAturBankSampahSheet(
                       selected.toList(),
                     );
                     if (!controller.isSaving.value) {
-                      Navigator.of(ctx).pop();
+                      Get.back();
                     }
                   },
                 )),
@@ -953,18 +857,14 @@ Future<void> _showAturBankSampahSheet(
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Info Sheet Pengelola
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Bottom Sheet: Info Pengelola Detail ──────────────────────────
 Future<void> _showInfoSheet(
   BuildContext context,
   ProfileModel pengelola,
   PengelolaController controller,
 ) async {
   final ids = await controller.getBankSampahPengelola(pengelola.id);
-  final banks =
-      controller.listBankSampah.where((b) => ids.contains(b.id)).toList();
+  final banks = controller.listBankSampah.where((b) => ids.contains(b.id)).toList();
 
   if (!context.mounted) return;
 
@@ -981,7 +881,6 @@ Future<void> _showInfoSheet(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 44,
@@ -1004,22 +903,20 @@ Future<void> _showInfoSheet(
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [_C.blue600, _C.blue400],
+                      colors: [_C.blue500, _C.blue400],
                     ),
-                    borderRadius: BorderRadius.circular(17),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: _C.blue600.withValues(alpha: 0.28),
-                        blurRadius: 8,
+                        color: _C.blue500.withValues(alpha: 0.25),
+                        blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Center(
                     child: Text(
-                      pengelola.namaLengkap.isNotEmpty
-                          ? pengelola.namaLengkap[0].toUpperCase()
-                          : '?',
+                      pengelola.namaLengkap.isNotEmpty ? pengelola.namaLengkap[0].toUpperCase() : '?',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
@@ -1036,25 +933,24 @@ Future<void> _showInfoSheet(
                       Text(
                         pengelola.namaLengkap,
                         style: const TextStyle(
-                          fontSize: 17,
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: _C.blue900,
                           letterSpacing: -0.3,
                         ),
                       ),
-                      if (pengelola.noHp != null &&
-                          pengelola.noHp!.isNotEmpty) ...[
+                      if (pengelola.noHp != null && pengelola.noHp!.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.phone_outlined,
-                                size: 14, color: _C.blue400),
-                            const SizedBox(width: 5),
+                            const Icon(Icons.phone_outlined, size: 13, color: _C.blue500),
+                            const SizedBox(width: 6),
                             Text(
                               pengelola.noHp!,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.grey.shade500,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -1067,23 +963,10 @@ Future<void> _showInfoSheet(
             ),
 
             const SizedBox(height: 18),
-
-            // Divider
-            Container(
-              height: 1,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    _C.blue200.withValues(alpha: 0.8),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
+            const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
             const SizedBox(height: 16),
 
-            // Section label
+            // Section Label
             Row(
               children: [
                 Container(
@@ -1091,11 +974,9 @@ Future<void> _showInfoSheet(
                   height: 18,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
                       colors: [_C.blue500, _C.blue400],
                     ),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1103,7 +984,7 @@ Future<void> _showInfoSheet(
                   'Bank Sampah yang Dikelola',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: _C.blue900,
                   ),
                 ),
@@ -1113,23 +994,21 @@ Future<void> _showInfoSheet(
 
             if (banks.isEmpty)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: _C.blue50,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.info_outline_rounded,
-                        size: 16, color: _C.blue400),
+                    Icon(Icons.info_outline_rounded, size: 16, color: _C.blue500),
                     SizedBox(width: 8),
                     Text(
                       'Belum ada bank sampah yang dikelola.',
                       style: TextStyle(
                         fontSize: 13,
-                        color: _C.blue600,
-                        fontWeight: FontWeight.w500,
+                        color: _C.blue500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1141,9 +1020,9 @@ Future<void> _showInfoSheet(
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _C.blue50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _C.blue200, width: 1),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
                       ),
                       child: Row(
                         children: [
@@ -1152,12 +1031,11 @@ Future<void> _showInfoSheet(
                             height: 40,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [_C.blue600, _C.blue400],
+                                colors: [_C.blue500, _C.blue400],
                               ),
-                              borderRadius: BorderRadius.circular(11),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.store_rounded,
-                                color: Colors.white, size: 20),
+                            child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1167,24 +1045,22 @@ Future<void> _showInfoSheet(
                                 Text(
                                   b.nama,
                                   style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
                                     color: _C.blue900,
                                   ),
                                 ),
-                                if ((b.rt?.isNotEmpty ?? false) ||
-                                    (b.rw?.isNotEmpty ?? false)) ...[
-                                  const SizedBox(height: 2),
+                                if ((b.rt?.isNotEmpty ?? false) || (b.rw?.isNotEmpty ?? false)) ...[
+                                  const SizedBox(height: 3),
                                   Text(
                                     [
-                                      if (b.rt?.isNotEmpty ?? false)
-                                        'RT ${b.rt}',
-                                      if (b.rw?.isNotEmpty ?? false)
-                                        'RW ${b.rw}',
+                                      if (b.rt?.isNotEmpty ?? false) 'RT ${b.rt}',
+                                      if (b.rw?.isNotEmpty ?? false) 'RW ${b.rw}',
                                     ].join(' / '),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       color: Colors.grey.shade500,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
@@ -1202,10 +1078,7 @@ Future<void> _showInfoSheet(
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dialog Konfirmasi
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Dialog Helpers ────────────────────────────────────────────────
 Future<void> _confirmHapus(
   BuildContext context,
   ProfileModel pengelola,
@@ -1213,8 +1086,7 @@ Future<void> _confirmHapus(
 ) async {
   final ok = await ConfirmDialog.show(
     title: 'Hapus Pengelola',
-    message:
-        'Yakin ingin menghapus "${pengelola.namaLengkap}"? Akun dan semua relasinya akan dihapus.',
+    message: 'Yakin ingin menghapus "${pengelola.namaLengkap}"? Akun dan semua relasinya akan dihapus.',
     confirmLabel: 'Hapus',
     isDanger: true,
   );
@@ -1228,18 +1100,14 @@ Future<void> _confirmTolak(
 ) async {
   final ok = await ConfirmDialog.show(
     title: 'Tolak Pendaftaran',
-    message:
-        'Yakin ingin menolak pendaftaran "${pengelola.namaLengkap}"? Akun akan dihapus permanen.',
+    message: 'Yakin ingin menolak pendaftaran "${pengelola.namaLengkap}"? Akun akan dihapus permanen.',
     confirmLabel: 'Tolak',
     isDanger: true,
   );
   if (ok) controller.tolakPengelola(pengelola.id);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helper Widgets (Sheet)
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Title Widget inside sheets ───────────────────────────────────
 class _SheetTitle extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -1255,21 +1123,19 @@ class _SheetTitle extends StatelessWidget {
           children: [
             Container(
               width: 4,
-              height: 22,
+              height: 18,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
                   colors: [_C.blue500, _C.blue400],
                 ),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: _C.blue900,
                 letterSpacing: -0.4,
@@ -1277,15 +1143,15 @@ class _SheetTitle extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         Padding(
-          padding: const EdgeInsets.only(left: 14),
+          padding: const EdgeInsets.only(left: 12),
           child: Text(
             subtitle,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12.5,
               color: Colors.grey.shade500,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -1294,6 +1160,7 @@ class _SheetTitle extends StatelessWidget {
   }
 }
 
+// ── Redesigned Bank Check List Tile Widget ──────────────────────────────────
 class _BankCheckTile extends StatelessWidget {
   final BankSampahModel bank;
   final bool isSelected;
@@ -1311,42 +1178,45 @@ class _BankCheckTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: isSelected ? _C.blue50 : Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? _C.blue400 : Colors.transparent,
+          color: isSelected ? _C.blue400 : const Color(0xFFEBF2FA),
           width: 1.2,
         ),
       ),
       child: CheckboxListTile(
         value: isSelected,
         onChanged: onChanged,
-        activeColor: _C.blue600,
+        activeColor: _C.blue500,
         checkColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           bank.namaLengkap,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w800,
             color: isSelected ? _C.blue900 : Colors.grey.shade700,
           ),
         ),
         subtitle: bank.alamat != null
             ? Text(
                 bank.alamat!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11.5,
                   color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
                 ),
               )
             : null,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
       ),
     );
   }
 }
 
+// ── Redesigned Gradient Button Widget ──────────────────────────────────────
 class _GradientButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -1366,30 +1236,29 @@ class _GradientButton extends StatelessWidget {
       onTap: isLoading ? null : onPressed,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        height: 52,
         decoration: BoxDecoration(
           gradient: isLoading
-              ? LinearGradient(
-                  colors: [Colors.grey.shade300, Colors.grey.shade400])
-              : const LinearGradient(colors: [_C.blue600, _C.blue400]),
+              ? LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400])
+              : const LinearGradient(colors: [_C.blue500, _C.blue400]),
           borderRadius: BorderRadius.circular(16),
           boxShadow: isLoading
               ? []
               : [
                   BoxShadow(
-                    color: _C.blue600.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
+                    color: _C.blue500.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
         ),
         child: isLoading
             ? const Center(
                 child: SizedBox(
-                  width: 22,
-                  height: 22,
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
+                    strokeWidth: 2,
                     color: Colors.white,
                   ),
                 ),
@@ -1402,10 +1271,10 @@ class _GradientButton extends StatelessWidget {
                   Text(
                     label,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      letterSpacing: 0.2,
+                      letterSpacing: 0.1,
                     ),
                   ),
                 ],

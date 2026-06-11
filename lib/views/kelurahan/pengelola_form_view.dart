@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
 import '../../core/widgets/app_widgets.dart';
 
@@ -12,7 +10,6 @@ class PengelolaFormView extends GetView<PengelolaController> {
 
   // ── Theme Colors (Sama dengan Dashboard) ────────────────────────────────
   static const _blue900 = AppColors.kelurahanDark;
-  static const _blue800 = AppColors.kelurahanDark;
   static const _blue600 = AppColors.kelurahanMain;
   static const _blue500 = AppColors.kelurahanMain;
   static const _blue400 = Color(0xFF42A5F5);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
 import '../../app/themes/app_text_styles.dart';
 import '../../app/themes/app_theme.dart';
@@ -804,6 +805,138 @@ class AppPageHeader extends StatelessWidget {
             trailing!,
           ],
         ],
+      ),
+    );
+  }
+}
+
+// ── KelurahanBottomNavBar ──────────────────────────────────
+class KelurahanBottomNavBar extends StatelessWidget {
+  final int currentIndex;
+
+  const KelurahanBottomNavBar({
+    super.key,
+    required this.currentIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> items = [
+      {
+        'icon': Icons.dashboard_outlined,
+        'activeIcon': Icons.dashboard_rounded,
+        'label': 'Dashboard',
+        'route': AppRoutes.dashboardKelurahan,
+      },
+      {
+        'icon': Icons.storefront_outlined,
+        'activeIcon': Icons.storefront_rounded,
+        'label': 'Bank Sampah',
+        'route': AppRoutes.manajemenBankSampah,
+      },
+      {
+        'icon': Icons.people_outline_rounded,
+        'activeIcon': Icons.people_rounded,
+        'label': 'Pengelola',
+        'route': AppRoutes.manajemenPengelola,
+      },
+      {
+        'icon': Icons.category_outlined,
+        'activeIcon': Icons.category_rounded,
+        'label': 'Jenis Sampah',
+        'route': AppRoutes.masterSampah,
+      },
+    ];
+
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.noScaling,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(bottom: bottomPadding),
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(items.length, (index) {
+                final isSelected = currentIndex == index;
+                final item = items[index];
+
+                return Expanded(
+                  flex: isSelected ? 3 : 2,
+                  child: GestureDetector(
+                    onTap: () {
+                      if (!isSelected) {
+                        Get.offNamed(item['route'], preventDuplicates: true);
+                      }
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.kelurahanLight.withValues(alpha: 0.8)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isSelected ? item['activeIcon'] : item['icon'],
+                              color: isSelected
+                                  ? AppColors.kelurahanMain
+                                  : AppColors.textSecondary,
+                              size: 20,
+                            ),
+                            Flexible(
+                              child: AnimatedSize(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInOut,
+                                child: isSelected
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(left: 6.0),
+                                        child: Text(
+                                          item['label'],
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.kelurahanMain,
+                                            fontFamily: 'PlusJakartaSans',
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
       ),
     );
   }

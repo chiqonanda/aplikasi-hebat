@@ -3,8 +3,7 @@ import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
-import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/app_theme.dart';
+import '../../app/themes/design_tokens.dart';
 import '../../controllers/kelurahan/monitoring_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -20,7 +19,7 @@ class MonitoringView extends GetView<MonitoringController> {
       body: SafeArea(
         child: Column(
           children: [
-            // Custom AppPageHeader replacing default header
+            // Custom AppPageHeader
             AppPageHeader(
               title: 'Monitoring',
               subtitle: 'Informasi Bank Sampah Kelurahan',
@@ -31,27 +30,30 @@ class MonitoringView extends GetView<MonitoringController> {
                     child: Stack(
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
                             color: controller.filterAktifSaja.value
                                 ? const Color(0xFF42A5F5).withValues(alpha: 0.3)
                                 : Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: controller.filterAktifSaja.value
                                   ? const Color(0xFF42A5F5).withValues(alpha: 0.6)
                                   : Colors.white.withValues(alpha: 0.25),
-                              width: 1,
+                              width: 1.2,
                             ),
                           ),
-                          child: const Icon(Icons.filter_list_rounded,
-                              color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.filter_list_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
                         if (controller.filterAktifSaja.value)
                           Positioned(
-                            right: 8,
-                            top: 8,
+                            right: 10,
+                            top: 10,
                             child: Container(
                               width: 8,
                               height: 8,
@@ -66,19 +68,19 @@ class MonitoringView extends GetView<MonitoringController> {
                   )),
             ),
 
-            // Search + Ringkasan
+            // Search Bar & Global Summary
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Column(
                 children: [
                   _buildSearchBar(),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                   _buildRingkasanGlobal(),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             // Section Label
             Padding(
@@ -87,22 +89,20 @@ class MonitoringView extends GetView<MonitoringController> {
                 children: [
                   Container(
                     width: 4,
-                    height: 22,
+                    height: 18,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
                         colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
                       ),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Obx(() => Text(
                         'Daftar Bank Sampah'
                         '${controller.filterAktifSaja.value ? ' · Aktif' : ''}',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: AppColors.kelurahanDark,
                           letterSpacing: -0.4,
@@ -114,11 +114,11 @@ class MonitoringView extends GetView<MonitoringController> {
 
             const SizedBox(height: 14),
 
-            // List
+            // List of Waste Banks
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const LoadingWidget(message: 'Memuat data monitoring...');
+                  return const AppLoadingState(message: 'Memuat data monitoring...');
                 }
                 if (controller.listBankFiltered.isEmpty) {
                   return _buildEmptyState();
@@ -130,11 +130,10 @@ class MonitoringView extends GetView<MonitoringController> {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                     physics: const BouncingScrollPhysics(),
                     itemCount: controller.listBankFiltered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) => const SizedBox(height: 14),
                     itemBuilder: (context, index) {
                       final bank = controller.listBankFiltered[index];
-                      final stat =
-                          controller.statistikPerBank[bank.id];
+                      final stat = controller.statistikPerBank[bank.id];
                       return _MonitoringCard(
                         bank: bank,
                         totalJumlah: stat?['total_jumlah'] ?? 0,
@@ -156,17 +155,18 @@ class MonitoringView extends GetView<MonitoringController> {
     );
   }
 
-  // ── Search Bar ───────────────────────────────────────────────────────────
+  // ── Search Bar Widget ────────────────────────────────────────────────────
   Widget _buildSearchBar() {
     return Container(
+      height: 52,
       decoration: BoxDecoration(
-        color: AppColors.surfaceLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant, width: 1.2),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.kelurahanMain.withValues(alpha: 0.07),
-            blurRadius: 12,
+            color: AppColors.kelurahanMain.withValues(alpha: 0.05),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -177,47 +177,52 @@ class MonitoringView extends GetView<MonitoringController> {
         style: const TextStyle(
           fontSize: 15,
           color: AppColors.kelurahanDark,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
         decoration: InputDecoration(
           hintText: 'Cari bank sampah...',
-          hintStyle: TextStyle(
+          hintStyle: const TextStyle(
             fontSize: 14,
             color: AppColors.textTertiary,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
           ),
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: AppColors.kelurahanMain, size: 22),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.kelurahanMain,
+            size: 22,
+          ),
           suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear_rounded,
-                      size: 18, color: Color(0xFF42A5F5)),
+                  icon: const Icon(
+                    Icons.clear_rounded,
+                    size: 18,
+                    color: Color(0xFF42A5F5),
+                  ),
                   onPressed: controller.clearSearch,
                 )
               : const SizedBox.shrink()),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
   }
 
-  // ── Ringkasan Global ─────────────────────────────────────────────────────
+  // ── Ringkasan Global Widget ──────────────────────────────────────────────
   Widget _buildRingkasanGlobal() {
     return Obx(() => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: AppColors.kelurahanGradient,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.kelurahanMain.withValues(alpha: 0.32),
-                blurRadius: 14,
+                color: AppColors.kelurahanMain.withValues(alpha: 0.25),
+                blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
             ],
@@ -232,30 +237,28 @@ class MonitoringView extends GetView<MonitoringController> {
                 ),
               ),
               Container(
-                width: 1,
-                height: 36,
-                color: Colors.white.withValues(alpha: 0.2),
+                width: 1.2,
+                height: 38,
+                color: Colors.white.withValues(alpha: 0.18),
               ),
               Expanded(
                 child: _RingkasanItem(
                   icon: Icons.scale_outlined,
                   label: 'Total Sampah',
-                  value: FormatHelper.number(
-                      controller.totalSampahGlobal.value),
+                  value: FormatHelper.number(controller.totalSampahGlobal.value),
                   satuan: 'kg',
                 ),
               ),
               Container(
-                width: 1,
-                height: 36,
-                color: Colors.white.withValues(alpha: 0.2),
+                width: 1.2,
+                height: 38,
+                color: Colors.white.withValues(alpha: 0.18),
               ),
               Expanded(
                 child: _RingkasanItem(
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'Total Nilai',
-                  value: FormatHelper.currency(
-                      controller.totalNilaiGlobal.value),
+                  value: FormatHelper.currency(controller.totalNilaiGlobal.value),
                 ),
               ),
             ],
@@ -263,10 +266,10 @@ class MonitoringView extends GetView<MonitoringController> {
         ));
   }
 
-  // ── Empty State ──────────────────────────────────────────────────────────
+  // ── Empty State Widget ───────────────────────────────────────────────────
   Widget _buildEmptyState() {
-    return EmptyState(
-      message: 'Tidak Ada Bank Sampah',
+    return AppEmptyState(
+      title: 'Tidak Ada Bank Sampah',
       subtitle: controller.filterAktifSaja.value
           ? 'Tidak ada bank sampah aktif yang ditemukan.'
           : 'Tidak ada bank sampah yang ditemukan.',
@@ -278,7 +281,7 @@ class MonitoringView extends GetView<MonitoringController> {
     );
   }
 
-  // ── Filter Sheet ─────────────────────────────────────────────────────────
+  // ── Filter Bottom Sheet Widget ───────────────────────────────────────────
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -307,21 +310,19 @@ class MonitoringView extends GetView<MonitoringController> {
               children: [
                 Container(
                   width: 4,
-                  height: 22,
+                  height: 18,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
                       colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
                     ),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 const Text(
                   'Filter',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppColors.kelurahanDark,
                     letterSpacing: -0.4,
@@ -331,21 +332,20 @@ class MonitoringView extends GetView<MonitoringController> {
             ),
             const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: AppColors.kelurahanLight,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.outlineVariant, width: 1.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE3F2FD), width: 1.2),
               ),
               child: Obx(() => SwitchListTile(
                     value: controller.filterAktifSaja.value,
-                    onChanged: (v) =>
-                        controller.filterAktifSaja.value = v,
+                    onChanged: (v) => controller.filterAktifSaja.value = v,
                     title: const Text(
                       'Tampilkan aktif saja',
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.kelurahanDark,
                       ),
                     ),
@@ -354,14 +354,15 @@ class MonitoringView extends GetView<MonitoringController> {
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    activeColor: AppColors.kelurahanMain,
-                    activeTrackColor: AppColors.kelurahanLight,
+                    activeThumbColor: AppColors.kelurahanMain,
+                    activeTrackColor: const Color(0xFF90CAF9),
                     contentPadding: EdgeInsets.zero,
                   )),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
               child: Container(
@@ -374,9 +375,9 @@ class MonitoringView extends GetView<MonitoringController> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.kelurahanMain.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
+                      color: AppColors.kelurahanMain.withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -384,7 +385,7 @@ class MonitoringView extends GetView<MonitoringController> {
                   'Terapkan Filter',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
                     letterSpacing: 0.2,
@@ -399,10 +400,7 @@ class MonitoringView extends GetView<MonitoringController> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Monitoring Card
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Monitoring Card ───────────────────────────────────────────
 class _MonitoringCard extends StatelessWidget {
   final BankSampahModel bank;
   final num totalJumlah;
@@ -423,28 +421,24 @@ class _MonitoringCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLowest,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.kelurahanLight, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.kelurahanMain.withValues(alpha: 0.07),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
+          boxShadow: DesignTokens.kelurahanShadowSm,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Top Row: Info & Status
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Store Icon Container
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     gradient: bank.isActive
                         ? const LinearGradient(
@@ -458,108 +452,98 @@ class _MonitoringCard extends StatelessWidget {
                               Colors.grey.shade400,
                             ],
                           ),
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: bank.isActive
-                        ? [
-                            BoxShadow(
-                              color: AppColors.kelurahanMain.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : [],
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.store_rounded,
-                      color: Colors.white, size: 26),
+                  child: const Icon(
+                    Icons.store_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
+
+                // Text details
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          bank.nama,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.kelurahanDark,
-                            letterSpacing: -0.3,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        bank.nama,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.kelurahanDark,
+                          letterSpacing: -0.3,
                         ),
-
-                        if (bank.rt != null) ...[
-                          const SizedBox(height: 4),
-
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_outlined,
-                                size: 13,
-                                color: Color(0xFF42A5F5),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (bank.rt != null) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 13,
+                              color: Color(0xFF42A5F5),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
                               ),
-
-                              const SizedBox(width: 4),
-
-                              Expanded(
-                                child: Text(
-                                  'RT ${bank.rt}'
-                                  '${bank.rw != null ? ' / RW ${bank.rw}' : ''}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              decoration: BoxDecoration(
+                                color: AppColors.kelurahanLight,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'RT ${bank.rt}'
+                                '${bank.rw != null ? ' / RW ${bank.rw}' : ''}',
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  color: AppColors.kelurahanMain,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ],
+                    ],
+                  ),
+                ),
+
+                // Status Badge & Action Chevron
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _StatusBadge(isActive: bank.isActive),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: AppColors.kelurahanLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.kelurahanMain,
+                        size: 18,
+                      ),
                     ),
-                  ),
-                ),
-                Flexible(
-                  flex: 0,
-                  child: _StatusBadge(isActive: bank.isActive),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: AppColors.kelurahanLight,
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: const Icon(Icons.chevron_right_rounded,
-                      color: AppColors.kelurahanMain, size: 20),
+                  ],
                 ),
               ],
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
+            const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+            const SizedBox(height: 16),
 
-            Container(
-              height: 1,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    AppColors.outlineVariant.withValues(alpha: 0.8),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
+            // Bottom stats row
             Row(
               children: [
                 Expanded(
@@ -600,10 +584,7 @@ class _MonitoringCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Status Badge
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Status Badge Widget ───────────────────────────────────────
 class _StatusBadge extends StatelessWidget {
   final bool isActive;
 
@@ -612,56 +593,42 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isActive
-            ? AppColors.pengelolaLight
-            : AppColors.background,
+        color: isActive ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isActive
-              ? const Color(0xFFA5D6A7)
-              : AppColors.outlineVariant,
+          color: isActive ? const Color(0xFFA5D6A7) : const Color(0xFFE0E0E0),
           width: 1,
         ),
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.pengelolaMain
-                    : AppColors.textSecondary,
-                shape: BoxShape.circle,
-              ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0xFF2E7D32) : const Color(0xFF757575),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 5),
-            Text(
-              isActive ? 'Aktif' : 'Nonaktif',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isActive
-                    ? AppColors.pengelolaMain
-                    : AppColors.textSecondary,
-              ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isActive ? 'Aktif' : 'Nonaktif',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: isActive ? const Color(0xFF2E7D32) : const Color(0xFF757575),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat Item (dalam card)
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Stat Item Widget ──────────────────────────────────────────
 class _StatItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -680,15 +647,15 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(height: 5),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
@@ -705,9 +672,9 @@ class _StatItem extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: color.withValues(alpha: 0.7),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color.withValues(alpha: 0.75),
             ),
             textAlign: TextAlign.center,
           ),
@@ -717,10 +684,7 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Ringkasan Item (dalam banner global)
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Redesigned Global Summary Item Widget ────────────────────────────────
 class _RingkasanItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -740,7 +704,7 @@ class _RingkasanItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.8)),
-        const SizedBox(height: 5),
+        const SizedBox(height: 6),
         Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -766,9 +730,9 @@ class _RingkasanItem extends StatelessWidget {
                 child: Text(
                   satuan!,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     color: Colors.white.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -779,9 +743,9 @@ class _RingkasanItem extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 10,
             color: Colors.white.withValues(alpha: 0.7),
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
           textAlign: TextAlign.center,
         ),

@@ -70,301 +70,330 @@ class LoginView extends GetView<AuthController> {
 
           // ── Main content ────────────────────────────────────
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: SizedBox(
-                width: screenWidth,
-                child: Column(
-                  children: [
-                  // ── Top section (logo + title di atas wave) ──
-                  SizedBox(
-                    height: screenHeight * 0.28,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Double ring logo
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.15),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                            ),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              width: 58,
-                              height: 58,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                width: 58,
-                                height: 58,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE8F5E9),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.eco_rounded,
-                                  color: Color(0xFF2E7D32),
-                                  size: 32,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Tentukan tinggi minimum konten agar pas tanpa scroll pada screen standard
+                const double minContentHeight = 710.0;
+                final double availableHeight = constraints.maxHeight;
+                
+                double topSpacer = 16.0;
+                double middleSpacer = 12.0;
+                double bottomSpacer = 16.0;
+                double footerSpacer = 16.0;
+                
+                if (availableHeight > minContentHeight) {
+                  final double extra = availableHeight - minContentHeight;
+                  topSpacer += extra * 0.25;
+                  middleSpacer += extra * 0.20;
+                  bottomSpacer += extra * 0.40;
+                  footerSpacer += extra * 0.15;
+                }
 
-                        // Title
-                        const Text(
-                          'BISA',
-                          style: TextStyle(
-                            fontFamily: 'PlusJakartaSans',
-                            fontSize: 34,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Basis Informasi Sampah',
-                          style: TextStyle(
-                            fontFamily: 'PlusJakartaSans',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.85),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: availableHeight,
                     ),
-                  ),
-
-                  // ── Login card ───────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 420),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(28),
-                          // Accent line hijau di atas card
-                          border: const Border(
-                            top: BorderSide(
-                              color: Color(0xFF2E7D32),
-                              width: 3,
-                            ),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF2E7D32)
-                                  .withValues(alpha: 0.08),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
-                            ),
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Form(
-                          key: controller.loginFormKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Card header
-                              const Text(
-                                'Selamat Datang 👋',
-                                style: TextStyle(
-                                  fontFamily: 'PlusJakartaSans',
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1A1A2E),
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Masuk untuk mengelola bank sampah Anda',
-                                style: TextStyle(
-                                  fontFamily: 'PlusJakartaSans',
-                                  fontSize: 13,
-                                  color: Colors.grey.shade500,
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 28),
-
-                              // Email label + field
-                              _FieldLabel(label: 'Email'),
-                              const SizedBox(height: 8),
-                              AppTextField(
-                                controller: controller.emailController,
-                                label: '',
-                                hint: 'contoh@email.com',
-                                prefixIcon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                                validator: AppValidator.email,
-                              ),
-                              const SizedBox(height: 20),
-
-                              // Password label + field
-                              _FieldLabel(label: 'Kata Sandi'),
-                              const SizedBox(height: 8),
-                              Obx(
-                                () => AppTextField(
-                                  controller: controller.passwordController,
-                                  label: '',
-                                  hint: 'Masukkan kata sandi',
-                                  prefixIcon: Icons.lock_outline_rounded,
-                                  obscureText:
-                                      !controller.isPasswordVisible.value,
-                                  validator: AppValidator.password,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      controller.isPasswordVisible.value
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
-                                      color: Colors.grey.shade400,
-                                      size: 20,
-                                    ),
-                                    onPressed:
-                                        controller.togglePasswordVisibility,
+                    child: IntrinsicHeight(
+                      child: SizedBox(
+                        width: screenWidth,
+                        child: Column(
+                          children: [
+                            SizedBox(height: topSpacer),
+                            
+                            // ── Top section (logo + title) ──
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Double ring logo
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withValues(alpha: 0.15),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-
-                              // Lupa sandi
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: controller.forgotPassword,
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: const Text(
-                                    'Lupa sandi?',
-                                    style: TextStyle(
-                                      fontFamily: 'PlusJakartaSans',
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF2E7D32),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white,
                                     ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 28),
-
-                              // Tombol masuk
-                              Obx(
-                                () => _GradientButton(
-                                  label: 'Masuk Sistem',
-                                  isLoading: controller.isLoading.value,
-                                  onPressed: controller.login,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Divider
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      height: 1,
-                                      color: Colors.grey.shade100,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12),
-                                    child: Text(
-                                      'atau',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade400,
-                                        fontFamily: 'PlusJakartaSans',
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 1,
-                                      color: Colors.grey.shade100,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Link daftar
-                              Center(
-                                child: Wrap(
-                                  alignment: WrapAlignment.center,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Belum punya akun? ',
-                                      style: TextStyle(
-                                        fontFamily: 'PlusJakartaSans',
-                                        fontSize: 14,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () =>
-                                          Get.toNamed(AppRoutes.register),
-                                      child: const Text(
-                                        'Daftar Sekarang',
-                                        style: TextStyle(
-                                          fontFamily: 'PlusJakartaSans',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w800,
+                                    child: Image.asset(
+                                      'assets/images/logo.png',
+                                      width: 58,
+                                      height: 58,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) => Container(
+                                        width: 58,
+                                        height: 58,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFE8F5E9),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.eco_rounded,
                                           color: Color(0xFF2E7D32),
+                                          size: 32,
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Title
+                                const Text(
+                                  'BISA',
+                                  style: TextStyle(
+                                    fontFamily: 'PlusJakartaSans',
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Basis Informasi Sampah',
+                                  style: TextStyle(
+                                    fontFamily: 'PlusJakartaSans',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: middleSpacer),
+
+                            // ── Login card ───────────────────────────────
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 420),
+                                child: Container(
+                                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(28),
+                                    // Accent line hijau di atas card
+                                    border: const Border(
+                                      top: BorderSide(
+                                        color: Color(0xFF2E7D32),
+                                        width: 3,
+                                      ),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF2E7D32)
+                                            .withValues(alpha: 0.08),
+                                        blurRadius: 30,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.04),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Form(
+                                    key: controller.loginFormKey,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Card header
+                                        const Text(
+                                          'Selamat Datang 👋',
+                                          style: TextStyle(
+                                            fontFamily: 'PlusJakartaSans',
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF1A1A2E),
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Masuk untuk mengelola bank sampah Anda',
+                                          style: TextStyle(
+                                            fontFamily: 'PlusJakartaSans',
+                                            fontSize: 13,
+                                            color: Colors.grey.shade500,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 28),
+
+                                        // Email label + field
+                                        const _FieldLabel(label: 'Email'),
+                                        const SizedBox(height: 8),
+                                        AppTextField(
+                                          controller: controller.emailController,
+                                          label: '',
+                                          hint: 'contoh@email.com',
+                                          prefixIcon: Icons.email_outlined,
+                                          keyboardType: TextInputType.emailAddress,
+                                          validator: AppValidator.email,
+                                        ),
+                                        const SizedBox(height: 20),
+
+                                        // Password label + field
+                                        const _FieldLabel(label: 'Kata Sandi'),
+                                        const SizedBox(height: 8),
+                                        Obx(
+                                          () => AppTextField(
+                                            controller: controller.passwordController,
+                                            label: '',
+                                            hint: 'Masukkan kata sandi',
+                                            prefixIcon: Icons.lock_outline_rounded,
+                                            obscureText:
+                                                !controller.isPasswordVisible.value,
+                                            validator: AppValidator.password,
+                                            suffixIcon: IconButton(
+                                              icon: Icon(
+                                                controller.isPasswordVisible.value
+                                                    ? Icons.visibility_outlined
+                                                    : Icons.visibility_off_outlined,
+                                                color: Colors.grey.shade400,
+                                                size: 20,
+                                              ),
+                                              onPressed:
+                                                  controller.togglePasswordVisibility,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+
+                                        // Lupa sandi
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton(
+                                            onPressed: controller.forgotPassword,
+                                            style: TextButton.styleFrom(
+                                              padding: EdgeInsets.zero,
+                                              minimumSize: Size.zero,
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize.shrinkWrap,
+                                            ),
+                                            child: const Text(
+                                              'Lupa sandi?',
+                                              style: TextStyle(
+                                                fontFamily: 'PlusJakartaSans',
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF2E7D32),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 28),
+
+                                        // Tombol masuk
+                                        Obx(
+                                          () => _GradientButton(
+                                            label: 'Masuk Sistem',
+                                            isLoading: controller.isLoading.value,
+                                            onPressed: controller.login,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 24),
+
+                                        // Divider
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Container(
+                                                height: 1,
+                                                color: Colors.grey.shade100,
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 12),
+                                              child: Text(
+                                                'atau',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade400,
+                                                  fontFamily: 'PlusJakartaSans',
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Container(
+                                                height: 1,
+                                                color: Colors.grey.shade100,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 24),
+
+                                        // Link daftar
+                                        Center(
+                                          child: Wrap(
+                                            alignment: WrapAlignment.center,
+                                            crossAxisAlignment: WrapCrossAlignment.center,
+                                            children: [
+                                              Text(
+                                                'Belum punya akun? ',
+                                                style: TextStyle(
+                                                  fontFamily: 'PlusJakartaSans',
+                                                  fontSize: 14,
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () =>
+                                                    Get.toNamed(AppRoutes.register),
+                                                child: const Text(
+                                                  'Daftar Sekarang',
+                                                  style: TextStyle(
+                                                    fontFamily: 'PlusJakartaSans',
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Color(0xFF2E7D32),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+
+                            SizedBox(height: bottomSpacer),
+
+                            // ── Tagline bawah ────────────────────────────
+                            Padding(
+                              padding: EdgeInsets.only(bottom: footerSpacer),
+                              child: Text(
+                                'Kelola sampah, jaga lingkungan 🌿',
+                                style: TextStyle(
+                                  fontFamily: 'PlusJakartaSans',
+                                  fontSize: 12,
+                                  color: Colors.grey.shade400,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-
-                  // ── Tagline bawah ────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 32),
-                    child: Text(
-                      'Kelola sampah, jaga lingkungan 🌿',
-                      style: TextStyle(
-                        fontFamily: 'PlusJakartaSans',
-                        fontSize: 12,
-                        color: Colors.grey.shade400,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  // Spacing tambahan saat keyboard muncul agar tombol daftar bisa di-scroll di atas keyboard
-                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-                ],
-              ),
+                );
+              },
             ),
           ),
-        ),
         ],
       ),
     );

@@ -1,8 +1,9 @@
-import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/services/session_service.dart';
@@ -389,15 +390,12 @@ class HistoriController extends GetxController {
       final fileName = 'laporan_${cleanBankNama}_$timestamp.xlsx';
       final shareText = 'Laporan Pengelolaan Sampah - $namaBankSampah';
 
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsBytes(bytes);
+
       await Share.shareXFiles(
-        [
-          XFile.fromData(
-            Uint8List.fromList(bytes),
-            name: fileName,
-            mimeType:
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          )
-        ],
+        [XFile(tempFile.path)],
         text: shareText,
       );
       

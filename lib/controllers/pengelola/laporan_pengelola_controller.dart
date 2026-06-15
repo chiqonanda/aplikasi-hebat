@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:csv/csv.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/services/session_service.dart';
@@ -257,19 +258,20 @@ class LaporanPengelolaController extends GetxController {
           FormatHelper.dateToInput(mulai).replaceAll('-', '');
       final endStr =
           FormatHelper.dateToInput(akhir).replaceAll('-', '');
-      final fileName = 'laporan_sampah_$startStr-$endStr.xlsx';
+      final bsuName = SessionService.to.activeBankSampahNama
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '_')
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+      final fileName = 'laporan_sampah_${bsuName}_$startStr-$endStr.xlsx';
       final shareText =
-          'Laporan Bank Sampah ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
+          'Laporan Bank Sampah ${SessionService.to.activeBankSampahNama} ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
+
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsBytes(bytes);
 
       await Share.shareXFiles(
-        [
-          XFile.fromData(
-            Uint8List.fromList(bytes),
-            name: fileName,
-            mimeType:
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          )
-        ],
+        [XFile(tempFile.path)],
         text: shareText,
       );
       Get.snackbar(
@@ -924,12 +926,20 @@ class LaporanPengelolaController extends GetxController {
 
       final startStr = FormatHelper.dateToInput(mulai).replaceAll('-', '');
       final endStr = FormatHelper.dateToInput(akhir).replaceAll('-', '');
-      final fileName = 'laporan_sampah_$startStr-$endStr.csv';
+      final bsuName = SessionService.to.activeBankSampahNama
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '_')
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+      final fileName = 'laporan_sampah_${bsuName}_$startStr-$endStr.csv';
       final shareText =
-          'Laporan Bank Sampah ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
+          'Laporan Bank Sampah ${SessionService.to.activeBankSampahNama} ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
+
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsString(csvWithBom, encoding: utf8);
 
       await Share.shareXFiles(
-        [XFile.fromData(Uint8List.fromList(utf8.encode(csvWithBom)), name: fileName, mimeType: 'text/csv')],
+        [XFile(tempFile.path)],
         text: shareText,
       );
       Get.snackbar('Sukses', 'Laporan CSV berhasil diexport dan siap dibagikan.');

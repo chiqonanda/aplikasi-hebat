@@ -19,7 +19,6 @@ import '../../views/auth/register_view.dart';
 import '../../views/auth/menunggu_verifikasi_view.dart';
 import '../../views/pilih_bank_sampah/pilih_bank_sampah_view.dart';
 import '../../views/pengelola/pengelola_main_view.dart';
-import '../../views/pengelola/dashboard_view.dart';
 import '../../views/pengelola/input_sampah_view.dart';
 import '../../views/pengelola/histori_view.dart';
 import '../../views/pengelola/harga_view.dart';

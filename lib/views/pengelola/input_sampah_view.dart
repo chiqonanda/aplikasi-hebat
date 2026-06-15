@@ -22,7 +22,6 @@ class _InputSampahViewState extends State<InputSampahView> {
   @override
   void initState() {
     super.initState();
-    // Jika dalam mode edit, mulai dengan data terisi penuh
     if (controller.isEditMode) {
       _currentStep = 0;
     }
@@ -98,24 +97,12 @@ class _InputSampahViewState extends State<InputSampahView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: Column(
           children: [
-            // Custom AppPageHeader replacing default header
-            AppPageHeader(
-              title: controller.isEditMode ? 'Edit Data Sampah' : 'Input Data Sampah',
-              subtitle: controller.isEditMode
-                  ? 'Perbarui data pengelolaan bank sampah'
-                  : 'Tambah pencatatan pengelolaan baru',
-              gradientColors: AppColors.pengelolaGradient,
-              showBack: true,
-            ),
-
-            // Step Progress Indicator
+            _buildHeader(context),
             _buildStepIndicator(),
-
-            // Form scrollable
             Expanded(
               child: Form(
                 key: controller.formKey,
@@ -124,15 +111,14 @@ class _InputSampahViewState extends State<InputSampahView> {
                   physics: const BouncingScrollPhysics(),
                   children: [
                     if (_currentStep == 0) ...[
-                      // STEP 1: Jenis Sampah
                       _SectionCard(
                         icon: Icons.category_outlined,
                         iconColor: const Color(0xFF6A1B9A),
                         iconBg: const Color(0xFFF3E5F5),
+                        accentColor: const Color(0xFF6A1B9A),
                         title: 'Jenis Sampah',
                         child: Column(
                           children: [
-                            // Kategori
                             Obx(() => _DropdownField<String>(
                                   label: 'Kategori *',
                                   hint: 'Pilih kategori',
@@ -150,7 +136,6 @@ class _InputSampahViewState extends State<InputSampahView> {
                                   onChanged: controller.onKategoriChanged,
                                 )),
 
-                            // Sub Kategori
                             Obx(() {
                               if (controller.selectedKategoriId.value.isEmpty ||
                                   controller.listSubKategori.isEmpty) {
@@ -178,7 +163,6 @@ class _InputSampahViewState extends State<InputSampahView> {
                               ]);
                             }),
 
-                            // Tipe
                             Obx(() {
                               if (controller.selectedSubKategoriId.value.isEmpty ||
                                   controller.listTipe.isEmpty) {
@@ -205,7 +189,6 @@ class _InputSampahViewState extends State<InputSampahView> {
                               ]);
                             }),
 
-                            // Jenis Sampah
                             Obx(() {
                               if (controller.listJenisSampah.isEmpty) {
                                 return const SizedBox.shrink();
@@ -238,11 +221,11 @@ class _InputSampahViewState extends State<InputSampahView> {
                         ),
                       ),
                     ] else if (_currentStep == 1) ...[
-                      // STEP 2: Informasi Nasabah
                       _SectionCard(
                         icon: Icons.person_outline_rounded,
                         iconColor: const Color(0xFF0D47A1),
                         iconBg: const Color(0xFFE3F2FD),
+                        accentColor: const Color(0xFF1565C0),
                         title: 'Data Nasabah',
                         child: RawAutocomplete<String>(
                           textEditingController: controller.nasabahController,
@@ -294,13 +277,13 @@ class _InputSampahViewState extends State<InputSampahView> {
                               child: Material(
                                 elevation: 4,
                                 borderRadius: BorderRadius.circular(16),
-                                color: AppColors.surfaceLowest,
+                                color: Colors.white,
                                 child: Container(
                                   width: 320,
                                   constraints: const BoxConstraints(maxHeight: 200),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: AppColors.outlineVariant),
+                                    border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
                                   ),
                                   child: ListView.builder(
                                     padding: EdgeInsets.zero,
@@ -322,11 +305,11 @@ class _InputSampahViewState extends State<InputSampahView> {
                       ),
                       const SizedBox(height: 14),
 
-                      // STEP 2: Jumlah & Tanggal Detail
                       _SectionCard(
                         icon: Icons.scale_outlined,
                         iconColor: const Color(0xFF1565C0),
                         iconBg: const Color(0xFFE3F2FD),
+                        accentColor: const Color(0xFF1565C0),
                         title: 'Jumlah, Satuan & Harga',
                         child: Column(
                           children: [
@@ -490,11 +473,11 @@ class _InputSampahViewState extends State<InputSampahView> {
                       ),
                       const SizedBox(height: 14),
 
-                      // Tanggal Pengelolaan
                       _SectionCard(
                         icon: Icons.calendar_today_outlined,
                         iconColor: const Color(0xFF00838F),
                         iconBg: const Color(0xFFE0F7FA),
+                        accentColor: const Color(0xFF00838F),
                         title: 'Tanggal Pengelolaan',
                         child: Obx(
                           () => AppTextField(
@@ -522,10 +505,8 @@ class _InputSampahViewState extends State<InputSampahView> {
                       ),
                       const SizedBox(height: 14),
 
-                      // Catatan Collapsible
                       _CollapsibleCatatanSection(controller: controller),
                     ] else ...[
-                      // STEP 3: Konfirmasi Ringkasan
                       Obx(() {
                         if (controller.hargaSnapshot.value == null) {
                           return const SizedBox.shrink();
@@ -533,7 +514,6 @@ class _InputSampahViewState extends State<InputSampahView> {
                         return _buildHargaSnapshot();
                       }),
 
-                      // Summary Card
                       _SummaryCard(controller: controller),
                     ],
                   ],
@@ -541,7 +521,6 @@ class _InputSampahViewState extends State<InputSampahView> {
               ),
             ),
 
-            // Persistent bottom actions
             _buildBottomActions(context),
           ],
         ),
@@ -549,7 +528,109 @@ class _InputSampahViewState extends State<InputSampahView> {
     );
   }
 
-  // ─── Step Indicator ──────────────────────────────────────────────────────
+  // ── Header ────────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+
+    return Stack(
+      children: [
+        CustomPaint(
+          size: Size(MediaQuery.of(context).size.width, 165),
+          painter: _WavePainter(),
+        ),
+        Positioned(
+          top: -15,
+          right: -10,
+          child: Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+          child: Row(
+            children: [
+              if (canPop)
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controller.isEditMode ? 'Edit Data Sampah' : 'Input Data Sampah',
+                      style: const TextStyle(
+                        fontFamily: 'PlusJakartaSans',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.4,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      controller.isEditMode
+                          ? 'Perbarui data pengelolaan bank sampah'
+                          : 'Tambah pencatatan pengelolaan baru',
+                      style: TextStyle(
+                        fontFamily: 'PlusJakartaSans',
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Icon(
+                  controller.isEditMode
+                      ? Icons.edit_note_rounded
+                      : Icons.add_circle_outline_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Step Indicator ────────────────────────────────────────────────────────
 
   Widget _buildStepIndicator() {
     return Container(
@@ -588,29 +669,33 @@ class _InputSampahViewState extends State<InputSampahView> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isCompleted
-                  ? AppColors.pengelolaMain
-                  : isActive
-                      ? AppColors.pengelolaLight
-                      : Colors.grey.shade50,
+              gradient: isCompleted || isActive
+                  ? const LinearGradient(
+                      colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                    )
+                  : null,
+              color: isCompleted || isActive ? null : Colors.grey.shade50,
               shape: BoxShape.circle,
               border: Border.all(
-                color: isActive
+                color: isActive || isCompleted
                     ? AppColors.pengelolaMain
-                    : isCompleted
-                        ? AppColors.pengelolaMain
-                        : Colors.grey.shade200,
+                    : Colors.grey.shade200,
                 width: 2,
               ),
+              boxShadow: (isCompleted || isActive)
+                  ? [
+                      BoxShadow(
+                        color: AppColors.pengelolaMain.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : [],
             ),
             child: Icon(
               isCompleted ? Icons.check_rounded : icon,
               size: 16,
-              color: isCompleted
-                  ? Colors.white
-                  : isActive
-                      ? AppColors.pengelolaMain
-                      : Colors.grey.shade400,
+              color: (isCompleted || isActive) ? Colors.white : Colors.grey.shade400,
             ),
           ),
           const SizedBox(height: 6),
@@ -624,7 +709,7 @@ class _InputSampahViewState extends State<InputSampahView> {
                   ? AppColors.pengelolaMain
                   : isCompleted
                       ? AppColors.textPrimary
-                      : AppColors.textTertiary,
+                      : Colors.grey.shade400,
               fontFamily: 'PlusJakartaSans',
             ),
           ),
@@ -639,11 +724,14 @@ class _InputSampahViewState extends State<InputSampahView> {
       width: 24,
       height: 2,
       margin: const EdgeInsets.only(bottom: 20),
-      color: isPassed ? AppColors.pengelolaMain : Colors.grey.shade200,
+      decoration: BoxDecoration(
+        color: isPassed ? AppColors.pengelolaMain : Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(2),
+      ),
     );
   }
 
-  // ─── Bottom Action Bar ────────────────────────────────────────────────────
+  // ── Bottom Action Bar ─────────────────────────────────────────────────────
 
   Widget _buildBottomActions(BuildContext context) {
     return Container(
@@ -669,6 +757,9 @@ class _InputSampahViewState extends State<InputSampahView> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     side: const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: const Text('Batal'),
                 ),
@@ -676,22 +767,16 @@ class _InputSampahViewState extends State<InputSampahView> {
               const SizedBox(width: 12),
               Expanded(
                 flex: 3,
-                child: ElevatedButton(
-                  onPressed: () {
+                child: _GradientButton(
+                  label: 'Selanjutnya',
+                  icon: Icons.arrow_forward_rounded,
+                  onTap: () {
                     if (_validateStep1(showSnackbar: true)) {
                       setState(() {
                         _currentStep = 1;
                       });
                     }
                   },
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Selanjutnya'),
-                      SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_rounded, size: 16),
-                    ],
-                  ),
                 ),
               ),
             ] else if (_currentStep == 1) ...[
@@ -706,6 +791,9 @@ class _InputSampahViewState extends State<InputSampahView> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     side: const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: const Text('Kembali'),
                 ),
@@ -713,22 +801,16 @@ class _InputSampahViewState extends State<InputSampahView> {
               const SizedBox(width: 12),
               Expanded(
                 flex: 3,
-                child: ElevatedButton(
-                  onPressed: () {
+                child: _GradientButton(
+                  label: 'Selanjutnya',
+                  icon: Icons.arrow_forward_rounded,
+                  onTap: () {
                     if (_validateStep2(showSnackbar: true)) {
                       setState(() {
                         _currentStep = 2;
                       });
                     }
                   },
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Selanjutnya'),
-                      SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_rounded, size: 16),
-                    ],
-                  ),
                 ),
               ),
             ] else ...[
@@ -743,6 +825,9 @@ class _InputSampahViewState extends State<InputSampahView> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     side: const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: const Text('Kembali'),
                 ),
@@ -752,28 +837,11 @@ class _InputSampahViewState extends State<InputSampahView> {
                 flex: 3,
                 child: Obx(() {
                   final isSaving = controller.isLoading.value;
-                  return ElevatedButton(
-                    onPressed: isSaving ? null : controller.simpan,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isSaving) ...[
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ] else ...[
-                          const Icon(Icons.check_circle_outline_rounded, size: 16),
-                          const SizedBox(width: 6),
-                        ],
-                        Text(controller.isEditMode ? 'Simpan' : 'Simpan Data'),
-                      ],
-                    ),
+                  return _GradientButton(
+                    label: controller.isEditMode ? 'Simpan' : 'Simpan Data',
+                    icon: Icons.check_circle_outline_rounded,
+                    isLoading: isSaving,
+                    onTap: isSaving ? null : controller.simpan,
                   );
                 }),
               ),
@@ -784,7 +852,7 @@ class _InputSampahViewState extends State<InputSampahView> {
     );
   }
 
-  // ─── Harga Snapshot ──────────────────────────────────────────────────────
+  // ── Harga Snapshot ────────────────────────────────────────────────────────
 
   Widget _buildHargaSnapshot() {
     return Padding(
@@ -793,12 +861,13 @@ class _InputSampahViewState extends State<InputSampahView> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: AppColors.pengelolaMain.withValues(alpha: 0.15), width: 1.5),
+          borderRadius: BorderRadius.circular(18),
+          border: Border(
+            top: BorderSide(color: AppColors.pengelolaMain, width: 2),
+          ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.pengelolaMain.withValues(alpha: 0.04),
+              color: AppColors.pengelolaMain.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -850,7 +919,7 @@ class _InputSampahViewState extends State<InputSampahView> {
             ),
             if (controller.jumlahController.text.isNotEmpty) ...[
               const SizedBox(height: 14),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Colors.grey.shade100),
               const SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -887,9 +956,74 @@ class _InputSampahViewState extends State<InputSampahView> {
   }
 }
 
-// ─────────────────────────────────────────
-// Section Card
-// ─────────────────────────────────────────
+// ── Gradient Button ───────────────────────────────────────────────────────────
+
+class _GradientButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool isLoading;
+
+  const _GradientButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: onTap == null
+              ? []
+              : [
+                  BoxShadow(
+                    color: AppColors.pengelolaMain.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        alignment: Alignment.center,
+        child: isLoading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(icon, size: 16, color: Colors.white),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+// ── Section Card ────────────────────────────────────────────────────────────
 
 class _SectionCard extends StatelessWidget {
   final String title;
@@ -897,6 +1031,7 @@ class _SectionCard extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final Color iconBg;
+  final Color accentColor;
 
   const _SectionCard({
     required this.title,
@@ -904,6 +1039,7 @@ class _SectionCard extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     required this.iconBg,
+    required this.accentColor,
   });
 
   @override
@@ -911,12 +1047,14 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border(
+          top: BorderSide(color: accentColor, width: 2),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
+            color: accentColor.withValues(alpha: 0.06),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -951,7 +1089,7 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: Colors.grey.shade100),
           Padding(
             padding: const EdgeInsets.all(16),
             child: child,
@@ -962,9 +1100,7 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────
-// Dropdown Field
-// ─────────────────────────────────────────
+// ── Dropdown Field ────────────────────────────────────────────────────────────
 
 class _DropdownField<T> extends StatelessWidget {
   final String label;
@@ -1002,48 +1138,46 @@ class _DropdownField<T> extends StatelessWidget {
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: enabled ? AppColors.surfaceLowest : AppColors.background,
+        fillColor: enabled ? const Color(0xFFF5F7FA) : const Color(0xFFEDEFF2),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide:
               const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide:
               const BorderSide(color: AppColors.error, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide:
               const BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
-      dropdownColor: AppColors.surfaceLowest,
-      borderRadius: BorderRadius.circular(16),
-      icon: const Icon(Icons.keyboard_arrow_down_rounded,
-          color: AppColors.outline),
+      dropdownColor: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      icon: Icon(Icons.keyboard_arrow_down_rounded,
+          color: Colors.grey.shade400),
     );
   }
 }
 
-// ─────────────────────────────────────────
-// Summary Card
-// ─────────────────────────────────────────
+// ── Summary Card ───────────────────────────────────────────────────────────────
 
 class _SummaryCard extends StatelessWidget {
   final InputSampahController controller;
@@ -1054,14 +1188,17 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() => Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.pengelolaMain.withValues(alpha: 0.15), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.pengelolaMain.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -1069,17 +1206,18 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
             child: Row(
               children: [
                 Container(
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.pengelolaLight,
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
-                  child: const Icon(Icons.assignment_outlined, color: AppColors.pengelolaMain, size: 18),
+                  child: const Icon(Icons.assignment_outlined, color: Colors.white, size: 18),
                 ),
                 const SizedBox(width: 10),
                 const Text(
@@ -1087,63 +1225,71 @@ class _SummaryCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.pengelolaDark,
+                    color: Colors.white,
                     fontFamily: 'PlusJakartaSans',
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: 14),
           Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              children: [
-              _buildSummaryRow('Nama Nasabah', controller.nasabahController.text),
-              const SizedBox(height: 12),
-              _buildSummaryRow('Jenis Sampah', controller.jenisSampahBreadcrumb),
-              const SizedBox(height: 12),
-              _buildSummaryRow(
-                'Jumlah',
-                '${FormatHelper.number(controller.rxJumlah.value)} ${controller.selectedSatuanSingkatan}',
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
-              const SizedBox(height: 12),
-              _buildSummaryRow('Tanggal', controller.selectedTanggalFormat),
-
-              const SizedBox(height: 12),
-              _buildSummaryRow(
-                'Harga/Satuan',
-                '${FormatHelper.currency(controller.rxHargaPerSatuan.value)} / ${controller.selectedSatuanSingkatan}',
-              ),
-              const SizedBox(height: 16),
-              const Divider(height: 1, color: AppColors.divider),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  const Text(
-                    'Total Nilai',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                      fontFamily: 'PlusJakartaSans',
-                    ),
+                  _buildSummaryRow('Nama Nasabah', controller.nasabahController.text),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow('Jenis Sampah', controller.jenisSampahBreadcrumb),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow(
+                    'Jumlah',
+                    '${FormatHelper.number(controller.rxJumlah.value)} ${controller.selectedSatuanSingkatan}',
                   ),
-                  Text(
-                    FormatHelper.currency(
-                      controller.rxJumlah.value * controller.rxHargaPerSatuan.value,
-                    ),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.pengelolaMain,
-                      fontFamily: 'PlusJakartaSans',
-                    ),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow('Tanggal', controller.selectedTanggalFormat),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow(
+                    'Harga/Satuan',
+                    '${FormatHelper.currency(controller.rxHargaPerSatuan.value)} / ${controller.selectedSatuanSingkatan}',
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(height: 1, color: Colors.white.withValues(alpha: 0.12)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total Nilai',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontFamily: 'PlusJakartaSans',
+                        ),
+                      ),
+                      Text(
+                        FormatHelper.currency(
+                          controller.rxJumlah.value * controller.rxHargaPerSatuan.value,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                          fontFamily: 'PlusJakartaSans',
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              ],
             ),
           ),
         ],
@@ -1159,9 +1305,9 @@ class _SummaryCard extends StatelessWidget {
           width: 100,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: AppColors.textSecondary,
+              color: Colors.white.withValues(alpha: 0.65),
               fontWeight: FontWeight.w500,
               fontFamily: 'PlusJakartaSans',
             ),
@@ -1173,7 +1319,7 @@ class _SummaryCard extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 13,
-              color: AppColors.textPrimary,
+              color: Colors.white,
               fontWeight: FontWeight.w700,
               fontFamily: 'PlusJakartaSans',
             ),
@@ -1184,9 +1330,7 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────
-// Collapsible Catatan Section
-// ─────────────────────────────────────────
+// ── Collapsible Catatan Section ────────────────────────────────────────────────
 
 class _CollapsibleCatatanSection extends StatelessWidget {
   final InputSampahController controller;
@@ -1198,7 +1342,7 @@ class _CollapsibleCatatanSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
@@ -1218,10 +1362,10 @@ class _CollapsibleCatatanSection extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: const Color(0xFFF5F7FA),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.notes_rounded, color: AppColors.textSecondary, size: 18),
+            child: Icon(Icons.notes_rounded, color: Colors.grey.shade500, size: 18),
           ),
           title: const Text(
             'Tambah Catatan (Opsional)',
@@ -1233,7 +1377,7 @@ class _CollapsibleCatatanSection extends StatelessWidget {
             ),
           ),
           children: [
-            const Divider(height: 1, color: AppColors.divider),
+            Divider(height: 1, color: Colors.grey.shade100),
             Padding(
               padding: const EdgeInsets.all(16),
               child: AppTextField(
@@ -1249,4 +1393,63 @@ class _CollapsibleCatatanSection extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Wave Painter ──────────────────────────────────────────────────────────────
+
+class _WavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint1 = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path1 = Path()
+      ..lineTo(0, size.height * 0.74)
+      ..quadraticBezierTo(
+        size.width * 0.25,
+        size.height * 0.98,
+        size.width * 0.5,
+        size.height * 0.80,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.75,
+        size.height * 0.62,
+        size.width,
+        size.height * 0.76,
+      )
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(path1, paint1);
+
+    final paint2 = Paint()
+      ..color = const Color(0xFF43A047).withValues(alpha: 0.3);
+
+    final path2 = Path()
+      ..moveTo(0, size.height * 0.55)
+      ..quadraticBezierTo(
+        size.width * 0.3,
+        size.height * 0.42,
+        size.width * 0.55,
+        size.height * 0.6,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.78,
+        size.height * 0.74,
+        size.width,
+        size.height * 0.56,
+      )
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+
+    canvas.drawPath(path2, paint2);
+  }
+
+  @override
+  bool shouldRepaint(_WavePainter oldDelegate) => false;
 }

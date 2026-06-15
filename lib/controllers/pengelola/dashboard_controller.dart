@@ -150,7 +150,7 @@ class DashboardController extends GetxController {
     if (result == true) fetchDashboardData();
   }
   void goToHistori() => Get.toNamed(AppRoutes.historiSampah);
-  void goToHarga() => Get.toNamed(AppRoutes.hargaSampah);
+  void goToLaporan() => Get.toNamed(AppRoutes.laporanPengelola);
   void goToProfil() => Get.toNamed(AppRoutes.profilBankSampah);
   void goToPilihBankSampah() => Get.toNamed(AppRoutes.pilihBankSampah);
 

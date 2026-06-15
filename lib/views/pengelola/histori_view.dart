@@ -112,78 +112,6 @@ class HistoriView extends GetView<HistoriController> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Export Excel
-                        Obx(() {
-                          final isEmpty = controller.listHistori.isEmpty;
-                          final isExporting = controller.isExporting.value;
-                          final disabled = isEmpty || isExporting;
-
-                          return GestureDetector(
-                            onTap: disabled
-                                ? null
-                                : () => controller.exportExcel(),
-                            child: Opacity(
-                              opacity: disabled ? 0.45 : 1.0,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF2E7D32),
-                                      Color(0xFF43A047),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: disabled
-                                      ? []
-                                      : [
-                                          BoxShadow(
-                                            color: const Color(0xFF2E7D32)
-                                                .withValues(alpha: 0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 3),
-                                          ),
-                                        ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isExporting)
-                                      const SizedBox(
-                                        width: 13,
-                                        height: 13,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    else
-                                      const Icon(
-                                        Icons.table_chart_rounded,
-                                        size: 13,
-                                        color: Colors.white,
-                                      ),
-                                    const SizedBox(width: 5),
-                                    const Text(
-                                      'Excel',
-                                      style: TextStyle(
-                                        fontFamily: 'PlusJakartaSans',
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                        const SizedBox(width: 8),
-
                         // Filter
                         Obx(() {
                           final isActive = controller.isFilterActive;
@@ -812,6 +740,20 @@ class _HistoriCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (item.namaNasabah != null && item.namaNasabah!.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          'Nasabah: ${item.namaNasabah}',
+                          style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
                   ),
                 ),

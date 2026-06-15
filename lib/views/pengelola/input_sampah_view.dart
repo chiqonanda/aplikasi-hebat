@@ -338,7 +338,6 @@ class _InputSampahViewState extends State<InputSampahView> {
                                         _DropdownField<String>(
                                           label: 'Satuan *',
                                           hint: 'Satuan',
-                                          enabled: !controller.isKategoriAnorganik && !controller.isMinyakJelantah,
                                           value:
                                               controller.selectedSatuanId.value.isEmpty
                                                   ? null
@@ -355,104 +354,6 @@ class _InputSampahViewState extends State<InputSampahView> {
                                               controller.selectedSatuanId.value =
                                                   v ?? '',
                                         ),
-                                        if (controller.isKategoriAnorganik) ...[
-                                          const SizedBox(height: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.infoContainer,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: const SingleChildScrollView(
-                                              scrollDirection: Axis.horizontal,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.lock_outline_rounded,
-                                                    size: 12,
-                                                    color: AppColors.info,
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    'Kunci kg (An Organik)',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: AppColors.info,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ] else if (controller.isMinyakJelantah) ...[
-                                          const SizedBox(height: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.infoContainer,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: const SingleChildScrollView(
-                                              scrollDirection: Axis.horizontal,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.lock_outline_rounded,
-                                                    size: 12,
-                                                    color: AppColors.info,
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    'Kunci ltr (Jelantah)',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: AppColors.info,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ] else if (controller.isSatuanAuto) ...[
-                                          const SizedBox(height: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.secondaryContainer,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: SingleChildScrollView(
-                                              scrollDirection: Axis.horizontal,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.auto_awesome,
-                                                    size: 12,
-                                                    color: AppColors.onSecondaryContainer,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Otomatis',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.w600,
-                                                      color:
-                                                          AppColors.onSecondaryContainer,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
                                       ],
                                     ),
                                   ),
@@ -465,7 +366,10 @@ class _InputSampahViewState extends State<InputSampahView> {
                               label: 'Harga per Satuan (Rp) *',
                               hint: 'Masukkan harga per satuan...',
                               prefixIcon: Icons.attach_money_rounded,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                              inputFormatters: [
+                                ThousandsSeparatorInputFormatter(),
+                              ],
                               validator: AppValidator.harga,
                             ),
                           ],

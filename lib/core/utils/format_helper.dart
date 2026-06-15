@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class FormatHelper {
@@ -67,5 +68,51 @@ class FormatHelper {
   // 12,5 kg / 6 ltr
   static String jumlahSatuan(num? jumlah, String? satuan) {
     return '${number(jumlah)} ${satuan ?? ''}';
+  }
+}
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  static final _formatter = NumberFormat('#,##0', 'id_ID');
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Remove all dots
+    String cleanText = newValue.text.replaceAll('.', '');
+
+    // Try parsing
+    final value = int.tryParse(cleanText);
+    if (value == null) {
+      return oldValue;
+    }
+
+    String newText = _formatter.format(value);
+
+    int dotsBeforeInNewValue = 0;
+    for (int i = 0; i < newValue.selection.end; i++) {
+      if (newValue.text[i] == '.') {
+        dotsBeforeInNewValue++;
+      }
+    }
+
+    int digitsBeforeCursor = newValue.selection.end - dotsBeforeInNewValue;
+
+    int newSelectionIndex = 0;
+    int digitsSeen = 0;
+    while (digitsSeen < digitsBeforeCursor && newSelectionIndex < newText.length) {
+      if (newText[newSelectionIndex] != '.') {
+        digitsSeen++;
+      }
+      newSelectionIndex++;
+    }
+    
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newSelectionIndex),
+    );
   }
 }

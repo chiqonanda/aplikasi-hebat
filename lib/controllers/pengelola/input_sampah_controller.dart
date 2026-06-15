@@ -95,18 +95,7 @@ class InputSampahController extends GetxController {
   }
 
   void _applyUnitLocks() {
-    if (isKategoriAnorganik) {
-      final kgUnit = listSatuan.firstWhereOrNull((s) => s.singkatan.toLowerCase() == 'kg');
-      if (kgUnit != null) {
-        selectedSatuanId.value = kgUnit.id;
-      }
-    } else if (isMinyakJelantah) {
-      final ltrUnit = listSatuan.firstWhereOrNull((s) =>
-          s.singkatan.toLowerCase() == 'ltr' || s.singkatan.toLowerCase() == 'liter');
-      if (ltrUnit != null) {
-        selectedSatuanId.value = ltrUnit.id;
-      }
-    }
+    // No-op: Unit locks for Kategori Anorganik and Minyak Jelantah are disabled to allow selection.
   }
 
   bool get isSatuanAuto {
@@ -149,7 +138,7 @@ class InputSampahController extends GetxController {
     if (hargaSnapshot.value != null) {
       return hargaSnapshot.value!.hargaPerSatuan;
     }
-    return double.tryParse(hargaPerSatuanController.text.trim().replaceAll(',', '.')) ?? 0.0;
+    return double.tryParse(hargaPerSatuanController.text.trim().replaceAll('.', '').replaceAll(',', '.')) ?? 0.0;
   }
 
   @override
@@ -349,7 +338,7 @@ class InputSampahController extends GetxController {
       if (data != null) {
         hargaSnapshot.value = HargaSampahModel.fromJson(data);
         hargaPerSatuanController.text =
-            hargaSnapshot.value!.hargaPerSatuan.toStringAsFixed(0);
+            FormatHelper.number(hargaSnapshot.value!.hargaPerSatuan);
         if (hargaSnapshot.value?.satuanId != null &&
             selectedSatuanId.value.isEmpty) {
           selectedSatuanId.value = hargaSnapshot.value!.satuanId;
@@ -454,7 +443,7 @@ class InputSampahController extends GetxController {
     tanggalController.text  = FormatHelper.date(d.tanggalPengelolaan);
     jumlahController.text   = d.jumlah.toString();
     hargaPerSatuanController.text =
-        d.hargaPerSatuan != null ? d.hargaPerSatuan.toString() : '';
+        d.hargaPerSatuan != null ? FormatHelper.number(d.hargaPerSatuan) : '';
     catatanController.text  = d.catatan ?? '';
     selectedSatuanId.value  = d.satuanId;
     nasabahController.text  = d.namaNasabah ?? '';
@@ -559,9 +548,9 @@ class InputSampahController extends GetxController {
       final jumlah = double.parse(
           jumlahController.text.trim().replaceAll(',', '.'));
       final totalHargaInput = double.tryParse(
-          totalHargaController.text.trim().replaceAll(',', '.'));
+          totalHargaController.text.trim().replaceAll('.', '').replaceAll(',', '.'));
       final hargaPerSatuanInput = double.tryParse(
-          hargaPerSatuanController.text.trim().replaceAll(',', '.'));
+          hargaPerSatuanController.text.trim().replaceAll('.', '').replaceAll(',', '.'));
 
       // Karena total_harga adalah generated column di database PostgreSQL,
       // kita tidak boleh memasukkannya ke dalam payload insert/update.
@@ -633,7 +622,7 @@ class InputSampahController extends GetxController {
         double.tryParse(jumlahController.text.trim().replaceAll(',', '.')) ??
             0.0;
     rxHargaPerSatuan.value = double.tryParse(
-            hargaPerSatuanController.text.trim().replaceAll(',', '.')) ??
+            hargaPerSatuanController.text.trim().replaceAll('.', '').replaceAll(',', '.')) ??
         0.0;
   }
 

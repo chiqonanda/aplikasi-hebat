@@ -6,7 +6,7 @@ import '../../app/themes/design_tokens.dart';
 import '../../controllers/pengelola/pengelola_main_controller.dart';
 import 'dashboard_view.dart';
 import 'histori_view.dart';
-import 'harga_view.dart';
+import 'laporan_pengelola_view.dart';
 import 'profil_bank_sampah_view.dart';
 
 class PengelolaMainView extends GetView<PengelolaMainController> {
@@ -17,7 +17,7 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
     final List<Widget> pages = [
       const DashboardView(),
       const HistoriView(),
-      const HargaView(),
+      const LaporanPengelolaView(),
       const ProfilBankSampahView(),
     ];
 
@@ -43,9 +43,9 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
         'label': 'Histori',
       },
       {
-        'icon': Icons.sell_outlined,
-        'activeIcon': Icons.sell_rounded,
-        'label': 'Harga',
+        'icon': Icons.description_outlined,
+        'activeIcon': Icons.description_rounded,
+        'label': 'Laporan',
       },
       {
         'icon': Icons.store_outlined,

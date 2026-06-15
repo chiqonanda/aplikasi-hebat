@@ -523,8 +523,8 @@ class DashboardView extends GetView<DashboardController> {
         },
       },
       {
-        'icon': Icons.sell_outlined,
-        'label': 'Harga',
+        'icon': Icons.description_outlined,
+        'label': 'Laporan',
         'color': const Color(0xFFE65100),
         'bgColor': const Color(0xFFFFF3E0),
         'onTap': () {
@@ -773,7 +773,21 @@ class _AktivitasCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
+                if (item.namaNasabah != null && item.namaNasabah!.isNotEmpty) ...[
+                  Text(
+                    'Nasabah: ${item.namaNasabah}',
+                    style: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                ],
                 Row(
                   children: [
                     Icon(

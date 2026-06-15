@@ -57,7 +57,7 @@ class AppValidator {
     if (value == null || value.trim().isEmpty) {
       return 'Harga wajib diisi';
     }
-    final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
+    final parsed = double.tryParse(value.trim().replaceAll('.', '').replaceAll(',', '.'));
     if (parsed == null) {
       return 'Harga harus berupa angka';
     }

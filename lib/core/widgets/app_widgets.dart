@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
@@ -86,6 +87,7 @@ class AppTextField extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onTap;
   final void Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AppTextField({
     super.key,
@@ -102,6 +104,7 @@ class AppTextField extends StatelessWidget {
     this.enabled = true,
     this.onTap,
     this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -117,6 +120,7 @@ class AppTextField extends StatelessWidget {
       enabled: enabled,
       onTap: onTap,
       onChanged: onChanged,
+      inputFormatters: inputFormatters,
       style: AppTextStyles.bodyLg.copyWith(
         color: isInteractive ? AppColors.textPrimary : AppColors.textSecondary,
       ),

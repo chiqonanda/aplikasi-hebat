@@ -6,7 +6,7 @@ import '../../controllers/pengelola/pengelola_main_controller.dart';
 import '../../controllers/pengelola/dashboard_controller.dart';
 import '../../controllers/pengelola/input_sampah_controller.dart';
 import '../../controllers/pengelola/histori_controller.dart';
-import '../../controllers/pengelola/harga_controller.dart';
+import '../../controllers/pengelola/laporan_pengelola_controller.dart';
 import '../../controllers/kelurahan/dashboard_kelurahan_controller.dart';
 import '../../controllers/kelurahan/monitoring_controller.dart';
 import '../../controllers/kelurahan/bank_sampah_controller.dart';
@@ -21,7 +21,7 @@ import '../../views/pilih_bank_sampah/pilih_bank_sampah_view.dart';
 import '../../views/pengelola/pengelola_main_view.dart';
 import '../../views/pengelola/input_sampah_view.dart';
 import '../../views/pengelola/histori_view.dart';
-import '../../views/pengelola/harga_view.dart';
+import '../../views/pengelola/laporan_pengelola_view.dart';
 import '../../views/pengelola/profil_bank_sampah_view.dart';
 import '../../views/kelurahan/dashboard_kelurahan_view.dart';
 import '../../views/kelurahan/monitoring_view.dart';
@@ -75,7 +75,7 @@ class AppPages {
         Get.lazyPut(() => PengelolaMainController());
         Get.lazyPut(() => DashboardController());
         Get.lazyPut(() => HistoriController());
-        Get.lazyPut(() => HargaController());
+        Get.lazyPut(() => LaporanPengelolaController());
       }),
     ),
     GetPage(
@@ -93,10 +93,10 @@ class AppPages {
       }),
     ),
     GetPage(
-      name: AppRoutes.hargaSampah,
-      page: () => const HargaView(),
+      name: AppRoutes.laporanPengelola,
+      page: () => const LaporanPengelolaView(),
       binding: BindingsBuilder(() {
-        Get.lazyPut(() => HargaController());
+        Get.lazyPut(() => LaporanPengelolaController());
       }),
     ),
     GetPage(

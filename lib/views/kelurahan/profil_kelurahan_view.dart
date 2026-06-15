@@ -11,136 +11,126 @@ import '../../controllers/auth_controller.dart';
 class ProfilKelurahanView extends StatelessWidget {
   const ProfilKelurahanView({super.key});
 
-  // ── Warna Utama ──────────────────────────────────────────────────────────
-  static const _blue900 = AppColors.kelurahanDark;
-  static const _blue600 = AppColors.kelurahanMain;
-  static const _blue50  = AppColors.kelurahanLight;
-  static const _teal    = Color(0xFF00ACC1);
-  static const _tealBg  = Color(0xFFE0F7FA);
-  static const _bg      = AppColors.scaffoldBg;
-
   @override
   Widget build(BuildContext context) {
     final session = SessionService.to;
 
     return Scaffold(
-      backgroundColor: _bg,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Combined Gradient Header & Overlapping Avatar ───────────────
-            _buildCombinedHeader(context, session),
+      backgroundColor: AppColors.scaffoldBg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Wave Header ──────────────────────────────────────────────
+              _buildWaveHeader(context, session),
 
-            // ── Profile Name & Verified Badge ────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(top: 56),
-              child: Column(
-                children: [
-                  Obx(
-                    () => Text(
-                      session.profile.value?.namaLengkap ?? '-',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: _blue900,
-                        letterSpacing: -0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F4FD),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.verified_rounded,
-                          size: 14,
-                          color: _blue600,
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Pengelola Kelurahan',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: _blue600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              // ── Avatar overlapping header ────────────────────────────────
+              Transform.translate(
+                offset: const Offset(0, -48),
+                child: _buildAvatar(session),
               ),
-            ),
 
-            // ── Informasi Akun ───────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
-              child: _buildInfoAkun(session),
-            ),
+              // ── Nama & Badge ─────────────────────────────────────────────
+              Transform.translate(
+                offset: const Offset(0, -36),
+                child: _buildNameBadge(session),
+              ),
 
-            // ── Menu Kelola Sistem ───────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
-              child: _buildMenuKelola(),
-            ),
-
-            // ── Tombol Keluar ────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 36, 20, 48),
-              child: _buildLogoutButton(context),
-            ),
-          ],
+              // ── Cards ────────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Transform.translate(
+                  offset: const Offset(0, -20),
+                  child: Column(
+                    children: [
+                      _buildInfoCard(session),
+                      const SizedBox(height: 20),
+                      _buildMenuGrid(),
+                      const SizedBox(height: 20),
+                      _buildLogoutButton(context),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ── Combined Header Widget (Gradient Banner + Overlapping Avatar) ────────
-  Widget _buildCombinedHeader(BuildContext context, SessionService session) {
+  // ── Wave Header ─────────────────────────────────────────────────────────
+  Widget _buildWaveHeader(BuildContext context, SessionService session) {
     return Stack(
-      clipBehavior: Clip.none,
       children: [
-        // Gradient banner
-        Container(
-          height: 180,
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: AppColors.kelurahanGradient,
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(32),
-              bottomRight: Radius.circular(32),
+        CustomPaint(
+          size: Size(MediaQuery.of(context).size.width, 210),
+          painter: _WavePainter(),
+        ),
+
+        // Decorative circles
+        Positioned(
+          top: -30,
+          right: -20,
+          child: Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.05),
             ),
           ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-              child: Row(
+        ),
+        Positioned(
+          top: 40,
+          right: 60,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.04),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 10,
+          left: -20,
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.04),
+            ),
+          ),
+        ),
+
+        // Content
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 12, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top bar
+              Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Get.back(),
                   ),
                   const Expanded(
                     child: Text(
                       'Profil',
                       style: TextStyle(
+                        fontFamily: 'PlusJakartaSans',
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -148,105 +138,70 @@ class ProfilKelurahanView extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Edit hint icon
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person_outline_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-        ),
-        // Overlapping Avatar Card
-        Positioned(
-          bottom: -44,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Obx(() {
-              final nama = session.profile.value?.namaLengkap ?? 'Kelurahan';
-              final initial = nama.isNotEmpty ? nama[0].toUpperCase() : 'K';
-              return Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: AppColors.kelurahanGradient,
-                  ),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 4,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0A2540).withValues(alpha: 0.15),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      fontSize: 38,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+
+              const SizedBox(height: 20),
+
+              // Kelurahan badge dengan dot hijau
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
                     ),
                   ),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Informasi Akun ────────────────────────────────────────────────────────
-  Widget _buildInfoAkun(SessionService session) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(title: 'Informasi Akun'),
-        const SizedBox(height: 16),
-
-        // Card info
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
-            boxShadow: DesignTokens.kelurahanShadowSm,
-          ),
-          child: Column(
-            children: [
-              Obx(
-                () => _InfoRow(
-                  icon: Icons.badge_outlined,
-                  label: 'Nama Lengkap',
-                  value: session.profile.value?.namaLengkap ?? '-',
-                  iconBg: const Color(0xFFE3F2FD),
-                  iconColor: _blue600,
-                ),
-              ),
-              _Divider(),
-              const _InfoRow(
-                icon: Icons.admin_panel_settings_outlined,
-                label: 'Role',
-                value: 'Pengelola Kelurahan',
-                iconBg: _tealBg,
-                iconColor: _teal,
-              ),
-              _Divider(),
-              Obx(
-                () => _InfoRow(
-                  icon: Icons.calendar_today_outlined,
-                  label: 'Bergabung Sejak',
-                  value: session.profile.value?.createdAt != null
-                      ? FormatHelper.date(session.profile.value!.createdAt)
-                      : '-',
-                  iconBg: const Color(0xFFF3E5F5),
-                  iconColor: const Color(0xFF6A1B9A),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF69F0AE),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.verified_rounded,
+                        size: 13,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Pengelola Kelurahan',
+                        style: TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -256,60 +211,281 @@ class ProfilKelurahanView extends StatelessWidget {
     );
   }
 
-  // ── Menu Kelola Sistem ────────────────────────────────────────────────────
-  Widget _buildMenuKelola() {
+  // ── Avatar ───────────────────────────────────────────────────────────────
+  Widget _buildAvatar(SessionService session) {
+    return Center(
+      child: Obx(() {
+        final nama = session.profile.value?.namaLengkap ?? 'K';
+        final initial = nama.isNotEmpty ? nama[0].toUpperCase() : 'K';
+        return Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: AppColors.kelurahanGradient,
+            ),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 4),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.kelurahanMain.withValues(alpha: 0.35),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              initial,
+              style: const TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  // ── Nama & Badge ─────────────────────────────────────────────────────────
+  Widget _buildNameBadge(SessionService session) {
+    return Column(
+      children: [
+        Obx(() => Text(
+              session.profile.value?.namaLengkap ?? '-',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppColors.kelurahanDark,
+                letterSpacing: -0.5,
+              ),
+            )),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.kelurahanLight,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFFBBDEFB),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppColors.kelurahanMain,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'Akun Terverifikasi',
+                style: TextStyle(
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.kelurahanMain,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Info Card ─────────────────────────────────────────────────────────────
+  Widget _buildInfoCard(SessionService session) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
+        boxShadow: DesignTokens.kelurahanShadowSm,
+      ),
+      child: Column(
+        children: [
+          // Section header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.kelurahanMain,
+                        Color(0xFF42A5F5),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Informasi Akun',
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.kelurahanDark,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+          const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+
+          // Rows
+          Obx(() => _InfoRow(
+                icon: Icons.badge_outlined,
+                label: 'Nama Lengkap',
+                value: session.profile.value?.namaLengkap ?? '-',
+                iconGradient: const [
+                  AppColors.kelurahanMain,
+                  Color(0xFF42A5F5),
+                ],
+              )),
+          const Divider(
+              color: Color(0xFFF1F5F9), height: 1, thickness: 1,
+              indent: 16, endIndent: 16),
+          const _InfoRow(
+            icon: Icons.admin_panel_settings_outlined,
+            label: 'Role',
+            value: 'Pengelola Kelurahan',
+            iconGradient: [Color(0xFF00838F), Color(0xFF26C6DA)],
+          ),
+          const Divider(
+              color: Color(0xFFF1F5F9), height: 1, thickness: 1,
+              indent: 16, endIndent: 16),
+          Obx(() => _InfoRow(
+                icon: Icons.calendar_today_outlined,
+                label: 'Bergabung Sejak',
+                value: session.profile.value?.createdAt != null
+                    ? FormatHelper.date(session.profile.value!.createdAt)
+                    : '-',
+                iconGradient: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+              )),
+        ],
+      ),
+    );
+  }
+
+  // ── Menu Grid ─────────────────────────────────────────────────────────────
+  Widget _buildMenuGrid() {
     final menus = [
-      _MenuData(
+      _MenuItem(
+        icon: Icons.bar_chart_rounded,
+        label: 'Monitoring',
+        gradientColors: const [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+        bgColor: AppColors.kelurahanLight,
+        onTap: () => Get.toNamed(AppRoutes.monitoringBankSampah),
+      ),
+      _MenuItem(
         icon: Icons.store_rounded,
-        label: 'Manajemen\nBank Sampah',
-        iconColor: _blue600,
-        iconBg: _blue50,
+        label: 'Bank Sampah',
+        gradientColors: const [Color(0xFF00838F), Color(0xFF26C6DA)],
+        bgColor: const Color(0xFFE0F7FA),
         onTap: () => Get.toNamed(AppRoutes.manajemenBankSampah),
       ),
-      _MenuData(
-        icon: Icons.people_rounded,
-        label: 'Manajemen\nPengelola',
-        iconColor: _teal,
-        iconBg: _tealBg,
+      _MenuItem(
+        icon: Icons.people_outline_rounded,
+        label: 'Pengelola',
+        gradientColors: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
+        bgColor: const Color(0xFFE3F2FD),
         onTap: () => Get.toNamed(AppRoutes.manajemenPengelola),
       ),
-      _MenuData(
-        icon: Icons.category_rounded,
-        label: 'Master Data\nSampah',
-        iconColor: const Color(0xFF6A1B9A),
-        iconBg: const Color(0xFFF3E5F5),
+      _MenuItem(
+        icon: Icons.category_outlined,
+        label: 'Jenis Sampah',
+        gradientColors: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+        bgColor: const Color(0xFFF3E5F5),
         onTap: () => Get.toNamed(AppRoutes.masterSampah),
       ),
-      _MenuData(
-        icon: Icons.assessment_rounded,
-        label: 'Generator\nLaporan',
-        iconColor: const Color(0xFF00695C),
-        iconBg: const Color(0xFFE0F2F1),
+      _MenuItem(
+        icon: Icons.assessment_outlined,
+        label: 'Laporan',
+        gradientColors: const [Color(0xFF00695C), Color(0xFF26A69A)],
+        bgColor: const Color(0xFFE0F2F1),
         onTap: () => Get.toNamed(AppRoutes.generatorLaporan),
+      ),
+      _MenuItem(
+        icon: Icons.manage_search_rounded,
+        label: 'Aktivitas',
+        gradientColors: const [Color(0xFF283593), Color(0xFF5C6BC0)],
+        bgColor: const Color(0xFFE8EAF6),
+        onTap: () => Get.toNamed(AppRoutes.monitoringBankSampah),
       ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader(title: 'Kelola Sistem'),
-        const SizedBox(height: 16),
+        // Section header
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 18,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Kelola Sistem',
+              style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: AppColors.kelurahanDark,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
 
         LayoutBuilder(
           builder: (context, constraints) {
-            final itemWidth = (constraints.maxWidth - 14) / 2;
-
+            final itemWidth = (constraints.maxWidth - 24) / 3;
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: menus.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                mainAxisExtent: itemWidth * 0.92,
+                crossAxisCount: 3,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                mainAxisExtent: itemWidth + 16,
               ),
-              itemBuilder: (_, i) => _MenuCard(data: menus[i]),
+              itemBuilder: (context, index) {
+                return _MenuCard(item: menus[index]);
+              },
             );
           },
         ),
@@ -317,53 +493,73 @@ class ProfilKelurahanView extends StatelessWidget {
     );
   }
 
-  // ── Tombol Keluar ─────────────────────────────────────────────────────────
+  // ── Logout Button ─────────────────────────────────────────────────────────
   Widget _buildLogoutButton(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 54,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFEF5350), Color(0xFFD32F2F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFD32F2F).withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
+    return GestureDetector(
+      onTap: () => _confirmLogout(context),
+      child: Container(
+        width: double.infinity,
+        height: 54,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFEF5350), Color(0xFFD32F2F)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _confirmLogout(context),
           borderRadius: BorderRadius.circular(18),
-          child: const Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.logout_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                SizedBox(width: 10),
-                Text(
-                  'Keluar dari Akun',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.2,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD32F2F).withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Shine
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 27,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(18),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.10),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+            const Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.logout_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Text(
+                    'Keluar dari Akun',
+                    style: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -380,7 +576,7 @@ class ProfilKelurahanView extends StatelessWidget {
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: _blue600.withValues(alpha: 0.12),
+                color: AppColors.kelurahanMain.withValues(alpha: 0.12),
                 blurRadius: 30,
                 offset: const Offset(0, 10),
               ),
@@ -391,25 +587,35 @@ class ProfilKelurahanView extends StatelessWidget {
             children: [
               // Icon
               Container(
-                width: 68,
-                height: 68,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFEF5350), Color(0xFFD32F2F)],
+                  ),
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD32F2F).withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.logout_rounded,
-                  color: Colors.red.shade400,
-                  size: 32,
+                  color: Colors.white,
+                  size: 34,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
               const Text(
                 'Keluar dari Akun?',
                 style: TextStyle(
+                  fontFamily: 'PlusJakartaSans',
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
-                  color: _blue900,
+                  color: AppColors.kelurahanDark,
                   letterSpacing: -0.4,
                 ),
               ),
@@ -418,31 +624,37 @@ class ProfilKelurahanView extends StatelessWidget {
                 'Anda akan keluar dari sesi ini.\nApakah Anda yakin?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 13.5,
                   color: Colors.grey.shade500,
                   height: 1.6,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 26),
               Row(
                 children: [
-                  // Tombol Batal
                   Expanded(
                     child: GestureDetector(
                       onTap: () => Get.back(result: false),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        height: 48,
                         decoration: BoxDecoration(
-                          color: _blue50,
-                          borderRadius: BorderRadius.circular(16),
+                          color: AppColors.kelurahanLight,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFBBDEFB),
+                            width: 1,
+                          ),
                         ),
                         child: const Center(
                           child: Text(
                             'Batal',
                             style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: _blue600,
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.kelurahanMain,
                             ),
                           ),
                         ),
@@ -450,24 +662,21 @@ class ProfilKelurahanView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Tombol Keluar
                   Expanded(
                     child: GestureDetector(
                       onTap: () => Get.back(result: true),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        height: 48,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.red.shade400,
-                              Colors.red.shade300,
-                            ],
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFEF5350), Color(0xFFD32F2F)],
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withValues(alpha: 0.3),
-                              blurRadius: 10,
+                              color: const Color(0xFFD32F2F)
+                                  .withValues(alpha: 0.25),
+                              blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -476,8 +685,9 @@ class ProfilKelurahanView extends StatelessWidget {
                           child: Text(
                             'Keluar',
                             style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
                               color: Colors.white,
                             ),
                           ),
@@ -499,87 +709,45 @@ class ProfilKelurahanView extends StatelessWidget {
   }
 }
 
-// ── Section Header Widget ───────────────────────────────────────────────────
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 22,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: AppColors.kelurahanGradient,
-            ),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF0A2540),
-            letterSpacing: -0.5,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Divider Widget ──────────────────────────────────────────────────────────
-class _Divider extends StatelessWidget {
-  const _Divider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      color: const Color(0xFFEBF2FA),
-    );
-  }
-}
-
-// ── Info Row Widget ─────────────────────────────────────────────────────────
+// ── Info Row Widget ──────────────────────────────────────────────────────────
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final Color iconBg;
-  final Color iconColor;
+  final List<Color> iconGradient;
 
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.value,
-    required this.iconBg,
-    required this.iconColor,
+    required this.iconGradient,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: iconBg,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: iconGradient,
+              ),
               borderRadius: BorderRadius.circular(13),
+              boxShadow: [
+                BoxShadow(
+                  color: iconGradient.first.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            child: Icon(icon, color: iconColor, size: 22),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -588,25 +756,32 @@ class _InfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.2,
+                    color: Colors.grey.shade500,
+                    letterSpacing: 0.3,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   value,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0A2540),
+                    color: AppColors.kelurahanDark,
                     letterSpacing: -0.2,
                   ),
                 ),
               ],
             ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: Colors.grey.shade300,
+            size: 20,
           ),
         ],
       ),
@@ -614,80 +789,84 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// ── Menu Data Model ─────────────────────────────────────────────────────────
-class _MenuData {
+// ── Menu Item Data ───────────────────────────────────────────────────────────
+class _MenuItem {
   final IconData icon;
   final String label;
-  final Color iconColor;
-  final Color iconBg;
+  final List<Color> gradientColors;
+  final Color bgColor;
   final VoidCallback onTap;
 
-  const _MenuData({
+  const _MenuItem({
     required this.icon,
     required this.label,
-    required this.iconColor,
-    required this.iconBg,
+    required this.gradientColors,
+    required this.bgColor,
     required this.onTap,
   });
 }
 
-// ── Menu Card Widget ────────────────────────────────────────────────────────
+// ── Menu Card Widget ─────────────────────────────────────────────────────────
 class _MenuCard extends StatelessWidget {
-  final _MenuData data;
+  final _MenuItem item;
 
-  const _MenuCard({required this.data});
+  const _MenuCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: data.onTap,
+      onTap: item.onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: 14,
-          horizontal: 10,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: DesignTokens.kelurahanShadowSm,
-          border: Border.all(
-            color: const Color(0xFFEBF2FA),
-            width: 1.2,
+          borderRadius: BorderRadius.circular(18),
+          border: Border(
+            top: BorderSide(color: item.gradientColors.first, width: 2),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: item.gradientColors.first.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Flexible(
-              flex: 4,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: data.iconBg,
-                  borderRadius: BorderRadius.circular(18),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: item.gradientColors,
                 ),
-                child: Icon(
-                  data.icon,
-                  color: data.iconColor,
-                  size: 28,
-                ),
+                borderRadius: BorderRadius.circular(13),
+                boxShadow: [
+                  BoxShadow(
+                    color: item.gradientColors.first.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
+              child: Icon(item.icon, color: Colors.white, size: 20),
             ),
-            const SizedBox(height: 10),
-            Flexible(
-              flex: 2,
-              child: Text(
-                data.label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0A2540),
-                  height: 1.35,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 8),
+            Text(
+              item.label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.kelurahanDark,
+                height: 1.2,
               ),
             ),
           ],
@@ -695,4 +874,70 @@ class _MenuCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Wave Painter ─────────────────────────────────────────────────────────────
+class _WavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint1 = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: AppColors.kelurahanGradient,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path1 = Path()
+      ..lineTo(0, size.height * 0.78)
+      ..quadraticBezierTo(
+        size.width * 0.25,
+        size.height * 0.95,
+        size.width * 0.5,
+        size.height * 0.82,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.75,
+        size.height * 0.68,
+        size.width,
+        size.height * 0.80,
+      )
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(path1, paint1);
+
+    final paint2 = Paint()
+      ..color = const Color(0xFF42A5F5).withValues(alpha: 0.3);
+
+    final path2 = Path()
+      ..moveTo(0, size.height * 0.62)
+      ..quadraticBezierTo(
+        size.width * 0.3,
+        size.height * 0.50,
+        size.width * 0.55,
+        size.height * 0.66,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.78,
+        size.height * 0.78,
+        size.width,
+        size.height * 0.64,
+      )
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+
+    canvas.drawPath(path2, paint2);
+
+    final paintDot = Paint()
+      ..color = Colors.white.withValues(alpha: 0.06);
+
+    canvas.drawCircle(
+        Offset(size.width * 0.12, size.height * 0.35), 45, paintDot);
+    canvas.drawCircle(
+        Offset(size.width * 0.88, size.height * 0.18), 28, paintDot);
+  }
+
+  @override
+  bool shouldRepaint(_WavePainter oldDelegate) => false;
 }

@@ -64,19 +64,28 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surfaceLowest,
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
               ),
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.only(bottom: bottomPadding),
+            padding: EdgeInsets.only(
+              bottom: bottomPadding,
+              top: 10,
+              left: 12,
+              right: 12,
+            ),
             child: SizedBox(
-              height: 60,
+              height: 56,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: List.generate(items.length, (index) {
@@ -92,12 +101,24 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeInOut,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.pengelolaLight
-                                : Colors.transparent,
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                                  )
+                                : null,
+                            color: isSelected ? null : Colors.transparent,
                             borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.pengelolaMain.withValues(alpha: 0.3),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : [],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -105,8 +126,8 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
                               Icon(
                                 isSelected ? item['activeIcon'] : item['icon'],
                                 color: isSelected
-                                    ? AppColors.pengelolaDark
-                                    : AppColors.textSecondary,
+                                    ? Colors.white
+                                    : Colors.grey.shade400,
                                 size: 20,
                               ),
                               Flexible(
@@ -119,10 +140,10 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
                                           child: Text(
                                             item['label'],
                                             style: const TextStyle(
+                                              fontFamily: 'PlusJakartaSans',
                                               fontSize: 11,
                                               fontWeight: FontWeight.w700,
-                                              color: AppColors.pengelolaDark,
-                                              fontFamily: 'PlusJakartaSans',
+                                              color: Colors.white,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,

@@ -4,26 +4,11 @@ import 'package:get/get.dart';
 import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
 import '../../app/themes/app_text_styles.dart';
-import '../../app/themes/design_tokens.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
 import '../../models/profile_model.dart';
-
-// ── Palet Warna Lokal ────────────────────────────────────────────────────────
-class _C {
-  static const blue900 = AppColors.kelurahanDark;
-  static const blue500 = AppColors.kelurahanMain;
-  static const blue400 = Color(0xFF42A5F5);
-  static const blue200 = AppColors.kelurahanLight;
-  static const blue50  = AppColors.kelurahanLight;
-  static const bg      = AppColors.scaffoldBg;
-  static const warning = Color(0xFFF57F17);
-  static const warnBg  = Color(0xFFFFF8E1);
-  static const red     = Color(0xFFD32F2F);
-  static const redBg   = Color(0xFFFFEBEE);
-}
 
 class PengelolaListView extends GetView<PengelolaController> {
   const PengelolaListView({super.key});
@@ -33,27 +18,19 @@ class PengelolaListView extends GetView<PengelolaController> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: _C.bg,
+        backgroundColor: AppColors.scaffoldBg,
         bottomNavigationBar: const KelurahanBottomNavBar(currentIndex: 2),
         body: SafeArea(
           child: Column(
             children: [
-              // Header Page
-              AppPageHeader(
-                title: 'Manajemen',
-                subtitle: 'Pengelola Bank Sampah',
-                gradientColors: AppColors.kelurahanGradient,
-                showBack: false,
-              ),
-
-              // Tab Bar
+              _buildHeader(context),
               _buildTabBar(),
-
-              // Tab Content
               Expanded(
                 child: Obx(() {
                   if (controller.isLoading.value) {
-                    return const AppLoadingState(message: 'Memuat data pengelola...');
+                    return const Center(
+                      child: AppLoadingState(message: 'Memuat data pengelola...'),
+                    );
                   }
                   return TabBarView(
                     children: [
@@ -66,35 +43,122 @@ class PengelolaListView extends GetView<PengelolaController> {
             ],
           ),
         ),
-
-        // FAB Tambah Pengelola
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            controller.resetForm();
-            Get.toNamed(AppRoutes.formPengelola);
-          },
-          backgroundColor: _C.blue500,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          highlightElevation: 0,
-          icon: const Icon(Icons.person_add_rounded, size: 22),
-          label: const Text(
-            'Tambah Pengelola',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.1,
-            ),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
+        floatingActionButton: _buildFAB(),
       ),
     );
   }
 
-  // ── Tab Bar Widget ─────────────────────────────────────────────────────────
+  // ── Header dengan wave & stats ───────────────────────────────────────────
+  Widget _buildHeader(BuildContext context) {
+    return Stack(
+      children: [
+        CustomPaint(
+          size: Size(MediaQuery.of(context).size.width, 185),
+          painter: _HeaderWavePainter(),
+        ),
+        // Decorative circles
+        Positioned(
+          top: -25, right: -15,
+          child: Container(
+            width: 140, height: 140,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 30, right: 65,
+          child: Container(
+            width: 55, height: 55,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.04),
+            ),
+          ),
+        ),
+        // Content
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top bar
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Manajemen Pengelola',
+                          style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Kelola akun pengelola bank sampah',
+                          style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // People icon badge
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    ),
+                    child: const Icon(Icons.people_rounded, color: Colors.white, size: 22),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              // Stat pills row
+              Obx(() => Row(
+                children: [
+                  _StatPill(
+                    icon: Icons.verified_user_rounded,
+                    label: 'Aktif',
+                    value: '${controller.listPengelola.length}',
+                    color: const Color(0xFF69F0AE),
+                  ),
+                  const SizedBox(width: 10),
+                  _StatPill(
+                    icon: Icons.hourglass_top_rounded,
+                    label: 'Menunggu',
+                    value: '${controller.listPending.length}',
+                    color: const Color(0xFFFFD54F),
+                  ),
+                  const SizedBox(width: 10),
+                  _StatPill(
+                    icon: Icons.store_rounded,
+                    label: 'Bank',
+                    value: '${controller.listBankSampah.length}',
+                    color: const Color(0xFF80D8FF),
+                  ),
+                ],
+              )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Tab Bar ──────────────────────────────────────────────────────────────
   Widget _buildTabBar() {
     return Container(
       color: Colors.white,
@@ -102,10 +166,24 @@ class PengelolaListView extends GetView<PengelolaController> {
         final pendingCount = controller.listPending.length;
         return TabBar(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          indicatorColor: _C.blue500,
           indicatorSize: TabBarIndicatorSize.tab,
-          dividerColor: AppColors.divider,
-          labelColor: _C.blue900,
+          indicator: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: AppColors.kelurahanGradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.kelurahanMain.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          dividerColor: Colors.transparent,
+          labelColor: Colors.white,
           unselectedLabelColor: AppColors.textSecondary,
           labelStyle: AppTextStyles.titleSm.copyWith(fontWeight: FontWeight.w800),
           unselectedLabelStyle: AppTextStyles.bodyMd.copyWith(fontWeight: FontWeight.w600),
@@ -114,19 +192,21 @@ class PengelolaListView extends GetView<PengelolaController> {
             Tab(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Menunggu'),
                   if (pendingCount > 0) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 7),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: _C.warning,
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFFF57F17),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '$pendingCount',
                         style: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -142,9 +222,115 @@ class PengelolaListView extends GetView<PengelolaController> {
       }),
     );
   }
+
+  // ── FAB ──────────────────────────────────────────────────────────────────
+  Widget _buildFAB() {
+    return GestureDetector(
+      onTap: () {
+        controller.resetForm();
+        Get.toNamed(AppRoutes.formPengelola);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: AppColors.kelurahanGradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.kelurahanMain.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 26, height: 26,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Tambah Pengelola',
+              style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-// ── Tab Aktif Widget ─────────────────────────────────────────────────────────
+// ── Stat Pill Widget ─────────────────────────────────────────────────────────
+class _StatPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.75),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB: AKTIF
+// ─────────────────────────────────────────────────────────────────────────────
 class _TabAktif extends StatelessWidget {
   final PengelolaController controller;
   const _TabAktif({required this.controller});
@@ -161,18 +347,22 @@ class _TabAktif extends StatelessWidget {
       }
       return RefreshIndicator(
         onRefresh: controller.fetchAll,
-        color: _C.blue500,
-        child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+        color: AppColors.kelurahanMain,
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 100),
           itemCount: controller.listPengelola.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, i) {
             final pengelola = controller.listPengelola[i];
-            return _PengelolaCard(
-              pengelola: pengelola,
-              controller: controller,
-              onHapus: () => _confirmHapus(context, pengelola, controller),
-              onAturBankSampah: () => _showAturBankSampahSheet(context, pengelola, controller),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _PengelolaCard(
+                pengelola: pengelola,
+                index: i,
+                controller: controller,
+                onHapus: () => _confirmHapus(context, pengelola, controller),
+                onAturBankSampah: () =>
+                    _showAturBankSampahSheet(context, pengelola, controller),
+              ),
             );
           },
         ),
@@ -181,7 +371,9 @@ class _TabAktif extends StatelessWidget {
   }
 }
 
-// ── Tab Pending Widget ────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB: PENDING
+// ─────────────────────────────────────────────────────────────────────────────
 class _TabPending extends StatelessWidget {
   final PengelolaController controller;
   const _TabPending({required this.controller});
@@ -198,19 +390,22 @@ class _TabPending extends StatelessWidget {
       }
       return RefreshIndicator(
         onRefresh: controller.fetchAll,
-        color: _C.blue500,
-        child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+        color: AppColors.kelurahanMain,
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
           itemCount: controller.listPending.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 14),
           itemBuilder: (context, i) {
             final pengelola = controller.listPending[i];
-            return _PendingCard(
-              pengelola: pengelola,
-              listBankSampah: controller.listBankSampah,
-              controller: controller,
-              onApprove: () => _showApproveSheet(context, pengelola, controller),
-              onTolak: () => _confirmTolak(context, pengelola, controller),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: _PendingCard(
+                pengelola: pengelola,
+                listBankSampah: controller.listBankSampah,
+                controller: controller,
+                onApprove: () =>
+                    _showApproveSheet(context, pengelola, controller),
+                onTolak: () => _confirmTolak(context, pengelola, controller),
+              ),
             );
           },
         ),
@@ -219,50 +414,74 @@ class _TabPending extends StatelessWidget {
   }
 }
 
-// ── Redesigned Card Pengelola Aktif ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CARD: PENGELOLA AKTIF
+// ─────────────────────────────────────────────────────────────────────────────
+// warna avatar bergilir berdasarkan index
+const _avatarGradients = [
+  [Color(0xFF0A2540), Color(0xFF1E88E5)],
+  [Color(0xFF00695C), Color(0xFF26A69A)],
+  [Color(0xFF283593), Color(0xFF5C6BC0)],
+  [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+  [Color(0xFF00838F), Color(0xFF26C6DA)],
+];
+
 class _PengelolaCard extends StatelessWidget {
   final ProfileModel pengelola;
+  final int index;
+  final PengelolaController controller;
   final VoidCallback onHapus;
   final VoidCallback onAturBankSampah;
-  final PengelolaController controller;
 
   const _PengelolaCard({
     required this.pengelola,
+    required this.index,
+    required this.controller,
     required this.onHapus,
     required this.onAturBankSampah,
-    required this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
-    final initial = pengelola.namaLengkap.isNotEmpty ? pengelola.namaLengkap[0].toUpperCase() : '?';
+    final initial = pengelola.namaLengkap.isNotEmpty
+        ? pengelola.namaLengkap[0].toUpperCase()
+        : '?';
+    final grad = _avatarGradients[index % _avatarGradients.length];
 
     return GestureDetector(
       onTap: () => _showInfoSheet(context, pengelola, controller),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
-          boxShadow: DesignTokens.kelurahanShadowSm,
+          borderRadius: BorderRadius.circular(22),
+          border: Border(
+            left: BorderSide(color: grad[0], width: 3),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: grad[0].withValues(alpha: 0.07),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            // Avatar
+            // Avatar dengan gradient bergilir
             Container(
-              width: 50,
-              height: 50,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
+                  colors: grad,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [_C.blue500, _C.blue400],
                 ),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: _C.blue500.withValues(alpha: 0.25),
+                    color: grad[0].withValues(alpha: 0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -272,8 +491,9 @@ class _PengelolaCard extends StatelessWidget {
                 child: Text(
                   initial,
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
                     color: Colors.white,
                   ),
                 ),
@@ -281,7 +501,7 @@ class _PengelolaCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
 
-            // Info Details
+            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,49 +509,75 @@ class _PengelolaCard extends StatelessWidget {
                   Text(
                     pengelola.namaLengkap,
                     style: const TextStyle(
+                      fontFamily: 'PlusJakartaSans',
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: _C.blue900,
-                      letterSpacing: -0.2,
+                      color: AppColors.kelurahanDark,
+                      letterSpacing: -0.3,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (pengelola.noHp != null && pengelola.noHp!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.phone_outlined, size: 12, color: _C.blue500),
-                        const SizedBox(width: 6),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      if (pengelola.noHp != null &&
+                          pengelola.noHp!.isNotEmpty) ...[
+                        Icon(Icons.phone_outlined,
+                            size: 11, color: grad[1]),
+                        const SizedBox(width: 4),
                         Text(
                           pengelola.noHp!,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontFamily: 'PlusJakartaSans',
+                            fontSize: 11.5,
                             color: Colors.grey.shade600,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                        const SizedBox(width: 10),
                       ],
-                    ),
-                  ],
-                  const SizedBox(height: 6),
+                      Icon(Icons.calendar_today_outlined,
+                          size: 11, color: grad[1]),
+                      const SizedBox(width: 4),
+                      Text(
+                        FormatHelper.date(pengelola.createdAt),
+                        style: TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  // "Aktif" badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: _C.blue50,
+                      color: grad[0].withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today_rounded, size: 10, color: _C.blue500),
-                        const SizedBox(width: 4),
+                        Container(
+                          width: 5, height: 5,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF69F0AE),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
                         Text(
-                          'Bergabung ${FormatHelper.date(pengelola.createdAt)}',
-                          style: const TextStyle(
+                          'Pengelola Aktif',
+                          style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: _C.blue500,
+                            color: grad[0],
                           ),
                         ),
                       ],
@@ -342,19 +588,38 @@ class _PengelolaCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
 
-            // Delete Action Button
-            GestureDetector(
-              onTap: onHapus,
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _C.redBg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _C.red.withValues(alpha: 0.2), width: 1),
+            // Action column: atur + hapus
+            Column(
+              children: [
+                GestureDetector(
+                  onTap: onAturBankSampah,
+                  child: Container(
+                    width: 34, height: 34,
+                    decoration: BoxDecoration(
+                      color: grad[0].withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: grad[0].withValues(alpha: 0.2), width: 1),
+                    ),
+                    child: Icon(Icons.store_rounded, color: grad[0], size: 16),
+                  ),
                 ),
-                child: const Icon(Icons.delete_outline_rounded, color: _C.red, size: 18),
-              ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: onHapus,
+                  child: Container(
+                    width: 34, height: 34,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: const Color(0xFFFFCDD2), width: 1),
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded,
+                        color: Color(0xFFD32F2F), size: 16),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -363,7 +628,9 @@ class _PengelolaCard extends StatelessWidget {
   }
 }
 
-// ── Redesigned Card Pending ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CARD: PENDING
+// ─────────────────────────────────────────────────────────────────────────────
 class _PendingCard extends StatelessWidget {
   final ProfileModel pengelola;
   final List<BankSampahModel> listBankSampah;
@@ -381,7 +648,9 @@ class _PendingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = pengelola.namaLengkap.isNotEmpty ? pengelola.namaLengkap[0].toUpperCase() : '?';
+    final initial = pengelola.namaLengkap.isNotEmpty
+        ? pengelola.namaLengkap[0].toUpperCase()
+        : '?';
 
     final namaPilihan = pengelola.bankSampahPilihan.isEmpty
         ? null
@@ -391,286 +660,332 @@ class _PendingCard extends StatelessWidget {
             .join(', ');
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFFFECB3), width: 1.5),
+        borderRadius: BorderRadius.circular(22),
+        border: const Border(
+          left: BorderSide(color: Color(0xFFF57F17), width: 3),
+        ),
         boxShadow: [
           BoxShadow(
-            color: _C.warning.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFFF57F17).withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Basic Info
-          Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_C.warning, const Color(0xFFFFB300)],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _C.warning.withValues(alpha: 0.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+          // Top section
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar
+                Stack(
+                  children: [
+                    Container(
+                      width: 52, height: 52,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFF57F17), Color(0xFFFFB300)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFF57F17).withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Dot animasi menunggu
+                    Positioned(
+                      top: 0, right: 0,
+                      child: Container(
+                        width: 12, height: 12,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD54F),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            pengelola.namaLengkap,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: _C.blue900,
-                              letterSpacing: -0.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                const SizedBox(width: 14),
+
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        pengelola.namaLengkap,
+                        style: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.kelurahanDark,
+                          letterSpacing: -0.3,
                         ),
-                        const SizedBox(width: 8),
-                        // Badge "Menunggu"
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _C.warnBg,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFFFD54F), width: 1),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: _C.warning,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'Menunggu',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: _C.warning,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (pengelola.noHp != null && pengelola.noHp!.isNotEmpty) ...[
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 4),
+                      if (pengelola.noHp != null && pengelola.noHp!.isNotEmpty)
+                        Row(
+                          children: [
+                            const Icon(Icons.phone_outlined,
+                                size: 11, color: Color(0xFFF57F17)),
+                            const SizedBox(width: 4),
+                            Text(
+                              pengelola.noHp!,
+                              style: TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 11.5,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 5),
                       Row(
                         children: [
-                          const Icon(Icons.phone_outlined, size: 12, color: _C.blue500),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF8E1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: const Color(0xFFFFD54F), width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 5, height: 5,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF57F17),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Menunggu Verifikasi',
+                                  style: TextStyle(
+                                    fontFamily: 'PlusJakartaSans',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFFF57F17),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           const SizedBox(width: 6),
                           Text(
-                            pengelola.noHp!,
+                            FormatHelper.date(pengelola.createdAt),
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 10,
+                              color: Colors.grey.shade500,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ],
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _C.blue50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.calendar_today_rounded, size: 10, color: _C.blue500),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Daftar ${FormatHelper.date(pengelola.createdAt)}',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: _C.blue500,
-                            ),
-                          ),
-                        ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Bank pilihan
+          if (namaPilihan != null) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: AppColors.kelurahanLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: const Color(0xFFBBDEFB), width: 1),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.storefront_rounded,
+                        size: 14, color: AppColors.kelurahanMain),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Pengajuan: $namaPilihan',
+                        style: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 11.5,
+                          color: AppColors.kelurahanMain,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-
-          // Bank Sampah Pilihan
-          if (namaPilihan != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: _C.blue50,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFBBDEFB), width: 1),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.storefront_rounded, size: 16, color: _C.blue500),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Pengajuan Bank: $namaPilihan',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: _C.blue500,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
 
-          const SizedBox(height: 14),
-          const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // Action Buttons
-          Obx(() {
-            final isProcessing = controller.isApprovingId.value == pengelola.id;
-            return Row(
-              children: [
-                // Tolak Button
-                Expanded(
-                  child: GestureDetector(
+          // Divider
+          const Divider(
+              color: Color(0xFFF1F5F9), height: 1, thickness: 1,
+              indent: 14, endIndent: 14),
+          const SizedBox(height: 12),
+
+          // Action buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: Obx(() {
+              final isProcessing =
+                  controller.isApprovingId.value == pengelola.id;
+              return Row(
+                children: [
+                  // Tolak
+                  GestureDetector(
                     onTap: isProcessing ? null : onTolak,
                     child: Container(
-                      height: 44,
+                      height: 42,
+                      width: 90,
                       decoration: BoxDecoration(
-                        color: isProcessing ? Colors.grey.shade100 : _C.redBg,
+                        color: isProcessing
+                            ? Colors.grey.shade100
+                            : const Color(0xFFFFEBEE),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isProcessing ? Colors.grey.shade300 : _C.red.withValues(alpha: 0.3),
+                          color: isProcessing
+                              ? Colors.grey.shade300
+                              : const Color(0xFFD32F2F).withValues(alpha: 0.3),
                           width: 1.2,
                         ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.close_rounded, size: 18, color: isProcessing ? Colors.grey : _C.red),
-                          const SizedBox(width: 6),
+                          Icon(Icons.close_rounded,
+                              size: 16,
+                              color: isProcessing
+                                  ? Colors.grey
+                                  : const Color(0xFFD32F2F)),
+                          const SizedBox(width: 4),
                           Text(
                             'Tolak',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w800,
-                              color: isProcessing ? Colors.grey : _C.red,
+                              color: isProcessing
+                                  ? Colors.grey
+                                  : const Color(0xFFD32F2F),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
-                // Setujui & Atur Button
-                Expanded(
-                  flex: 2,
-                  child: GestureDetector(
-                    onTap: isProcessing ? null : onApprove,
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: isProcessing
-                            ? LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400])
-                            : const LinearGradient(colors: [_C.blue500, _C.blue400]),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: isProcessing
-                            ? []
-                            : [
-                                BoxShadow(
-                                  color: _C.blue500.withValues(alpha: 0.25),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
+                  // Setujui
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: isProcessing ? null : onApprove,
+                      child: Container(
+                        height: 42,
+                        decoration: BoxDecoration(
+                          gradient: isProcessing
+                              ? LinearGradient(colors: [
+                                  Colors.grey.shade300,
+                                  Colors.grey.shade400,
+                                ])
+                              : const LinearGradient(
+                                  colors: AppColors.kelurahanGradient,
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                              ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          isProcessing
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: isProcessing
+                              ? []
+                              : [
+                                  BoxShadow(
+                                    color: AppColors.kelurahanMain
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
-                                )
-                              : const Icon(Icons.check_rounded, size: 18, color: Colors.white),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Setujui & Atur',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                                ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            isProcessing
+                                ? const SizedBox(
+                                    width: 15, height: 15,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.check_rounded,
+                                    size: 17, color: Colors.white),
+                            const SizedBox(width: 7),
+                            const Text(
+                              'Setujui & Atur Bank',
+                              style: TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
-          }),
+                ],
+              );
+            }),
+          ),
         ],
       ),
     );
   }
 }
 
-// ── Redesigned Bottom Sheet: Approve + Pilih Bank Sampah ───────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// BOTTOM SHEET: Approve
+// ─────────────────────────────────────────────────────────────────────────────
 Future<void> _showApproveSheet(
   BuildContext context,
   ProfileModel pengelola,
@@ -681,93 +996,72 @@ Future<void> _showApproveSheet(
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
-    builder: (ctx) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.65,
-      maxChildSize: 0.9,
-      builder: (_, scrollCtrl) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: _C.blue200,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => _StyledSheet(
+      title: 'Setujui Pendaftaran',
+      subtitle: pengelola.namaLengkap,
+      gradientColors: const [Color(0xFF00695C), Color(0xFF26A69A)],
+      icon: Icons.how_to_reg_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pilih bank sampah yang akan dikelola:',
+            style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
+              fontSize: 13,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 20),
-
-            _SheetTitle(
-              title: 'Setujui Pendaftaran',
-              subtitle: pengelola.namaLengkap,
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Pilih bank sampah yang akan dikelola:',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Waste Bank Selector List
-            Expanded(
-              child: Obx(() => ListView.separated(
-                    controller: scrollCtrl,
-                    itemCount: controller.listBankSampah.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) {
-                      final bank = controller.listBankSampah[i];
-                      return Obx(() => _BankCheckTile(
-                            bank: bank,
-                            isSelected: selected.contains(bank.id),
-                            onChanged: (v) {
-                              if (v == true) {
-                                selected.add(bank.id);
-                              } else {
-                                selected.remove(bank.id);
-                              }
-                            },
-                          ));
-                    },
-                  )),
-            ),
-
-            const SizedBox(height: 14),
-
-            Obx(() => _GradientButton(
-                  label: 'Setujui Pengelola',
-                  icon: Icons.check_circle_outline_rounded,
-                  isLoading: controller.isApprovingId.value == pengelola.id,
-                  onPressed: () async {
-                    await controller.approvePengelola(
-                      pengelola.id,
-                      selected.toList(),
-                    );
-                    if (!controller.listPending.any((p) => p.id == pengelola.id)) {
-                      Get.back();
-                    }
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Obx(() => ListView.separated(
+                  itemCount: controller.listBankSampah.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) {
+                    final bank = controller.listBankSampah[i];
+                    return Obx(() => _BankCheckTile(
+                          bank: bank,
+                          isSelected: selected.contains(bank.id),
+                          onChanged: (v) {
+                            if (v == true) {
+                              selected.add(bank.id);
+                            } else {
+                              selected.remove(bank.id);
+                            }
+                          },
+                        ));
                   },
                 )),
-          ],
-        ),
+          ),
+          const SizedBox(height: 14),
+          Obx(() => _ActionButton(
+                label: 'Setujui Pengelola',
+                icon: Icons.check_circle_outline_rounded,
+                isLoading:
+                    controller.isApprovingId.value == pengelola.id,
+                gradientColors: const [Color(0xFF00695C), Color(0xFF26A69A)],
+                onPressed: () async {
+                  await controller.approvePengelola(
+                    pengelola.id,
+                    selected.toList(),
+                  );
+                  if (!controller.listPending
+                      .any((p) => p.id == pengelola.id)) {
+                    Get.back();
+                  }
+                },
+              )),
+        ],
       ),
     ),
   );
 }
 
-// ── Redesigned Bottom Sheet: Atur Bank Sampah ──────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// BOTTOM SHEET: Atur Bank Sampah
+// ─────────────────────────────────────────────────────────────────────────────
 Future<void> _showAturBankSampahSheet(
   BuildContext context,
   ProfileModel pengelola,
@@ -781,90 +1075,65 @@ Future<void> _showAturBankSampahSheet(
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
-    builder: (ctx) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.6,
-      maxChildSize: 0.85,
-      builder: (_, scrollCtrl) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: _C.blue200,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _SheetTitle(
-              title: 'Atur Bank Sampah',
-              subtitle: pengelola.namaLengkap,
-            ),
-            const SizedBox(height: 14),
-
-            Expanded(
-              child: Obx(() => ListView.separated(
-                    controller: scrollCtrl,
-                    itemCount: controller.listBankSampah.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) {
-                      final bank = controller.listBankSampah[i];
-                      return Obx(() => _BankCheckTile(
-                            bank: bank,
-                            isSelected: selected.contains(bank.id),
-                            onChanged: (v) {
-                              if (v == true) {
-                                selected.add(bank.id);
-                              } else {
-                                selected.remove(bank.id);
-                              }
-                            },
-                          ));
-                    },
-                  )),
-            ),
-
-            const SizedBox(height: 14),
-
-            Obx(() => _GradientButton(
-                  label: 'Simpan Relasi',
-                  icon: Icons.save_outlined,
-                  isLoading: controller.isSaving.value,
-                  onPressed: () async {
-                    await controller.updateRelasiPengelola(
-                      pengelola.id,
-                      selected.toList(),
-                    );
-                    if (!controller.isSaving.value) {
-                      Get.back();
-                    }
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => _StyledSheet(
+      title: 'Atur Bank Sampah',
+      subtitle: pengelola.namaLengkap,
+      gradientColors: AppColors.kelurahanGradient,
+      icon: Icons.store_rounded,
+      child: Column(
+        children: [
+          Expanded(
+            child: Obx(() => ListView.separated(
+                  itemCount: controller.listBankSampah.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) {
+                    final bank = controller.listBankSampah[i];
+                    return Obx(() => _BankCheckTile(
+                          bank: bank,
+                          isSelected: selected.contains(bank.id),
+                          onChanged: (v) {
+                            if (v == true) {
+                              selected.add(bank.id);
+                            } else {
+                              selected.remove(bank.id);
+                            }
+                          },
+                        ));
                   },
                 )),
-          ],
-        ),
+          ),
+          const SizedBox(height: 14),
+          Obx(() => _ActionButton(
+                label: 'Simpan Relasi',
+                icon: Icons.save_outlined,
+                isLoading: controller.isSaving.value,
+                gradientColors: AppColors.kelurahanGradient,
+                onPressed: () async {
+                  await controller.updateRelasiPengelola(
+                    pengelola.id,
+                    selected.toList(),
+                  );
+                  if (!controller.isSaving.value) Get.back();
+                },
+              )),
+        ],
       ),
     ),
   );
 }
 
-// ── Redesigned Bottom Sheet: Info Pengelola Detail ──────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// BOTTOM SHEET: Info Pengelola
+// ─────────────────────────────────────────────────────────────────────────────
 Future<void> _showInfoSheet(
   BuildContext context,
   ProfileModel pengelola,
   PengelolaController controller,
 ) async {
   final ids = await controller.getBankSampahPengelola(pengelola.id);
-  final banks = controller.listBankSampah.where((b) => ids.contains(b.id)).toList();
+  final banks =
+      controller.listBankSampah.where((b) => ids.contains(b.id)).toList();
 
   if (!context.mounted) return;
 
@@ -883,10 +1152,9 @@ Future<void> _showInfoSheet(
           children: [
             Center(
               child: Container(
-                width: 44,
-                height: 4,
+                width: 44, height: 4,
                 decoration: BoxDecoration(
-                  color: _C.blue200,
+                  color: AppColors.kelurahanLight,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -897,29 +1165,31 @@ Future<void> _showInfoSheet(
             Row(
               children: [
                 Container(
-                  width: 58,
-                  height: 58,
+                  width: 60, height: 60,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
+                      colors: AppColors.kelurahanGradient,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [_C.blue500, _C.blue400],
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: _C.blue500.withValues(alpha: 0.25),
-                        blurRadius: 10,
+                        color: AppColors.kelurahanMain.withValues(alpha: 0.3),
+                        blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Center(
                     child: Text(
-                      pengelola.namaLengkap.isNotEmpty ? pengelola.namaLengkap[0].toUpperCase() : '?',
+                      pengelola.namaLengkap.isNotEmpty
+                          ? pengelola.namaLengkap[0].toUpperCase()
+                          : '?',
                       style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
+                        fontFamily: 'PlusJakartaSans',
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
                       ),
                     ),
@@ -933,22 +1203,26 @@ Future<void> _showInfoSheet(
                       Text(
                         pengelola.namaLengkap,
                         style: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: _C.blue900,
+                          color: AppColors.kelurahanDark,
                           letterSpacing: -0.3,
                         ),
                       ),
-                      if (pengelola.noHp != null && pengelola.noHp!.isNotEmpty) ...[
+                      if (pengelola.noHp != null &&
+                          pengelola.noHp!.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.phone_outlined, size: 13, color: _C.blue500),
-                            const SizedBox(width: 6),
+                            const Icon(Icons.phone_outlined,
+                                size: 12, color: AppColors.kelurahanMain),
+                            const SizedBox(width: 5),
                             Text(
                               pengelola.noHp!,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 12.5,
                                 color: Colors.grey.shade600,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -956,6 +1230,37 @@ Future<void> _showInfoSheet(
                           ],
                         ),
                       ],
+                      const SizedBox(height: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 5, height: 5,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF2E7D32),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            const Text(
+                              'Pengelola Aktif',
+                              style: TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF2E7D32),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -963,29 +1268,31 @@ Future<void> _showInfoSheet(
             ),
 
             const SizedBox(height: 18),
-            const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+            const Divider(color: Color(0xFFF1F5F9), height: 1),
             const SizedBox(height: 16),
 
-            // Section Label
+            // Section label
             Row(
               children: [
                 Container(
-                  width: 4,
-                  height: 18,
+                  width: 4, height: 18,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [_C.blue500, _C.blue400],
+                      colors: AppColors.kelurahanGradient,
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 const SizedBox(width: 8),
                 const Text(
                   'Bank Sampah yang Dikelola',
                   style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: _C.blue900,
+                    color: AppColors.kelurahanDark,
                   ),
                 ),
               ],
@@ -996,18 +1303,20 @@ Future<void> _showInfoSheet(
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: _C.blue50,
+                  color: AppColors.kelurahanLight,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.info_outline_rounded, size: 16, color: _C.blue500),
+                    Icon(Icons.info_outline_rounded,
+                        size: 16, color: AppColors.kelurahanMain),
                     SizedBox(width: 8),
                     Text(
                       'Belum ada bank sampah yang dikelola.',
                       style: TextStyle(
+                        fontFamily: 'PlusJakartaSans',
                         fontSize: 13,
-                        color: _C.blue500,
+                        color: AppColors.kelurahanMain,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1022,20 +1331,29 @@ Future<void> _showInfoSheet(
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFEBF2FA), width: 1.2),
+                        border: Border.all(
+                            color: const Color(0xFFEBF2FA), width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.kelurahanMain
+                                .withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
                           Container(
-                            width: 40,
-                            height: 40,
+                            width: 40, height: 40,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [_C.blue500, _C.blue400],
+                                colors: AppColors.kelurahanGradient,
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                            child: const Icon(Icons.storefront_rounded,
+                                color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1045,12 +1363,14 @@ Future<void> _showInfoSheet(
                                 Text(
                                   b.nama,
                                   style: const TextStyle(
+                                    fontFamily: 'PlusJakartaSans',
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w800,
-                                    color: _C.blue900,
+                                    color: AppColors.kelurahanDark,
                                   ),
                                 ),
-                                if ((b.rt?.isNotEmpty ?? false) || (b.rw?.isNotEmpty ?? false)) ...[
+                                if ((b.rt?.isNotEmpty ?? false) ||
+                                    (b.rw?.isNotEmpty ?? false)) ...[
                                   const SizedBox(height: 3),
                                   Text(
                                     [
@@ -1058,6 +1378,7 @@ Future<void> _showInfoSheet(
                                       if (b.rw?.isNotEmpty ?? false) 'RW ${b.rw}',
                                     ].join(' / '),
                                     style: TextStyle(
+                                      fontFamily: 'PlusJakartaSans',
                                       fontSize: 11,
                                       color: Colors.grey.shade500,
                                       fontWeight: FontWeight.w600,
@@ -1078,7 +1399,9 @@ Future<void> _showInfoSheet(
   );
 }
 
-// ── Redesigned Dialog Helpers ────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// DIALOGS
+// ─────────────────────────────────────────────────────────────────────────────
 Future<void> _confirmHapus(
   BuildContext context,
   ProfileModel pengelola,
@@ -1086,7 +1409,8 @@ Future<void> _confirmHapus(
 ) async {
   final ok = await ConfirmDialog.show(
     title: 'Hapus Pengelola',
-    message: 'Yakin ingin menghapus "${pengelola.namaLengkap}"? Akun dan semua relasinya akan dihapus.',
+    message:
+        'Yakin ingin menghapus "${pengelola.namaLengkap}"? Akun dan semua relasinya akan dihapus.',
     confirmLabel: 'Hapus',
     isDanger: true,
   );
@@ -1100,67 +1424,137 @@ Future<void> _confirmTolak(
 ) async {
   final ok = await ConfirmDialog.show(
     title: 'Tolak Pendaftaran',
-    message: 'Yakin ingin menolak pendaftaran "${pengelola.namaLengkap}"? Akun akan dihapus permanen.',
+    message:
+        'Yakin ingin menolak pendaftaran "${pengelola.namaLengkap}"? Akun akan dihapus permanen.',
     confirmLabel: 'Tolak',
     isDanger: true,
   );
   if (ok) controller.tolakPengelola(pengelola.id);
 }
 
-// ── Redesigned Title Widget inside sheets ───────────────────────────────────
-class _SheetTitle extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED WIDGETS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Styled Bottom Sheet ──────────────────────────────────────────────────────
+class _StyledSheet extends StatelessWidget {
   final String title;
   final String subtitle;
+  final List<Color> gradientColors;
+  final IconData icon;
+  final Widget child;
 
-  const _SheetTitle({required this.title, required this.subtitle});
+  const _StyledSheet({
+    required this.title,
+    required this.subtitle,
+    required this.gradientColors,
+    required this.icon,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 18,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [_C.blue500, _C.blue400],
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: _C.blue900,
-                letterSpacing: -0.4,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 3),
-        Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12.5,
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.w600,
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          // Handle
+          Container(
+            width: 44, height: 4,
+            margin: const EdgeInsets.only(top: 14),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
-        ),
-      ],
+          // Sheet header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Row(
+              children: [
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: gradientColors.first.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.kelurahanDark,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 12.5,
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Get.back(),
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.scaffoldBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                        size: 17, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Color(0xFFF1F5F9), height: 1),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 14, 20, bottomInset + 20),
+              child: child,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-// ── Redesigned Bank Check List Tile Widget ──────────────────────────────────
+// ── Bank Check Tile ──────────────────────────────────────────────────────────
 class _BankCheckTile extends StatelessWidget {
   final BankSampahModel bank;
   final bool isSelected;
@@ -1174,28 +1568,44 @@ class _BankCheckTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: isSelected ? _C.blue50 : Colors.white,
+        color: isSelected ? AppColors.kelurahanLight : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? _C.blue400 : const Color(0xFFEBF2FA),
-          width: 1.2,
+          color: isSelected
+              ? const Color(0xFF42A5F5)
+              : const Color(0xFFEBF2FA),
+          width: isSelected ? 1.5 : 1.2,
         ),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: AppColors.kelurahanMain.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : [],
       ),
       child: CheckboxListTile(
         value: isSelected,
         onChanged: onChanged,
-        activeColor: _C.blue500,
+        activeColor: AppColors.kelurahanMain,
         checkColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: Text(
           bank.namaLengkap,
           style: TextStyle(
+            fontFamily: 'PlusJakartaSans',
             fontSize: 13.5,
             fontWeight: FontWeight.w800,
-            color: isSelected ? _C.blue900 : Colors.grey.shade700,
+            color: isSelected
+                ? AppColors.kelurahanDark
+                : Colors.grey.shade700,
           ),
         ),
         subtitle: bank.alamat != null
@@ -1204,29 +1614,33 @@ class _BankCheckTile extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
+                  fontFamily: 'PlusJakartaSans',
                   fontSize: 11.5,
                   color: Colors.grey.shade500,
                   fontWeight: FontWeight.w500,
                 ),
               )
             : null,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
       ),
     );
   }
 }
 
-// ── Redesigned Gradient Button Widget ──────────────────────────────────────
-class _GradientButton extends StatelessWidget {
+// ── Action Button ────────────────────────────────────────────────────────────
+class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool isLoading;
+  final List<Color> gradientColors;
   final VoidCallback onPressed;
 
-  const _GradientButton({
+  const _ActionButton({
     required this.label,
     required this.icon,
     required this.isLoading,
+    required this.gradientColors,
     required this.onPressed,
   });
 
@@ -1239,24 +1653,28 @@ class _GradientButton extends StatelessWidget {
         height: 52,
         decoration: BoxDecoration(
           gradient: isLoading
-              ? LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400])
-              : const LinearGradient(colors: [_C.blue500, _C.blue400]),
+              ? LinearGradient(
+                  colors: [Colors.grey.shade300, Colors.grey.shade400])
+              : LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: isLoading
               ? []
               : [
                   BoxShadow(
-                    color: _C.blue500.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: gradientColors.first.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
                   ),
                 ],
         ),
         child: isLoading
             ? const Center(
                 child: SizedBox(
-                  width: 20,
-                  height: 20,
+                  width: 20, height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.white,
@@ -1271,6 +1689,7 @@ class _GradientButton extends StatelessWidget {
                   Text(
                     label,
                     style: const TextStyle(
+                      fontFamily: 'PlusJakartaSans',
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -1282,4 +1701,65 @@ class _GradientButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WAVE PAINTER
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeaderWavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint1 = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: AppColors.kelurahanGradient,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path1 = Path()
+      ..lineTo(0, size.height * 0.72)
+      ..quadraticBezierTo(
+        size.width * 0.22, size.height * 0.96,
+        size.width * 0.5, size.height * 0.80,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.78, size.height * 0.64,
+        size.width, size.height * 0.78,
+      )
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(path1, paint1);
+
+    final paint2 = Paint()
+      ..color = const Color(0xFF42A5F5).withValues(alpha: 0.28);
+
+    final path2 = Path()
+      ..moveTo(0, size.height * 0.52)
+      ..quadraticBezierTo(
+        size.width * 0.32, size.height * 0.40,
+        size.width * 0.58, size.height * 0.58,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.80, size.height * 0.72,
+        size.width, size.height * 0.58,
+      )
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+
+    canvas.drawPath(path2, paint2);
+
+    // Subtle dots
+    final dotPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.07);
+
+    canvas.drawCircle(
+        Offset(size.width * 0.1, size.height * 0.28), 38, dotPaint);
+    canvas.drawCircle(
+        Offset(size.width * 0.88, size.height * 0.16), 24, dotPaint);
+  }
+
+  @override
+  bool shouldRepaint(_HeaderWavePainter oldDelegate) => false;
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../app/themes/app_colors.dart';
-
 import '../../controllers/pengelola/laporan_pengelola_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -10,158 +9,223 @@ import '../../core/widgets/app_widgets.dart';
 class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
   const LaporanPengelolaView({super.key});
 
-  // ── Theme Colors ────────────────────────────────────────────────────────
-  static const _green900 = AppColors.pengelolaDark;
-  static const _green500 = AppColors.pengelolaMain;
-  static const _green400 = Color(0xFF43A047);
-  static const _bg = AppColors.scaffoldBg;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await controller.fetchNamaNasabah();
-            if (controller.hasPreview.value) {
-              await controller.previewLaporan();
-            }
-          },
-          color: _green500,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Page
-                const AppPageHeader(
-                  title: 'Laporan',
-                  subtitle: 'Export & Preview Data Laporan',
-                  gradientColors: AppColors.pengelolaGradient,
-                  showBack: false,
-                ),
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await controller.fetchNamaNasabah();
+          if (controller.hasPreview.value) {
+            await controller.previewLaporan();
+          }
+        },
+        color: AppColors.pengelolaMain,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // ── Header ───────────────────────────────────────
+            SliverToBoxAdapter(child: _buildHeader(context)),
 
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Info Banner
-                      _buildInfoBanner(),
-                      const SizedBox(height: 24),
+            // ── Content ──────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoBanner(),
+                    const SizedBox(height: 24),
 
-                      // Section Title
-                      _buildSectionTitle(
-                        title: 'Generator Laporan',
-                        subtitle: 'Atur filter dan export laporan Anda',
-                      ),
-                      const SizedBox(height: 18),
+                    _buildSectionTitle(
+                      title: 'Generator Laporan',
+                      subtitle: 'Atur filter dan export laporan Anda',
+                    ),
+                    const SizedBox(height: 14),
 
-                      // Filter Card
-                      _buildFilterCard(),
-                      const SizedBox(height: 22),
+                    _buildFilterCard(),
+                    const SizedBox(height: 20),
 
-                      // Action Buttons
-                      _buildActionButtons(),
+                    _buildActionButtons(),
 
-                      // Preview Results
-                      Obx(() {
-                        if (!controller.hasPreview.value) {
-                          return const SizedBox.shrink();
-                        }
+                    Obx(() {
+                      if (!controller.hasPreview.value) {
+                        return const SizedBox.shrink();
+                      }
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 30),
-                            _buildSectionTitle(
-                              title: 'Preview Data (${controller.previewData.length})',
-                              subtitle: 'Hasil laporan berdasarkan filter terpilih',
-                            ),
-                            const SizedBox(height: 16),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 28),
+                          _buildSectionTitle(
+                            title: 'Preview Data (${controller.previewData.length})',
+                            subtitle: 'Hasil laporan berdasarkan filter terpilih',
+                          ),
+                          const SizedBox(height: 14),
 
-                            if (controller.previewData.isEmpty)
-                              const AppEmptyState(
+                          if (controller.previewData.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: AppEmptyState(
                                 title: 'Data Tidak Ditemukan',
                                 subtitle: 'Tidak ada data transaksi pada periode yang dipilih.',
                                 icon: Icons.receipt_long_outlined,
-                              )
-                            else
-                              Column(
-                                children: controller.previewData.map((item) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: _PreviewCard(item: item),
-                                  );
-                                }).toList(),
                               ),
+                            )
+                          else
+                            Column(
+                              children: controller.previewData
+                                  .toList()
+                                  .asMap()
+                                  .entries
+                                  .map((entry) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: _PreviewCard(item: entry.value, index: entry.key),
+                                );
+                              }).toList(),
+                            ),
 
-                            if (controller.previewData.isNotEmpty) ...[
-                              const SizedBox(height: 20),
-                              _buildSummaryCard(),
-                            ],
+                          if (controller.previewData.isNotEmpty) ...[
+                            const SizedBox(height: 18),
+                            _buildSummaryCard(),
                           ],
-                        );
-                      }),
+                        ],
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Header ─────────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(BuildContext context) {
+    return Stack(
+      children: [
+        CustomPaint(
+          size: Size(MediaQuery.of(context).size.width, 165),
+          painter: _WavePainter(),
+        ),
+        Positioned(
+          top: -15,
+          right: -10,
+          child: Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 30,
+          right: 60,
+          child: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.04),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Laporan',
+                        style: TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Export & preview data laporan',
+                        style: TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.75),
+                        ),
+                      ),
                     ],
+                  ),
+                ),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.description_rounded,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
-  // ── Info Banner Widget ───────────────────────────────────────────────────
+  // ── Info Banner ────────────────────────────────────────────────────────────
+
   Widget _buildInfoBanner() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: const Color(0xFFEBF2FA),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.infoContainer,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_green500, _green400],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
+              color: Colors.white.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: const Icon(
-              Icons.description_rounded,
-              color: Colors.white,
-              size: 24,
+              Icons.info_outline_rounded,
+              color: AppColors.info,
+              size: 18,
             ),
           ),
-          const SizedBox(width: 14),
-          const Expanded(
+          const SizedBox(width: 12),
+          Expanded(
             child: Text(
               'Buat laporan pengelolaan sampah dengan mudah. Filter berdasarkan nasabah dan rentang tanggal yang diinginkan.',
               style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
                 height: 1.4,
                 fontSize: 12.5,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
+                color: AppColors.info,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -170,7 +234,8 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
     );
   }
 
-  // ── Section Title Widget ──────────────────────────────────────────────────
+  // ── Section Title ──────────────────────────────────────────────────────────
+
   Widget _buildSectionTitle({
     required String title,
     required String subtitle,
@@ -179,15 +244,17 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
       children: [
         Container(
           width: 4,
-          height: 18,
+          height: 20,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(2),
             gradient: const LinearGradient(
-              colors: [_green500, _green400],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
             ),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,19 +262,20 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: _green900,
-                  letterSpacing: -0.4,
+                  color: Color(0xFF1A1A2E),
+                  letterSpacing: -0.3,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
                 subtitle,
                 style: TextStyle(
+                  fontFamily: 'PlusJakartaSans',
                   fontSize: 12,
                   color: Colors.grey.shade500,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -217,21 +285,21 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
     );
   }
 
-  // ── Filter Card Widget ────────────────────────────────────────────────────
+  // ── Filter Card ────────────────────────────────────────────────────────────
+
   Widget _buildFilterCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFEBF2FA),
-          width: 1.2,
+        borderRadius: BorderRadius.circular(18),
+        border: const Border(
+          top: BorderSide(color: AppColors.pengelolaMain, width: 2),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
+            color: AppColors.pengelolaMain.withValues(alpha: 0.06),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -239,13 +307,13 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Dropdown Nasabah Selector
           const Text(
             'Nasabah',
             style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
               fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: _green900,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 10),
@@ -253,28 +321,32 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
             () => DropdownButtonFormField<String?>(
               initialValue: controller.selectedNasabah.value,
               isExpanded: true,
-              borderRadius: BorderRadius.circular(18),
-              icon: const Icon(
+              borderRadius: BorderRadius.circular(14),
+              icon: Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: _green500,
+                color: Colors.grey.shade400,
               ),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: _bg,
+                fillColor: const Color(0xFFF5F7FA),
                 hintText: 'Semua nasabah',
                 prefixIcon: const Icon(
                   Icons.person_rounded,
-                  color: _green500,
+                  color: AppColors.pengelolaMain,
                   size: 20,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
+                ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: _green500, width: 1.5),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
                 ),
               ),
               items: [
@@ -284,7 +356,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                     'Semua Nasabah',
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w600),
                   ),
                 ),
                 ...controller.listNamaNasabah.map(
@@ -294,7 +366,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                       n,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -307,13 +379,13 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
 
           const SizedBox(height: 18),
 
-          // Date Period Selectors
           const Text(
             'Periode Laporan',
             style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
               fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: _green900,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 10),
@@ -374,18 +446,35 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
     );
   }
 
-  // ── Action Buttons Widget ─────────────────────────────────────────────────
+  // ── Action Buttons ─────────────────────────────────────────────────────────
+
   Widget _buildActionButtons() {
     return Column(
       children: [
-        // Preview Button
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: Obx(
-            () => ElevatedButton.icon(
-              onPressed: controller.isGenerating.value ? null : controller.previewLaporan,
-              icon: controller.isGenerating.value
+        // Preview Button — gradient
+        Obx(() {
+          final isLoading = controller.isGenerating.value;
+          return GestureDetector(
+            onTap: isLoading ? null : controller.previewLaporan,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: isLoading
+                    ? []
+                    : [
+                        BoxShadow(
+                          color: AppColors.pengelolaMain.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+              ),
+              alignment: Alignment.center,
+              child: isLoading
                   ? const SizedBox(
                       width: 18,
                       height: 18,
@@ -394,80 +483,46 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.visibility_rounded, size: 20),
-              label: const Text(
-                'Tampilkan Preview',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14.5,
-                  letterSpacing: 0.1,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: _green500,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.visibility_rounded, size: 18, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          'Tampilkan Preview',
+                          style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: Colors.white,
+                            letterSpacing: 0.1,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
-          ),
-        ),
+          );
+        }),
 
         const SizedBox(height: 12),
 
-        // Export Excel & CSV Buttons Row
+        // Export Excel & CSV
         Row(
           children: [
             Expanded(
-              child: Obx(
-                () => OutlinedButton.icon(
-                  onPressed: controller.isGenerating.value ? null : controller.exportExcel,
-                  icon: const Icon(Icons.table_chart_rounded, size: 18),
-                  label: const Text(
-                    'Excel',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _green500,
-                    side: const BorderSide(color: Color(0xFFEBF2FA), width: 1.2),
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
+              child: Obx(() => _OutlineActionButton(
+                    label: 'Excel',
+                    icon: Icons.table_chart_rounded,
+                    onTap: controller.isGenerating.value ? null : controller.exportExcel,
+                  )),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Obx(
-                () => OutlinedButton.icon(
-                  onPressed: controller.isGenerating.value ? null : controller.exportCsv,
-                  icon: const Icon(Icons.download_rounded, size: 18),
-                  label: const Text(
-                    'CSV',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _green500,
-                    side: const BorderSide(color: Color(0xFFEBF2FA), width: 1.2),
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
+              child: Obx(() => _OutlineActionButton(
+                    label: 'CSV',
+                    icon: Icons.download_rounded,
+                    onTap: controller.isGenerating.value ? null : controller.exportCsv,
+                  )),
             ),
           ],
         ),
@@ -475,7 +530,8 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
     );
   }
 
-  // ── Summary Card Widget ──────────────────────────────────────────────────
+  // ── Summary Card ───────────────────────────────────────────────────────────
+
   Widget _buildSummaryCard() {
     final total = controller.previewData.fold<double>(
       0,
@@ -483,19 +539,19 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
     );
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [_green500, _green400],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _green500.withValues(alpha: 0.25),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -509,9 +565,9 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
             ),
           ),
           Container(
-            width: 1.2,
-            height: 48,
-            color: Colors.white.withValues(alpha: 0.25),
+            width: 1,
+            height: 44,
+            color: Colors.white.withValues(alpha: 0.15),
           ),
           Expanded(
             child: _SummaryItem(
@@ -526,11 +582,56 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
   }
 }
 
-// ── Redesigned Date Picker Field Widget ────────────────────────────────────
-class _DatePickerField extends StatelessWidget {
-  static const _green500 = AppColors.pengelolaMain;
-  static const _bg = AppColors.pengelolaLight;
+// ── Outline Action Button ──────────────────────────────────────────────────
 
+class _OutlineActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _OutlineActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 17, color: AppColors.pengelolaMain),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+                color: AppColors.pengelolaMain,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Date Picker Field ──────────────────────────────────────────────────────
+
+class _DatePickerField extends StatelessWidget {
   final String label;
   final DateTime? value;
   final ValueChanged<DateTime> onPick;
@@ -543,6 +644,7 @@ class _DatePickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasValue = value != null;
     return GestureDetector(
       onTap: () async {
         final picked = await showDatePicker(
@@ -554,7 +656,7 @@ class _DatePickerField extends StatelessWidget {
             return Theme(
               data: Theme.of(ctx).copyWith(
                 colorScheme: const ColorScheme.light(
-                  primary: _green500,
+                  primary: AppColors.pengelolaMain,
                 ),
               ),
               child: child!,
@@ -569,30 +671,32 @@ class _DatePickerField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: _bg.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(16),
+          color: hasValue ? AppColors.pengelolaLight : const Color(0xFFF5F7FA),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: _green500.withValues(alpha: 0.25),
-            width: 1.2,
+            color: hasValue
+                ? AppColors.pengelolaMain.withValues(alpha: 0.3)
+                : AppColors.outlineVariant.withValues(alpha: 0.4),
+            width: hasValue ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFEBF2FA), width: 1),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
               ),
               child: const Icon(
                 Icons.calendar_month_rounded,
-                color: _green500,
-                size: 18,
+                color: AppColors.pengelolaMain,
+                size: 17,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,19 +704,21 @@ class _DatePickerField extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 11,
                       color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
-                    value != null ? FormatHelper.date(value) : 'Pilih tanggal',
+                    hasValue ? FormatHelper.date(value) : 'Pilih tanggal',
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: value != null ? const Color(0xFF0A2540) : Colors.grey.shade500,
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: hasValue ? AppColors.pengelolaMain : Colors.grey.shade500,
                     ),
                   ),
                 ],
@@ -625,59 +731,61 @@ class _DatePickerField extends StatelessWidget {
   }
 }
 
-// ── Redesigned Preview Card Widget ────────────────────────────────────────
+// ── Preview Card ──────────────────────────────────────────────────────────────
+
 class _PreviewCard extends StatelessWidget {
-  static const _green900 = AppColors.pengelolaDark;
-  static const _green500 = AppColors.pengelolaMain;
-  static const _green400 = Color(0xFF43A047);
-  static const _greenLight = AppColors.pengelolaLight;
-
   final dynamic item;
+  final int index;
 
-  const _PreviewCard({required this.item});
+  const _PreviewCard({required this.item, required this.index});
+
+  static const _accents = [
+    Color(0xFF2E7D32),
+    Color(0xFF1565C0),
+    Color(0xFFE65100),
+    Color(0xFF6A1B9A),
+  ];
+  static const _accentBgs = [
+    Color(0xFFE8F5E9),
+    Color(0xFFE3F2FD),
+    Color(0xFFFBE9E7),
+    Color(0xFFF3E5F5),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final accent = _accents[index % _accents.length];
+    final accentBg = _accentBgs[index % _accentBgs.length];
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: _greenLight.withValues(alpha: 0.5),
-          width: 1.2,
+        borderRadius: BorderRadius.circular(16),
+        border: Border(
+          left: BorderSide(color: accent, width: 3),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
+            color: accent.withValues(alpha: 0.06),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          // Recycle Icon Container
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_green500, _green400],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
+              color: accentBg,
+              borderRadius: BorderRadius.circular(13),
             ),
-            child: const Icon(
-              Icons.recycling_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: Icon(Icons.recycling_rounded, color: accent, size: 22),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
-          // Main info details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -685,10 +793,10 @@ class _PreviewCard extends StatelessWidget {
                 Text(
                   item.namaItem,
                   style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                    color: _green900,
-                    letterSpacing: -0.3,
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A2E),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -697,9 +805,9 @@ class _PreviewCard extends StatelessWidget {
                 Text(
                   'Nasabah: ${item.namaNasabah ?? '-'}',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600,
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 11.5,
+                    color: Colors.grey.shade500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -712,10 +820,14 @@ class _PreviewCard extends StatelessWidget {
                     _InfoChip(
                       icon: Icons.calendar_today_rounded,
                       text: FormatHelper.date(item.tanggalPengelolaan),
+                      accent: accent,
+                      accentBg: accentBg,
                     ),
                     _InfoChip(
                       icon: Icons.scale_rounded,
                       text: '${FormatHelper.number(item.jumlah)} ${item.satuan?.singkatan ?? ''}',
+                      accent: accent,
+                      accentBg: accentBg,
                     ),
                   ],
                 ),
@@ -724,22 +836,14 @@ class _PreviewCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
-          // Pricing Badge
           if (item.totalHarga != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFC8E6C9), width: 1),
-              ),
-              child: Text(
-                FormatHelper.currency(item.totalHarga),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: _green900,
-                ),
+            Text(
+              FormatHelper.currency(item.totalHarga),
+              style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: accent,
               ),
             ),
         ],
@@ -748,17 +852,19 @@ class _PreviewCard extends StatelessWidget {
   }
 }
 
-// ── Redesigned Info Chip Widget ───────────────────────────────────────────
-class _InfoChip extends StatelessWidget {
-  static const _green500 = AppColors.pengelolaMain;
-  static const _greenLight = AppColors.pengelolaLight;
+// ── Info Chip ─────────────────────────────────────────────────────────────────
 
+class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String text;
+  final Color accent;
+  final Color accentBg;
 
   const _InfoChip({
     required this.icon,
     required this.text,
+    required this.accent,
+    required this.accentBg,
   });
 
   @override
@@ -766,24 +872,21 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _greenLight,
+        color: accentBg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 11,
-            color: _green500,
-          ),
+          Icon(icon, size: 11, color: accent),
           const SizedBox(width: 4),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
               fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: _green500,
+              fontWeight: FontWeight.w700,
+              color: accent,
             ),
           ),
         ],
@@ -792,7 +895,8 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
-// ── Redesigned Summary Item Widget ────────────────────────────────────────
+// ── Summary Item ──────────────────────────────────────────────────────────────
+
 class _SummaryItem extends StatelessWidget {
   final String title;
   final String value;
@@ -808,26 +912,24 @@ class _SummaryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: Colors.white,
-          size: 22,
-        ),
+        Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 20),
         const SizedBox(height: 8),
         Text(
           title,
           style: TextStyle(
+            fontFamily: 'PlusJakartaSans',
             fontSize: 11,
-            color: Colors.white.withValues(alpha: 0.8),
-            fontWeight: FontWeight.w700,
+            color: Colors.white.withValues(alpha: 0.75),
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           value,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 16,
+            fontFamily: 'PlusJakartaSans',
+            fontSize: 17,
             fontWeight: FontWeight.w900,
             color: Colors.white,
             letterSpacing: -0.3,
@@ -836,4 +938,77 @@ class _SummaryItem extends StatelessWidget {
       ],
     );
   }
+}
+
+// ── Wave Painter ──────────────────────────────────────────────────────────────
+
+class _WavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint1 = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path1 = Path()
+      ..lineTo(0, size.height * 0.74)
+      ..quadraticBezierTo(
+        size.width * 0.25,
+        size.height * 0.98,
+        size.width * 0.5,
+        size.height * 0.80,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.75,
+        size.height * 0.62,
+        size.width,
+        size.height * 0.76,
+      )
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(path1, paint1);
+
+    final paint2 = Paint()
+      ..color = const Color(0xFF43A047).withValues(alpha: 0.3);
+
+    final path2 = Path()
+      ..moveTo(0, size.height * 0.55)
+      ..quadraticBezierTo(
+        size.width * 0.3,
+        size.height * 0.42,
+        size.width * 0.55,
+        size.height * 0.6,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.78,
+        size.height * 0.74,
+        size.width,
+        size.height * 0.56,
+      )
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+
+    canvas.drawPath(path2, paint2);
+
+    final paintDot = Paint()
+      ..color = Colors.white.withValues(alpha: 0.06);
+
+    canvas.drawCircle(
+      Offset(size.width * 0.1, size.height * 0.3),
+      40,
+      paintDot,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.9, size.height * 0.15),
+      25,
+      paintDot,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_WavePainter oldDelegate) => false;
 }

@@ -130,7 +130,7 @@ class ProfilKelurahanView extends StatelessWidget {
                     child: Text(
                       'Profil',
                       style: TextStyle(
-                        fontFamily: 'PlusJakartaSans',
+                        fontFamily: 'Inter',
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -194,7 +194,7 @@ class ProfilKelurahanView extends StatelessWidget {
                       const Text(
                         'Pengelola Kelurahan',
                         style: TextStyle(
-                          fontFamily: 'PlusJakartaSans',
+                          fontFamily: 'Inter',
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -240,7 +240,7 @@ class ProfilKelurahanView extends StatelessWidget {
             child: Text(
               initial,
               style: const TextStyle(
-                fontFamily: 'PlusJakartaSans',
+                fontFamily: 'Inter',
                 fontSize: 40,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
@@ -254,55 +254,57 @@ class ProfilKelurahanView extends StatelessWidget {
 
   // ── Nama & Badge ─────────────────────────────────────────────────────────
   Widget _buildNameBadge(SessionService session) {
-    return Column(
-      children: [
-        Obx(() => Text(
-              session.profile.value?.namaLengkap ?? '-',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'PlusJakartaSans',
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.kelurahanDark,
-                letterSpacing: -0.5,
+    return Center(
+      child: Column(
+        children: [
+          Obx(() => Text(
+                session.profile.value?.namaLengkap ?? '-',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.kelurahanDark,
+                  letterSpacing: -0.5,
+                ),
+              )),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.kelurahanLight,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFBBDEFB),
+                width: 1,
               ),
-            )),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.kelurahanLight,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color(0xFFBBDEFB),
-              width: 1,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppColors.kelurahanMain,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'Akun Terverifikasi',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.kelurahanMain,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: AppColors.kelurahanMain,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              const Text(
-                'Akun Terverifikasi',
-                style: TextStyle(
-                  fontFamily: 'PlusJakartaSans',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.kelurahanMain,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -341,7 +343,7 @@ class ProfilKelurahanView extends StatelessWidget {
                 const Text(
                   'Informasi Akun',
                   style: TextStyle(
-                    fontFamily: 'PlusJakartaSans',
+                    fontFamily: 'Inter',
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                     color: AppColors.kelurahanDark,
@@ -459,7 +461,7 @@ class ProfilKelurahanView extends StatelessWidget {
             const Text(
               'Kelola Sistem',
               style: TextStyle(
-                fontFamily: 'PlusJakartaSans',
+                fontFamily: 'Inter',
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: AppColors.kelurahanDark,
@@ -549,7 +551,7 @@ class ProfilKelurahanView extends StatelessWidget {
                   Text(
                     'Keluar dari Akun',
                     style: TextStyle(
-                      fontFamily: 'PlusJakartaSans',
+                      fontFamily: 'Inter',
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -612,7 +614,7 @@ class ProfilKelurahanView extends StatelessWidget {
               const Text(
                 'Keluar dari Akun?',
                 style: TextStyle(
-                  fontFamily: 'PlusJakartaSans',
+                  fontFamily: 'Inter',
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
                   color: AppColors.kelurahanDark,
@@ -624,7 +626,7 @@ class ProfilKelurahanView extends StatelessWidget {
                 'Anda akan keluar dari sesi ini.\nApakah Anda yakin?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'PlusJakartaSans',
+                  fontFamily: 'Inter',
                   fontSize: 13.5,
                   color: Colors.grey.shade500,
                   height: 1.6,
@@ -651,7 +653,7 @@ class ProfilKelurahanView extends StatelessWidget {
                           child: Text(
                             'Batal',
                             style: TextStyle(
-                              fontFamily: 'PlusJakartaSans',
+                              fontFamily: 'Inter',
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                               color: AppColors.kelurahanMain,
@@ -685,7 +687,7 @@ class ProfilKelurahanView extends StatelessWidget {
                           child: Text(
                             'Keluar',
                             style: TextStyle(
-                              fontFamily: 'PlusJakartaSans',
+                              fontFamily: 'Inter',
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
@@ -704,7 +706,10 @@ class ProfilKelurahanView extends StatelessWidget {
     );
 
     if (ok == true) {
-      Get.find<AuthController>().logout();
+      // Tunggu hingga dialog tertutup sepenuhnya sebelum memicu transisi logout
+      Future.delayed(const Duration(milliseconds: 150), () {
+        Get.find<AuthController>().logout();
+      });
     }
   }
 }
@@ -757,7 +762,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontFamily: 'PlusJakartaSans',
+                    fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Colors.grey.shade500,
@@ -768,7 +773,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   value,
                   style: const TextStyle(
-                    fontFamily: 'PlusJakartaSans',
+                    fontFamily: 'Inter',
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.kelurahanDark,
@@ -862,7 +867,7 @@ class _MenuCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontFamily: 'PlusJakartaSans',
+                fontFamily: 'Inter',
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: AppColors.kelurahanDark,

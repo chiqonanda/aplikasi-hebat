@@ -162,8 +162,10 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       await SupabaseService.client.auth.signOut();
-      SessionService.to.clearSession();
       Get.offAllNamed(AppRoutes.login);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        SessionService.to.clearSession();
+      });
     } catch (e) {
       _showError('Gagal logout. Coba lagi.');
     } finally {

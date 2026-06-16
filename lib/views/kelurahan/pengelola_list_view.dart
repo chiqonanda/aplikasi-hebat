@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
@@ -1225,6 +1226,54 @@ Future<void> _showInfoSheet(
                                 fontSize: 12.5,
                                 color: Colors.grey.shade600,
                                 fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            InkWell(
+                              onTap: () async {
+                                final phone = pengelola.noHp!;
+                                String clean = phone.replaceAll(RegExp(r'\D'), '');
+                                if (clean.startsWith('0')) {
+                                  clean = '62${clean.substring(1)}';
+                                }
+                                final url = Uri.parse('https://wa.me/$clean');
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                                } else {
+                                  Get.snackbar('Gagal', 'Tidak dapat membuka WhatsApp');
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F5E9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color(0xFFC8E6C9),
+                                      width: 0.8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_rounded,
+                                      size: 13,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'WhatsApp',
+                                      style: TextStyle(
+                                        fontFamily: 'PlusJakartaSans',
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF2E7D32),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],

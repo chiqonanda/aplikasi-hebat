@@ -475,6 +475,18 @@ class ProfilBankSampahView extends StatelessWidget {
             label: 'Ganti Bank Sampah',
             sublabel: 'Beralih ke kelola bank sampah lain',
             onTap: () => Get.toNamed(AppRoutes.pilihBankSampah),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(height: 1, color: Colors.grey.shade100),
+          ),
+          _MenuTile(
+            icon: Icons.people_outline_rounded,
+            iconBg: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            label: 'Kelola Nasabah',
+            sublabel: 'Daftar & kelola nasabah BSU ini saja',
+            onTap: () => Get.toNamed(AppRoutes.manajemenNasabah),
             isLast: true,
           ),
         ],

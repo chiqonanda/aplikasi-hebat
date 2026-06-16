@@ -13,6 +13,7 @@ import '../../controllers/kelurahan/bank_sampah_controller.dart';
 import '../../controllers/kelurahan/master_sampah_controller.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
 import '../../controllers/kelurahan/laporan_controller.dart';
+import '../../controllers/kelurahan/nasabah_controller.dart';
 
 import '../../views/auth/login_view.dart';
 import '../../views/auth/register_view.dart';
@@ -27,13 +28,13 @@ import '../../views/kelurahan/dashboard_kelurahan_view.dart';
 import '../../views/kelurahan/monitoring_view.dart';
 import '../../views/kelurahan/detail_bank_sampah_view.dart';
 import '../../views/kelurahan/bank_sampah_list_view.dart';
+import '../../views/pengelola/nasabah_list_view.dart';
 import '../../views/kelurahan/bank_sampah_form_view.dart';
 import '../../views/kelurahan/master_sampah_view.dart';
 import '../../views/kelurahan/pengelola_list_view.dart';
 import '../../views/kelurahan/pengelola_form_view.dart';
 import '../../views/kelurahan/laporan_view.dart';
 import '../../views/kelurahan/profil_kelurahan_view.dart';
-
 import 'app_routes.dart';
 
 class AppPages {
@@ -171,6 +172,13 @@ class AppPages {
     GetPage(
       name: AppRoutes.profilKelurahan,
       page: () => const ProfilKelurahanView(),
+    ),
+    GetPage(
+      name: AppRoutes.manajemenNasabah,
+      page: () => const NasabahListView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => NasabahController());
+      }),
     ),
   ];
 }

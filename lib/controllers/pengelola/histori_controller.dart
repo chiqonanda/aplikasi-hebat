@@ -379,7 +379,7 @@ class HistoriController extends GetxController {
         rowIdx++;
       }
 
-      final bytes = excelFile.save();
+      final bytes = excelFile.encode();
       if (bytes == null) throw Exception('Gagal membuat byte data Excel.');
 
       final cleanBankNama = namaBankSampah

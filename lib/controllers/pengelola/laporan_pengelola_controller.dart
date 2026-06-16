@@ -1,11 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:csv/csv.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
+
+import '../../core/utils/file_saver_helper.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/services/session_service.dart';
@@ -251,7 +249,7 @@ class LaporanPengelolaController extends GetxController {
         excelFile.delete(key);
       }
 
-      final bytes = excelFile.save();
+      final bytes = excelFile.encode();
       if (bytes == null) throw Exception('Gagal membuat byte data Excel.');
 
       final startStr =
@@ -266,14 +264,7 @@ class LaporanPengelolaController extends GetxController {
       final shareText =
           'Laporan Bank Sampah ${SessionService.to.activeBankSampahNama} ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
 
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/$fileName');
-      await tempFile.writeAsBytes(bytes);
-
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
-        text: shareText,
-      );
+      await FileSaverHelper.saveBytes(bytes, fileName, shareText: shareText);
       Get.snackbar(
           'Sukses', 'Laporan Excel berhasil diexport dan siap dibagikan.');
     } catch (e) {
@@ -673,6 +664,43 @@ class LaporanPengelolaController extends GetxController {
         ? excel.TextCellValue(FormatHelper.number(grandTotal))
         : excel.TextCellValue('');
     setRowStyle(sheet, grandRow, totalCols, styleGroup());
+
+    rowIdx++; // baris kosong
+
+    // Hitung total pendapatan uang per nasabah
+    final Map<String, double> totalUangNasabah = {};
+    for (final item in data) {
+      final nasName = item.namaNasabah ?? '';
+      final harga = item.totalHarga ?? 0.0;
+      totalUangNasabah[nasName] = (totalUangNasabah[nasName] ?? 0.0) + harga;
+    }
+    final grandTotalUang = totalUangNasabah.values.fold(0.0, (sum, v) => sum + v);
+
+    final uangRow = rowIdx;
+    sheet
+        .cell(excel.CellIndex.indexByColumnRow(
+            columnIndex: 0, rowIndex: uangRow))
+        .value = excel.TextCellValue('');
+    sheet
+        .cell(excel.CellIndex.indexByColumnRow(
+            columnIndex: 1, rowIndex: uangRow))
+        .value = excel.TextCellValue('TOTAL PENDAPATAN (Rp)');
+    for (int i = 0; i < nasabahKolom.length; i++) {
+      final uang = totalUangNasabah[nasabahKolom[i]] ?? 0.0;
+      sheet
+          .cell(excel.CellIndex.indexByColumnRow(
+              columnIndex: i + 2, rowIndex: uangRow))
+          .value = uang > 0
+          ? excel.TextCellValue(FormatHelper.currency(uang))
+          : excel.TextCellValue('Rp 0');
+    }
+    sheet
+        .cell(excel.CellIndex.indexByColumnRow(
+            columnIndex: totalCols - 1, rowIndex: uangRow))
+        .value = grandTotalUang > 0
+        ? excel.TextCellValue(FormatHelper.currency(grandTotalUang))
+        : excel.TextCellValue('Rp 0');
+    setRowStyle(sheet, uangRow, totalCols, styleGroup());
   }
 
   String _namaBulan(int bulan) {
@@ -916,6 +944,30 @@ class LaporanPengelolaController extends GetxController {
         grandRow.add(grandTotal > 0 ? FormatHelper.number(grandTotal) : '');
         csvData.add(grandRow);
 
+        csvData.add([]); // baris kosong
+
+        // Hitung total pendapatan uang per nasabah
+        final Map<String, double> totalUangNasabah = {};
+        for (final item in data) {
+          final nasName = item.namaNasabah ?? '';
+          final harga = item.totalHarga ?? 0.0;
+          totalUangNasabah[nasName] = (totalUangNasabah[nasName] ?? 0.0) + harga;
+        }
+        final grandTotalUang = totalUangNasabah.values.fold(0.0, (sum, v) => sum + v);
+
+        final uangRow = <dynamic>[];
+        if (isMultiBulan) {
+          uangRow.add('');
+        }
+        uangRow.add('');
+        uangRow.add('TOTAL PENDAPATAN (Rp)');
+        for (final n in nasabahKolom) {
+          final uang = totalUangNasabah[n] ?? 0.0;
+          uangRow.add(uang > 0 ? FormatHelper.currency(uang) : 'Rp 0');
+        }
+        uangRow.add(grandTotalUang > 0 ? FormatHelper.currency(grandTotalUang) : 'Rp 0');
+        csvData.add(uangRow);
+
         if (isMultiBulan) {
           csvData.add([]);
         }
@@ -934,14 +986,7 @@ class LaporanPengelolaController extends GetxController {
       final shareText =
           'Laporan Bank Sampah ${SessionService.to.activeBankSampahNama} ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
 
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/$fileName');
-      await tempFile.writeAsString(csvWithBom, encoding: utf8);
-
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
-        text: shareText,
-      );
+      await FileSaverHelper.saveString(csvWithBom, fileName, shareText: shareText);
       Get.snackbar('Sukses', 'Laporan CSV berhasil diexport dan siap dibagikan.');
     } catch (e) {
       Get.snackbar('Gagal', 'Export CSV gagal: $e');

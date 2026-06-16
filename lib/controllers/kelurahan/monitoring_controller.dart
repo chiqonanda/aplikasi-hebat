@@ -31,6 +31,9 @@ class MonitoringController extends GetxController {
   final statJumlah = 0.0.obs;
   final statTransaksi = 0.obs;
   final statNilai = 0.0.obs;
+  final statJumlahPadat = 0.0.obs;
+  final statJumlahCair = 0.0.obs;
+  final statJumlahSatuan = 0.0.obs;
 
   // Getter list yang sudah difilter
   List<BankSampahModel> get listBankFiltered {
@@ -181,6 +184,25 @@ class MonitoringController extends GetxController {
       statJumlah.value = list.fold(0.0, (sum, e) => sum + e.jumlah);
       statNilai.value =
           list.fold(0.0, (sum, e) => sum + (e.totalHarga ?? 0.0));
+
+      double padat = 0.0;
+      double cair = 0.0;
+      double sat = 0.0;
+
+      for (final item in list) {
+        final singkatan = item.satuan?.singkatan.toLowerCase() ?? '';
+        if (singkatan == 'kg') {
+          padat += item.jumlah;
+        } else if (singkatan == 'liter' || singkatan == 'ltr' || singkatan == 'l') {
+          cair += item.jumlah;
+        } else {
+          sat += item.jumlah;
+        }
+      }
+
+      statJumlahPadat.value = padat;
+      statJumlahCair.value = cair;
+      statJumlahSatuan.value = sat;
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat detail bank sampah.');
     } finally {

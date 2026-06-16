@@ -1,10 +1,8 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:get/get.dart';
 import 'package:excel/excel.dart';
 import 'package:csv/csv.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
+
+import '../../core/utils/file_saver_helper.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/constants/supabase_constants.dart';
@@ -241,7 +239,7 @@ Future<void> exportExcel() async {
       excelFile.delete(key);
     }
 
-    final bytes = excelFile.save();
+    final bytes = excelFile.encode();
     if (bytes == null) throw Exception('Gagal membuat byte data Excel.');
 
     final startStr =
@@ -259,14 +257,7 @@ Future<void> exportExcel() async {
         ? 'Laporan Bank Sampah ${selectedBankSampah.value!.nama} ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}'
         : 'Laporan Seluruh Bank Sampah ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
 
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/$fileName');
-    await tempFile.writeAsBytes(bytes);
-
-    await Share.shareXFiles(
-      [XFile(tempFile.path)],
-      text: shareText,
-    );
+    await FileSaverHelper.saveBytes(bytes, fileName, shareText: shareText);
     Get.snackbar(
         'Sukses', 'Laporan Excel berhasil diexport dan siap dibagikan.');
   } catch (e) {
@@ -923,14 +914,7 @@ final List<String> bulanKeys = isMultiBulan
         ? 'Laporan Bank Sampah ${selectedBankSampah.value!.nama} ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}'
         : 'Laporan Seluruh Bank Sampah ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}';
 
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/$fileName');
-    await tempFile.writeAsString(csvWithBom, encoding: utf8);
-
-    await Share.shareXFiles(
-      [XFile(tempFile.path)],
-      text: shareText,
-    );
+    await FileSaverHelper.saveString(csvWithBom, fileName, shareText: shareText);
     Get.snackbar('Sukses', 'Laporan CSV berhasil diexport dan siap dibagikan.');
   } catch (e) {
     Get.snackbar('Gagal', 'Export CSV gagal: $e');

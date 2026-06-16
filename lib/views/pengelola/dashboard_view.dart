@@ -57,7 +57,7 @@ class DashboardView extends GetView<DashboardController> {
                         const Text(
                           'Aktivitas Terbaru',
                           style: TextStyle(
-                            fontFamily: 'PlusJakartaSans',
+                            fontFamily: 'Inter',
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF1A1A2E),
@@ -68,7 +68,7 @@ class DashboardView extends GetView<DashboardController> {
                         Text(
                           'Riwayat pencatatan sampah',
                           style: TextStyle(
-                            fontFamily: 'PlusJakartaSans',
+                            fontFamily: 'Inter',
                             fontSize: 12,
                             color: Colors.grey.shade500,
                           ),
@@ -107,7 +107,7 @@ class DashboardView extends GetView<DashboardController> {
                             Text(
                               'Lihat Semua',
                               style: TextStyle(
-                                fontFamily: 'PlusJakartaSans',
+                                fontFamily: 'Inter',
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -249,7 +249,7 @@ class DashboardView extends GetView<DashboardController> {
                           const Text(
                             'BISA',
                             style: TextStyle(
-                              fontFamily: 'PlusJakartaSans',
+                              fontFamily: 'Inter',
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
@@ -259,7 +259,7 @@ class DashboardView extends GetView<DashboardController> {
                           Text(
                             'Dashboard Pengelola',
                             style: TextStyle(
-                              fontFamily: 'PlusJakartaSans',
+                              fontFamily: 'Inter',
                               fontSize: 10,
                               color: Colors.white.withValues(alpha: 0.75),
                             ),
@@ -310,7 +310,7 @@ class DashboardView extends GetView<DashboardController> {
                   () => Text(
                     controller.penggunaNama,
                     style: const TextStyle(
-                      fontFamily: 'PlusJakartaSans',
+                      fontFamily: 'Inter',
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -357,7 +357,7 @@ class DashboardView extends GetView<DashboardController> {
                           child: Text(
                             controller.bankSampahNama,
                             style: const TextStyle(
-                              fontFamily: 'PlusJakartaSans',
+                              fontFamily: 'Inter',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -403,7 +403,7 @@ class DashboardView extends GetView<DashboardController> {
             const Text(
               'Ringkasan Bulan Ini',
               style: TextStyle(
-                fontFamily: 'PlusJakartaSans',
+                fontFamily: 'Inter',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF1A1A2E),
@@ -570,7 +570,7 @@ class DashboardView extends GetView<DashboardController> {
             const Text(
               'Menu Utama',
               style: TextStyle(
-                fontFamily: 'PlusJakartaSans',
+                fontFamily: 'Inter',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF1A1A2E),
@@ -632,7 +632,7 @@ class DashboardView extends GetView<DashboardController> {
                       Text(
                         item['label'] as String,
                         style: const TextStyle(
-                          fontFamily: 'PlusJakartaSans',
+                          fontFamily: 'Inter',
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF1A1A2E),
@@ -765,7 +765,7 @@ class _AktivitasCard extends StatelessWidget {
                 Text(
                   item.namaItem,
                   style: const TextStyle(
-                    fontFamily: 'PlusJakartaSans',
+                    fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A1A2E),
@@ -778,7 +778,7 @@ class _AktivitasCard extends StatelessWidget {
                   Text(
                     'Nasabah: ${item.namaNasabah}',
                     style: TextStyle(
-                      fontFamily: 'PlusJakartaSans',
+                      fontFamily: 'Inter',
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Colors.grey.shade600,
@@ -801,7 +801,7 @@ class _AktivitasCard extends StatelessWidget {
                         item.tanggalPengelolaan.toIso8601String(),
                       ),
                       style: TextStyle(
-                        fontFamily: 'PlusJakartaSans',
+                        fontFamily: 'Inter',
                         fontSize: 12,
                         color: Colors.grey.shade500,
                       ),
@@ -827,7 +827,7 @@ class _AktivitasCard extends StatelessWidget {
                 item.satuan?.singkatan,
               ),
               style: TextStyle(
-                fontFamily: 'PlusJakartaSans',
+                fontFamily: 'Inter',
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 color: accent,

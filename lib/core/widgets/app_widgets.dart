@@ -693,7 +693,7 @@ class StatCard extends StatelessWidget {
                     Text(
                       value,
                       style: const TextStyle(
-                        fontSize: 22,
+                        fontSize: 19,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                         letterSpacing: -0.5,

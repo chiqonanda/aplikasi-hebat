@@ -43,7 +43,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                     ),
                     const SizedBox(height: 14),
 
-                    _buildFilterCard(),
+                    _buildFilterCard(context),
                     const SizedBox(height: 20),
 
                     _buildActionButtons(),
@@ -287,7 +287,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
 
   // ── Filter Card ────────────────────────────────────────────────────────────
 
-  Widget _buildFilterCard() {
+  Widget _buildFilterCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -318,62 +318,45 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
           ),
           const SizedBox(height: 10),
           Obx(
-            () => DropdownButtonFormField<String?>(
-              initialValue: controller.selectedNasabah.value,
-              isExpanded: true,
+            () => InkWell(
+              onTap: () => _showNasabahSelector(context),
               borderRadius: BorderRadius.circular(14),
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: Colors.grey.shade400,
-              ),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF5F7FA),
-                hintText: 'Semua nasabah',
-                prefixIcon: const Icon(
-                  Icons.person_rounded,
-                  color: AppColors.pengelolaMain,
-                  size: 20,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                border: OutlineInputBorder(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F7FA),
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.pengelolaMain, width: 1.5),
-                ),
-              ),
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text(
-                    'Semua Nasabah',
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: TextStyle(fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w600),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.4),
                   ),
                 ),
-                ...controller.listNamaNasabah.map(
-                  (n) => DropdownMenuItem<String?>(
-                    value: n,
-                    child: Text(
-                      n,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: const TextStyle(fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w600),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.person_rounded,
+                      color: AppColors.pengelolaMain,
+                      size: 20,
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        controller.selectedNasabah.value ?? 'Semua Nasabah',
+                        style: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Colors.grey.shade400,
+                    ),
+                  ],
                 ),
-              ],
-              onChanged: (v) {
-                controller.selectedNasabah.value = v;
-              },
+              ),
             ),
           ),
 
@@ -577,6 +560,200 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showNasabahSelector(BuildContext context) {
+    final searchVal = ''.obs;
+    final textController = TextEditingController();
+
+    Get.bottomSheet(
+      Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Header Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Pilih Nasabah',
+                    style: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Get.back(),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Search Input
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F7FA),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: TextField(
+                  controller: textController,
+                  onChanged: (val) => searchVal.value = val,
+                  textAlignVertical: TextAlignVertical.center,
+                  style: const TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Cari nama nasabah...',
+                    hintStyle: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 13,
+                      color: Colors.grey.shade400,
+                    ),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.pengelolaMain),
+                    suffixIcon: Obx(() => searchVal.value.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            onPressed: () {
+                              textController.clear();
+                              searchVal.value = '';
+                            },
+                          )
+                        : const SizedBox.shrink()),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 10),
+            
+            // Nasabah List
+            Expanded(
+              child: Obx(() {
+                final query = searchVal.value.toLowerCase();
+                final list = controller.listNamaNasabah;
+                final filtered = list.where((name) => name.toLowerCase().contains(query)).toList();
+
+                return ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  children: [
+                    // Option: Semua Nasabah
+                    _buildSelectorTile(
+                      label: 'Semua Nasabah',
+                      isSelected: controller.selectedNasabah.value == null,
+                      onTap: () {
+                        controller.selectedNasabah.value = null;
+                        Get.back();
+                      },
+                    ),
+                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    
+                    ...filtered.map((name) {
+                      return Column(
+                        children: [
+                          _buildSelectorTile(
+                            label: name,
+                            isSelected: controller.selectedNasabah.value == name,
+                            onTap: () {
+                              controller.selectedNasabah.value = name;
+                              Get.back();
+                            },
+                          ),
+                          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                        ],
+                      );
+                    }),
+                    
+                    if (filtered.isEmpty && query.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: Text(
+                            'Nasabah "$searchVal" tidak ditemukan',
+                            style: TextStyle(
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 13,
+                              color: Colors.grey.shade400,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+    );
+  }
+
+  Widget _buildSelectorTile({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected ? AppColors.pengelolaMain : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.pengelolaMain,
+                size: 20,
+              ),
+          ],
+        ),
       ),
     );
   }

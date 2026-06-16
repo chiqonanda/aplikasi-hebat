@@ -28,4 +28,5 @@ class AppRoutes {
   static const String formPengelola = '/kelurahan/pengelola/form';
   static const String generatorLaporan = '/kelurahan/laporan';
   static const String profilKelurahan = '/kelurahan/profil';
+  static const String manajemenNasabah = '/kelurahan/nasabah';
 }

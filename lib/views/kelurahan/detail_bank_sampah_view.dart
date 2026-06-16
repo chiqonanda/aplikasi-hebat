@@ -45,7 +45,7 @@ class DetailBankSampahView extends GetView<MonitoringController> {
             // ── Statistik ─────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                 child: _buildStatSection(),
               ),
             ),
@@ -145,7 +145,7 @@ class DetailBankSampahView extends GetView<MonitoringController> {
     return Stack(
       children: [
         CustomPaint(
-          size: Size(MediaQuery.of(context).size.width, 210),
+          size: Size(MediaQuery.of(context).size.width, 190),
           painter: _WavePainter(),
         ),
         Positioned(
@@ -176,7 +176,7 @@ class DetailBankSampahView extends GetView<MonitoringController> {
         SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -223,7 +223,7 @@ class DetailBankSampahView extends GetView<MonitoringController> {
                   ],
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 10),
 
                 // Bank identity row
                 Row(
@@ -394,7 +394,60 @@ class DetailBankSampahView extends GetView<MonitoringController> {
             ),
             const SizedBox(width: 10),
             const Text(
-              'Statistik Bulan Ini',
+              'Volume Sampah Bulan Ini',
+              style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.kelurahanDark,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Obx(() => _WasteTypeCard(
+              label: 'Sampah Padat',
+              value: FormatHelper.number(controller.statJumlahPadat.value),
+              unit: 'kg',
+              icon: Icons.scale_rounded,
+              iconColor: Colors.white,
+              iconBgColor: const Color(0xFF388E3C),
+            )),
+        Obx(() => _WasteTypeCard(
+              label: 'Sampah Cair',
+              value: FormatHelper.number(controller.statJumlahCair.value),
+              unit: 'liter',
+              icon: Icons.water_drop_rounded,
+              iconColor: Colors.white,
+              iconBgColor: const Color(0xFF0288D1),
+            )),
+        Obx(() => _WasteTypeCard(
+              label: 'Satuan',
+              value: FormatHelper.number(controller.statJumlahSatuan.value),
+              unit: 'satuan',
+              icon: Icons.inventory_2_rounded,
+              iconColor: Colors.white,
+              iconBgColor: const Color(0xFF7B1FA2),
+            )),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Kinerja & Statistik Bank Sampah',
               style: TextStyle(
                 fontFamily: 'PlusJakartaSans',
                 fontSize: 18,
@@ -406,34 +459,26 @@ class DetailBankSampahView extends GetView<MonitoringController> {
           ],
         ),
         const SizedBox(height: 16),
-        Obx(
-          () => Row(
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: _StatCard(
-                  title: 'Transaksi',
-                  value: '${controller.statTransaksi.value}x',
-                  icon: Icons.receipt_long_rounded,
-                  gradientColors: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
-                ),
+                child: Obx(() => _StatCard(
+                      title: 'Total Transaksi',
+                      value: '${controller.statTransaksi.value}x',
+                      icon: Icons.receipt_long_rounded,
+                      gradientColors: const [Color(0xFF283593), Color(0xFF5C6BC0)],
+                    )),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: _StatCard(
-                  title: 'Jumlah',
-                  value: '${FormatHelper.number(controller.statJumlah.value)} kg',
-                  icon: Icons.scale_rounded,
-                  gradientColors: const [Color(0xFF00838F), Color(0xFF00ACC1)],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _StatCard(
-                  title: 'Nilai',
-                  value: FormatHelper.currency(controller.statNilai.value),
-                  icon: Icons.payments_rounded,
-                  gradientColors: const [Color(0xFF00695C), Color(0xFF26A69A)],
-                ),
+                child: Obx(() => _StatCard(
+                      title: 'Nilai Total',
+                      value: FormatHelper.currency(controller.statNilai.value),
+                      icon: Icons.account_balance_wallet_outlined,
+                      gradientColors: const [Color(0xFF00695C), Color(0xFF26A69A)],
+                    )),
               ),
             ],
           ),
@@ -760,4 +805,134 @@ class _WavePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_WavePainter oldDelegate) => false;
+}
+
+class _WasteTypeCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBgColor;
+
+  const _WasteTypeCard({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBgColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 3.5,
+                color: iconBgColor,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: iconBgColor,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: iconBgColor.withValues(alpha: 0.2),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              icon,
+                              color: iconColor,
+                              size: 15,
+                            ),
+                          ),
+                          Text(
+                            'Bulan Ini',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            value,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            unit,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

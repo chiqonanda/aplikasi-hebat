@@ -18,6 +18,11 @@ class DashboardKelurahanController extends GetxController {
   final totalNilaiBulanIni = 0.0.obs;
   final totalJumlahBulanLalu = 0.0.obs;
 
+  // Statistik per tipe sampah
+  final totalSampahPadat = 0.0.obs;
+  final totalSampahCair = 0.0.obs;
+  final totalSampahSatuan = 0.0.obs;
+
   // Bank sampah teraktif (top 3)
   final topBankSampah = <Map<String, dynamic>>[].obs;
 
@@ -90,7 +95,7 @@ class DashboardKelurahanController extends GetxController {
 
     final data = await SupabaseService.client
         .from(SupabaseConstants.tablePengelolaanSampah)
-        .select('jumlah, total_harga')
+        .select('jumlah, total_harga, satuan(singkatan)')
         .gte('tanggal_pengelolaan',
             firstDay.toIso8601String().split('T').first)
         .lte('tanggal_pengelolaan',
@@ -106,6 +111,26 @@ class DashboardKelurahanController extends GetxController {
       0.0,
       (sum, e) => sum + ((e['total_harga'] as num?)?.toDouble() ?? 0.0),
     );
+
+    double padat = 0.0;
+    double cair = 0.0;
+    double sat = 0.0;
+
+    for (final item in list) {
+      final jml = (item['jumlah'] as num).toDouble();
+      final singkatan = ((item['satuan'] as Map?)?['singkatan'] as String?)?.toLowerCase() ?? '';
+      if (singkatan == 'kg') {
+        padat += jml;
+      } else if (singkatan == 'liter' || singkatan == 'ltr' || singkatan == 'l') {
+        cair += jml;
+      } else {
+        sat += jml;
+      }
+    }
+
+    totalSampahPadat.value = padat;
+    totalSampahCair.value = cair;
+    totalSampahSatuan.value = sat;
   }
 
   Future<void> _fetchAktivitasTerbaru() async {

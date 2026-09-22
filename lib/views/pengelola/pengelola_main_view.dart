@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../app/themes/app_colors.dart';
 import '../../app/themes/design_tokens.dart';
 import '../../controllers/pengelola/pengelola_main_controller.dart';
+import '../../core/widgets/exit_confirm.dart';
 import 'dashboard_view.dart';
 import 'histori_view.dart';
 import 'laporan_pengelola_view.dart';
@@ -12,50 +13,52 @@ import 'profil_bank_sampah_view.dart';
 class PengelolaMainView extends GetView<PengelolaMainController> {
   const PengelolaMainView({super.key});
 
+  static const _pages = {
+    PengelolaTab.dashboard: DashboardView(),
+    PengelolaTab.histori: HistoriView(),
+    PengelolaTab.laporan: LaporanPengelolaView(),
+    PengelolaTab.profil: ProfilBankSampahView(),
+  };
+
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      const DashboardView(),
-      const HistoriView(),
-      const LaporanPengelolaView(),
-      const ProfilBankSampahView(),
-    ];
-
-    return Scaffold(
+    return ExitConfirmScope(
+      child: Scaffold(
       body: Obx(() => IndexedStack(
-            index: controller.currentIndex.value,
-            children: pages,
+            index: controller.currentTab.value.index,
+            children: _pages.values.toList(),
           )),
       bottomNavigationBar: _buildCustomBottomNav(context),
+      ),
     );
   }
 
   Widget _buildCustomBottomNav(BuildContext context) {
-    final List<Map<String, dynamic>> items = [
-      {
+    const items = <PengelolaTab, Map<String, dynamic>>{
+      PengelolaTab.dashboard: {
         'icon': Icons.dashboard_outlined,
         'activeIcon': Icons.dashboard_rounded,
         'label': 'Dashboard',
       },
-      {
+      PengelolaTab.histori: {
         'icon': Icons.history_outlined,
         'activeIcon': Icons.history_rounded,
         'label': 'Histori',
       },
-      {
+      PengelolaTab.laporan: {
         'icon': Icons.description_outlined,
         'activeIcon': Icons.description_rounded,
         'label': 'Laporan',
       },
-      {
+      PengelolaTab.profil: {
         'icon': Icons.store_outlined,
         'activeIcon': Icons.store_rounded,
         'label': 'Profil',
       },
-    ];
+    };
 
     return Obx(() {
-      final selectedIndex = controller.currentIndex.value;
+      final selectedTab = controller.currentTab.value;
       final bottomPadding = MediaQuery.of(context).padding.bottom;
 
       return MediaQuery(
@@ -88,14 +91,14 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
               height: 56,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(items.length, (index) {
-                  final isSelected = selectedIndex == index;
-                  final item = items[index];
+                children: PengelolaTab.values.map((tab) {
+                  final isSelected = selectedTab == tab;
+                  final item = items[tab]!;
 
                   return Expanded(
                     flex: isSelected ? 3 : 2,
                     child: GestureDetector(
-                      onTap: () => controller.changePage(index),
+                      onTap: () => controller.changePage(tab),
                       behavior: HitTestBehavior.opaque,
                       child: Center(
                         child: AnimatedContainer(
@@ -105,7 +108,7 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
                           decoration: BoxDecoration(
                             gradient: isSelected
                                 ? const LinearGradient(
-                                    colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                                    colors: [AppColors.pengelolaMain, AppColors.secondary],
                                   )
                                 : null,
                             color: isSelected ? null : Colors.transparent,
@@ -158,7 +161,7 @@ class PengelolaMainView extends GetView<PengelolaMainController> {
                       ),
                     ),
                   );
-                }),
+                }).toList(),
               ),
             ),
           ),

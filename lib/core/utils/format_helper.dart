@@ -25,6 +25,25 @@ class FormatHelper {
     return _currencyFormatter.format(value);
   }
 
+  /// Rupiah ringkas untuk header: 14.9 jt / 1.2 M.
+  static String compactCurrency(num? value) {
+    if (value == null) return 'Rp 0';
+    final v = value.toDouble();
+    if (v >= 1e9) {
+      final m = v / 1e9;
+      return '${m.toStringAsFixed(m.truncateToDouble() == m ? 0 : 1)} M';
+    }
+    if (v >= 1e6) {
+      final jt = v / 1e6;
+      return '${jt.toStringAsFixed(jt.truncateToDouble() == jt ? 0 : 1)} jt';
+    }
+    if (v >= 1e3) {
+      final rb = v / 1e3;
+      return '${rb.toStringAsFixed(rb.truncateToDouble() == rb ? 0 : 1)} rb';
+    }
+    return _currencyFormatter.format(v);
+  }
+
   // 1.234,5
   static String number(num? value) {
     if (value == null) return '0';

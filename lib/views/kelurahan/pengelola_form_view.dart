@@ -12,7 +12,7 @@ class PengelolaFormView extends GetView<PengelolaController> {
   static const _blue900 = AppColors.kelurahanDark;
   static const _blue600 = AppColors.kelurahanMain;
   static const _blue500 = AppColors.kelurahanMain;
-  static const _blue400 = Color(0xFF42A5F5);
+  static const _blue400 = AppColors.kelurahanAccent;
   static const _blue200 = AppColors.kelurahanLight;
   static const _blue50 = AppColors.kelurahanLight;
   static const _bg = AppColors.scaffoldBg;
@@ -195,7 +195,7 @@ class PengelolaFormView extends GetView<PengelolaController> {
                                         border: Border.all(
                                           color: selected
                                               ? _blue500
-                                              : const Color(0xFFE3F2FD),
+                                              : AppColors.kelurahanLight,
                                           width: selected ? 2 : 1.2,
                                         ),
                                         boxShadow: [
@@ -392,7 +392,7 @@ class PengelolaFormView extends GetView<PengelolaController> {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFFE3F2FD),
+            AppColors.kelurahanLight,
             Color(0xFFF5FAFF),
           ],
         ),
@@ -534,7 +534,7 @@ class PengelolaFormView extends GetView<PengelolaController> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
               borderSide: const BorderSide(
-                color: Color(0xFFE3F2FD),
+                color: AppColors.kelurahanLight,
                 width: 1.4,
               ),
             ),

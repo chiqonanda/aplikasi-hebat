@@ -10,6 +10,7 @@ import '../../core/constants/supabase_constants.dart';
 import '../../core/services/session_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/widgets/motion.dart';
 import '../../models/profile_model.dart';
 
 class MenungguVerifikasiView extends StatefulWidget {
@@ -63,10 +64,13 @@ class _MenungguVerifikasiViewState extends State<MenungguVerifikasiView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: ConstrainedBox(
+        child: PullToRefresh(
+          onRefresh: _cekStatus,
+          color: AppColors.primary,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Container(
                 decoration: BoxDecoration(
@@ -108,6 +112,7 @@ class _MenungguVerifikasiViewState extends State<MenungguVerifikasiView> {
                     ),
                   ],
                 ),
+              ),
               ),
             ),
           ),

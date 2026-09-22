@@ -6,6 +6,7 @@ import '../../app/themes/design_tokens.dart';
 import '../../controllers/kelurahan/laporan_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/widgets/motion.dart';
 import '../../models/bank_sampah_model.dart';
 
 class LaporanView extends GetView<LaporanController> {
@@ -14,7 +15,7 @@ class LaporanView extends GetView<LaporanController> {
   // ── Theme Colors ────────────────────────────────────────────────────────
   static const _blue900 = AppColors.kelurahanDark;
   static const _blue500 = AppColors.kelurahanMain;
-  static const _blue400 = Color(0xFF42A5F5);
+  static const _blue400 = AppColors.kelurahanAccent;
   static const _bg = AppColors.scaffoldBg;
 
   @override
@@ -22,11 +23,11 @@ class LaporanView extends GetView<LaporanController> {
     return Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
-        child: RefreshIndicator(
+        child: PullToRefresh(
           onRefresh: () async {
             // refresh trigger
           },
-          color: _blue500,
+          color: AppColors.kelurahanMain,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -121,7 +122,7 @@ class LaporanView extends GetView<LaporanController> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFEBF2FA),
+          color: AppColors.kelurahanSurface,
           width: 1.2,
         ),
         boxShadow: DesignTokens.kelurahanShadowSm,
@@ -217,7 +218,7 @@ class LaporanView extends GetView<LaporanController> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFFEBF2FA),
+          color: AppColors.kelurahanSurface,
           width: 1.2,
         ),
         boxShadow: DesignTokens.kelurahanShadowSm,
@@ -420,7 +421,7 @@ class LaporanView extends GetView<LaporanController> {
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _blue500,
-                    side: const BorderSide(color: Color(0xFFEBF2FA), width: 1.2),
+                    side: const BorderSide(color: AppColors.kelurahanSurface, width: 1.2),
                     backgroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -445,7 +446,7 @@ class LaporanView extends GetView<LaporanController> {
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _blue500,
-                    side: const BorderSide(color: Color(0xFFEBF2FA), width: 1.2),
+                    side: const BorderSide(color: AppColors.kelurahanSurface, width: 1.2),
                     backgroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -571,7 +572,7 @@ class _DatePickerField extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFEBF2FA), width: 1),
+                border: Border.all(color: AppColors.kelurahanSurface, width: 1),
               ),
               child: const Icon(
                 Icons.calendar_month_rounded,
@@ -599,7 +600,7 @@ class _DatePickerField extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
-                      color: value != null ? const Color(0xFF0A2540) : Colors.grey.shade500,
+                      color: value != null ? AppColors.kelurahanDark : Colors.grey.shade500,
                     ),
                   ),
                 ],
@@ -649,7 +650,7 @@ class _PreviewCard extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [_blue500, Color(0xFF42A5F5)],
+                colors: [_blue500, AppColors.kelurahanAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -715,7 +716,7 @@ class _PreviewCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFE0F2F1),
+                color: AppColors.tealContainer,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFB2DFDB), width: 1),
               ),

@@ -25,18 +25,23 @@ class ProfileModel {
   bool get isPengelola => role == 'pengelola';
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic val) {
+      if (val == null) return DateTime.now();
+      return DateTime.tryParse(val.toString()) ?? DateTime.now();
+    }
+
     return ProfileModel(
-      id: json['id'] as String,
-      authUserId: json['auth_user_id'] as String,
-      namaLengkap: json['nama_lengkap'] as String,
+      id: json['id'] as String? ?? '',
+      authUserId: json['auth_user_id'] as String? ?? '',
+      namaLengkap: json['nama_lengkap'] as String? ?? '',
       noHp: json['no_hp'] as String?,
-      role: json['role'] as String,
+      role: json['role'] as String? ?? 'pengelola',
       isVerified: json['is_verified'] as bool? ?? false,
-      bankSampahPilihan: json['bank_sampah_pilihan'] != null
-          ? List<String>.from(json['bank_sampah_pilihan'] as List)
+      bankSampahPilihan: json['bank_sampah_pilihan'] is List
+          ? (json['bank_sampah_pilihan'] as List).map((e) => e.toString()).toList()
           : [],
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: parseDate(json['created_at']),
+      updatedAt: parseDate(json['updated_at']),
     );
   }
 

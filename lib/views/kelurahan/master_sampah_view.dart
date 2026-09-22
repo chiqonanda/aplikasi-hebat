@@ -3,21 +3,26 @@ import 'package:get/get.dart';
 
 import '../../app/themes/app_colors.dart';
 import '../../controllers/kelurahan/master_sampah_controller.dart';
+import '../../core/utils/format_helper.dart';
+import '../../core/widgets/add_fab.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/kategori_model.dart';
 import '../../models/sub_kategori_model.dart';
 import '../../models/tipe_sampah_model.dart';
 import '../../models/satuan_model.dart';
+import '../../core/widgets/motion.dart';
+import '../../core/widgets/sampah_visuals.dart';
+import '../../core/widgets/wave_painter.dart';
 
 class MasterSampahView extends GetView<MasterSampahController> {
   const MasterSampahView({super.key});
 
   static const _tabs = [
-    _TabInfo('Kategori',     Icons.category_outlined,    [Color(0xFF0A2540), Color(0xFF1E88E5)]),
-    _TabInfo('Sub Kategori', Icons.layers_outlined,       [Color(0xFF00838F), Color(0xFF26C6DA)]),
-    _TabInfo('Tipe',         Icons.style_outlined,        [Color(0xFF283593), Color(0xFF5C6BC0)]),
-    _TabInfo('Jenis',        Icons.eco_outlined,          [Color(0xFF00695C), Color(0xFF26A69A)]),
-    _TabInfo('Satuan',       Icons.straighten_rounded,    [Color(0xFF6A1B9A), Color(0xFFAB47BC)]),
+    _TabInfo('Kategori',     Icons.category_outlined,    [AppColors.kelurahanDark, AppColors.kelurahanMain]),
+    _TabInfo('Sub Kategori', Icons.layers_outlined,       [AppColors.teal, AppColors.cyan]),
+    _TabInfo('Tipe',         Icons.style_outlined,        [AppColors.indigoDark, AppColors.indigo]),
+    _TabInfo('Jenis',        Icons.eco_outlined,          [AppColors.tealDark, AppColors.tealMid]),
+    _TabInfo('Satuan',       Icons.straighten_rounded,    [AppColors.purple, AppColors.purpleMid]),
   ];
 
   @override
@@ -63,9 +68,10 @@ class MasterSampahView extends GetView<MasterSampahController> {
     return Stack(
       children: [
         CustomPaint(
-          size: Size(MediaQuery.of(context).size.width, 160),
-          painter: _WavePainter(),
+          size: Size(MediaQuery.of(context).size.width, 210),
+          painter: WavePainter.blue(),
         ),
+        const AmbientBlob(color: Color(0x14FFFFFF), size: 220),
         // Decorative circles
         Positioned(
           top: -20,
@@ -124,14 +130,20 @@ class MasterSampahView extends GetView<MasterSampahController> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Kelola kategori, jenis & satuan',
-                      style: TextStyle(
-                        fontFamily: 'PlusJakartaSans',
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.75),
-                      ),
-                    ),
+                    Obx(() => AnimatedValue(
+                          value: (controller.listKategori.length +
+                                  controller.listJenis.length)
+                              .toDouble(),
+                          builder: (v) => Text(
+                            '${FormatHelper.number(v)} item dikelola',
+                            style: TextStyle(
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        )),
                   ],
                 ),
               ),
@@ -194,7 +206,7 @@ class MasterSampahView extends GetView<MasterSampahController> {
                       border: Border.all(
                         color: isActive
                             ? tab.gradientColors.first
-                            : const Color(0xFFEBF2FA),
+                            : AppColors.kelurahanSurface,
                         width: 1.2,
                       ),
                       boxShadow: isActive
@@ -355,7 +367,7 @@ void _showAddSheet(
             ),
 
             const SizedBox(height: 18),
-            const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+            const Divider(color: AppColors.dividerLight, height: 1, thickness: 1),
             const SizedBox(height: 18),
 
             formContent,
@@ -440,14 +452,14 @@ InputDecoration _dropdownDecoration(
     ),
     prefixIcon: Icon(icon, size: 18, color: gradientColors.first),
     filled: true,
-    fillColor: const Color(0xFFF8FBFF),
+    fillColor: AppColors.blueBg,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFEBF2FA), width: 1.2),
+      borderSide: const BorderSide(color: AppColors.kelurahanSurface, width: 1.2),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
@@ -464,7 +476,28 @@ class _KategoriTab extends StatelessWidget {
   final MasterSampahController controller;
   const _KategoriTab({required this.controller});
 
-  static const _grad = [Color(0xFF0A2540), Color(0xFF1E88E5)];
+  static const _grad = [AppColors.kelurahanDark, AppColors.kelurahanMain];
+
+  Widget _buildFormFields() => Column(children: [
+        _ModernTextField(
+          controller: controller.namaController,
+          label: 'Nama Kategori',
+          hint: 'Contoh: Plastik, Kertas, Logam',
+          icon: Icons.label_outline_rounded,
+          gradientColors: _grad,
+          validator: (v) =>
+              v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+        ),
+        const SizedBox(height: 14),
+        _ModernTextField(
+          controller: controller.deskripsiController,
+          label: 'Deskripsi (opsional)',
+          hint: 'Keterangan singkat kategori ini',
+          icon: Icons.notes_rounded,
+          gradientColors: _grad,
+          maxLines: 2,
+        ),
+      ]);
 
   @override
   Widget build(BuildContext context) {
@@ -480,52 +513,56 @@ class _KategoriTab extends StatelessWidget {
           gradientColors: _grad,
           controller: controller,
           onSimpan: controller.simpanKategori,
-          formContent: Column(children: [
-            _ModernTextField(
-              controller: controller.namaController,
-              label: 'Nama Kategori',
-              hint: 'Contoh: Plastik, Kertas, Logam',
-              icon: Icons.label_outline_rounded,
-              gradientColors: _grad,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
-            ),
-            const SizedBox(height: 14),
-            _ModernTextField(
-              controller: controller.deskripsiController,
-              label: 'Deskripsi (opsional)',
-              hint: 'Keterangan singkat kategori ini',
-              icon: Icons.notes_rounded,
-              gradientColors: _grad,
-              maxLines: 2,
-            ),
-          ]),
+          formContent: _buildFormFields(),
         ),
       ),
       body: Obx(() {
-        if (controller.listKategori.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.category_outlined,
-            title: 'Belum Ada Kategori',
-            subtitle: 'Tambahkan kategori sampah pertama Anda.',
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: controller.fetchAll,
-          color: _grad.first,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-            itemCount: controller.listKategori.length,
+        final items = controller.listKategoriFiltered;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: _SearchFilterBar(
+                  controller: controller, gradientColors: _grad),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? const AppEmptyState(
+                      icon: Icons.category_outlined,
+                      title: 'Belum Ada Kategori',
+                      subtitle: 'Tambahkan kategori sampah pertama Anda.',
+                    )
+                  : PullToRefresh(
+                      onRefresh: controller.fetchAll,
+                      color: _grad.first,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: items.length,
             itemBuilder: (context, i) {
-              final item = controller.listKategori[i];
+              final item = items[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MasterItemCard(
                   nama: item.nama,
                   subtitle: item.deskripsi,
-                  icon: Icons.category_outlined,
+                  kategori: item.nama,
                   gradientColors: _grad,
                   index: i,
+                  onTap: () => showKategoriDetailSheet(context,
+                      nama: item.nama, deskripsi: item.deskripsi),
+                  onEdit: () {
+                    controller.mulaiEditKategori(item);
+                    _showAddSheet(
+                      context,
+                      title: 'Edit Kategori',
+                      titleIcon: Icons.edit_outlined,
+                      gradientColors: _grad,
+                      controller: controller,
+                      onSimpan: controller.updateKategori,
+                      formContent: _buildFormFields(),
+                    );
+                  },
                   onDelete: () => _confirmHapus(
                     context,
                     nama: item.nama,
@@ -536,6 +573,9 @@ class _KategoriTab extends StatelessWidget {
               );
             },
           ),
+                      ),
+            ),
+          ],
         );
       }),
     );
@@ -549,7 +589,46 @@ class _SubKategoriTab extends StatelessWidget {
   final MasterSampahController controller;
   const _SubKategoriTab({required this.controller});
 
-  static const _grad = [Color(0xFF00838F), Color(0xFF26C6DA)];
+  static const _grad = [AppColors.teal, AppColors.cyan];
+
+  Widget _buildFormFields() => Column(children: [
+        Obx(
+          () => DropdownButtonFormField<KategoriModel>(
+            initialValue: controller.selectedKategoriForm.value,
+            decoration: _dropdownDecoration(
+                'Kategori *', Icons.category_outlined, _grad),
+            items: controller.listKategoriDropdown
+                .map((k) => DropdownMenuItem(
+                    value: k,
+                    child: Text(k.nama,
+                        style: const TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontWeight: FontWeight.w600))))
+                .toList(),
+            onChanged: (v) => controller.selectedKategoriForm.value = v,
+            validator: (v) => v == null ? 'Pilih kategori' : null,
+          ),
+        ),
+        const SizedBox(height: 14),
+        _ModernTextField(
+          controller: controller.namaController,
+          label: 'Nama Sub Kategori',
+          hint: 'Contoh: Plastik Keras, Kertas Bekas',
+          icon: Icons.label_outline_rounded,
+          gradientColors: _grad,
+          validator: (v) =>
+              v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+        ),
+        const SizedBox(height: 14),
+        _ModernTextField(
+          controller: controller.deskripsiController,
+          label: 'Deskripsi (opsional)',
+          hint: 'Keterangan sub kategori',
+          icon: Icons.notes_rounded,
+          gradientColors: _grad,
+          maxLines: 2,
+        ),
+      ]);
 
   @override
   Widget build(BuildContext context) {
@@ -565,63 +644,35 @@ class _SubKategoriTab extends StatelessWidget {
           gradientColors: _grad,
           controller: controller,
           onSimpan: controller.simpanSubKategori,
-          formContent: Column(children: [
-            Obx(
-              () => DropdownButtonFormField<KategoriModel>(
-                initialValue: controller.selectedKategoriForm.value,
-                decoration: _dropdownDecoration(
-                    'Kategori *', Icons.category_outlined, _grad),
-                items: controller.listKategoriDropdown
-                    .map((k) => DropdownMenuItem(
-                        value: k,
-                        child: Text(k.nama,
-                            style: const TextStyle(
-                                fontFamily: 'PlusJakartaSans',
-                                fontWeight: FontWeight.w600))))
-                    .toList(),
-                onChanged: (v) => controller.selectedKategoriForm.value = v,
-                validator: (v) => v == null ? 'Pilih kategori' : null,
-              ),
-            ),
-            const SizedBox(height: 14),
-            _ModernTextField(
-              controller: controller.namaController,
-              label: 'Nama Sub Kategori',
-              hint: 'Contoh: Plastik Keras, Kertas Bekas',
-              icon: Icons.label_outline_rounded,
-              gradientColors: _grad,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
-            ),
-            const SizedBox(height: 14),
-            _ModernTextField(
-              controller: controller.deskripsiController,
-              label: 'Deskripsi (opsional)',
-              hint: 'Keterangan sub kategori',
-              icon: Icons.notes_rounded,
-              gradientColors: _grad,
-              maxLines: 2,
-            ),
-          ]),
+          formContent: _buildFormFields(),
         ),
       ),
       body: Obx(() {
-        if (controller.listSubKategori.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.layers_outlined,
-            title: 'Belum Ada Sub Kategori',
-            subtitle:
-                'Tambahkan sub kategori untuk mengklasifikasikan sampah.',
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: controller.fetchAll,
-          color: _grad.first,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-            itemCount: controller.listSubKategori.length,
-            itemBuilder: (context, i) {
-              final item = controller.listSubKategori[i];
+        final items = controller.listSubKategoriFiltered;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: _SearchFilterBar(
+                  controller: controller, gradientColors: _grad),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? const AppEmptyState(
+                      icon: Icons.layers_outlined,
+                      title: 'Belum Ada Sub Kategori',
+                      subtitle:
+                          'Tambahkan sub kategori untuk mengklasifikasikan sampah.',
+                    )
+                  : PullToRefresh(
+                      onRefresh: controller.fetchAll,
+                      color: _grad.first,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) {
+              final item = items[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MasterItemCard(
@@ -629,9 +680,21 @@ class _SubKategoriTab extends StatelessWidget {
                   subtitle: item.kategori != null
                       ? 'Kategori: ${item.kategori!.nama}'
                       : null,
-                  icon: Icons.layers_outlined,
+                  kategori: item.kategori?.nama,
                   gradientColors: _grad,
                   index: i,
+                  onEdit: () {
+                    controller.mulaiEditSubKategori(item);
+                    _showAddSheet(
+                      context,
+                      title: 'Edit Sub Kategori',
+                      titleIcon: Icons.edit_outlined,
+                      gradientColors: _grad,
+                      controller: controller,
+                      onSimpan: controller.updateSubKategori,
+                      formContent: _buildFormFields(),
+                    );
+                  },
                   onDelete: () => _confirmHapus(
                     context,
                     nama: item.nama,
@@ -642,6 +705,9 @@ class _SubKategoriTab extends StatelessWidget {
               );
             },
           ),
+                      ),
+            ),
+          ],
         );
       }),
     );
@@ -655,7 +721,64 @@ class _TipeTab extends StatelessWidget {
   final MasterSampahController controller;
   const _TipeTab({required this.controller});
 
-  static const _grad = [Color(0xFF283593), Color(0xFF5C6BC0)];
+  static const _grad = [AppColors.indigoDark, AppColors.indigo];
+
+  Widget _buildFormFields() => Column(children: [
+        Obx(
+          () => DropdownButtonFormField<KategoriModel>(
+            initialValue: controller.selectedKategoriForm.value,
+            decoration: _dropdownDecoration(
+                'Kategori *', Icons.category_outlined, _grad),
+            items: controller.listKategoriDropdown
+                .map((k) => DropdownMenuItem(
+                    value: k,
+                    child: Text(k.nama,
+                        style: const TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontWeight: FontWeight.w600))))
+                .toList(),
+            onChanged: (v) => controller.selectedKategoriForm.value = v,
+            validator: (v) => v == null ? 'Pilih kategori' : null,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Obx(
+          () => DropdownButtonFormField<SubKategoriModel>(
+            initialValue: controller.selectedSubKategoriForm.value,
+            decoration: _dropdownDecoration(
+                'Sub Kategori *', Icons.layers_outlined, _grad),
+            items: controller.listSubKategoriDropdown
+                .map((s) => DropdownMenuItem(
+                    value: s,
+                    child: Text(s.nama,
+                        style: const TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontWeight: FontWeight.w600))))
+                .toList(),
+            onChanged: (v) => controller.selectedSubKategoriForm.value = v,
+            validator: (v) => v == null ? 'Pilih sub kategori' : null,
+          ),
+        ),
+        const SizedBox(height: 14),
+        _ModernTextField(
+          controller: controller.namaController,
+          label: 'Nama Tipe',
+          hint: 'Contoh: PET, PP, HDPE, ABS',
+          icon: Icons.label_outline_rounded,
+          gradientColors: _grad,
+          validator: (v) =>
+              v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+        ),
+        const SizedBox(height: 14),
+        _ModernTextField(
+          controller: controller.deskripsiController,
+          label: 'Deskripsi (opsional)',
+          hint: 'Keterangan tipe sampah',
+          icon: Icons.notes_rounded,
+          gradientColors: _grad,
+          maxLines: 2,
+        ),
+      ]);
 
   @override
   Widget build(BuildContext context) {
@@ -671,80 +794,35 @@ class _TipeTab extends StatelessWidget {
           gradientColors: _grad,
           controller: controller,
           onSimpan: controller.simpanTipe,
-          formContent: Column(children: [
-            Obx(
-              () => DropdownButtonFormField<KategoriModel>(
-                initialValue: controller.selectedKategoriForm.value,
-                decoration: _dropdownDecoration(
-                    'Kategori *', Icons.category_outlined, _grad),
-                items: controller.listKategoriDropdown
-                    .map((k) => DropdownMenuItem(
-                        value: k,
-                        child: Text(k.nama,
-                            style: const TextStyle(
-                                fontFamily: 'PlusJakartaSans',
-                                fontWeight: FontWeight.w600))))
-                    .toList(),
-                onChanged: (v) => controller.selectedKategoriForm.value = v,
-                validator: (v) => v == null ? 'Pilih kategori' : null,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Obx(
-              () => DropdownButtonFormField<SubKategoriModel>(
-                initialValue: controller.selectedSubKategoriForm.value,
-                decoration: _dropdownDecoration(
-                    'Sub Kategori *', Icons.layers_outlined, _grad),
-                items: controller.listSubKategoriDropdown
-                    .map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Text(s.nama,
-                            style: const TextStyle(
-                                fontFamily: 'PlusJakartaSans',
-                                fontWeight: FontWeight.w600))))
-                    .toList(),
-                onChanged: (v) => controller.selectedSubKategoriForm.value = v,
-                validator: (v) => v == null ? 'Pilih sub kategori' : null,
-              ),
-            ),
-            const SizedBox(height: 14),
-            _ModernTextField(
-              controller: controller.namaController,
-              label: 'Nama Tipe',
-              hint: 'Contoh: PET, PP, HDPE, ABS',
-              icon: Icons.label_outline_rounded,
-              gradientColors: _grad,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
-            ),
-            const SizedBox(height: 14),
-            _ModernTextField(
-              controller: controller.deskripsiController,
-              label: 'Deskripsi (opsional)',
-              hint: 'Keterangan tipe sampah',
-              icon: Icons.notes_rounded,
-              gradientColors: _grad,
-              maxLines: 2,
-            ),
-          ]),
+          formContent: _buildFormFields(),
         ),
       ),
       body: Obx(() {
-        if (controller.listTipe.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.style_outlined,
-            title: 'Belum Ada Tipe',
-            subtitle: 'Tambahkan tipe sampah seperti PET, PP, HDPE.',
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: controller.fetchAll,
-          color: _grad.first,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-            itemCount: controller.listTipe.length,
-            itemBuilder: (context, i) {
-              final item = controller.listTipe[i];
+        final items = controller.listTipeFiltered;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: _SearchFilterBar(
+                  controller: controller, gradientColors: _grad),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? const AppEmptyState(
+                      icon: Icons.style_outlined,
+                      title: 'Belum Ada Tipe',
+                      subtitle:
+                          'Tambahkan tipe sampah seperti PET, PP, HDPE.',
+                    )
+                  : PullToRefresh(
+                      onRefresh: controller.fetchAll,
+                      color: _grad.first,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) {
+              final item = items[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MasterItemCard(
@@ -752,9 +830,21 @@ class _TipeTab extends StatelessWidget {
                   subtitle: item.subKategori != null
                       ? 'Sub Kategori: ${item.subKategori!.nama}'
                       : null,
-                  icon: Icons.style_outlined,
+                  kategori: item.subKategori?.kategori?.nama,
                   gradientColors: _grad,
                   index: i,
+                  onEdit: () {
+                    controller.mulaiEditTipe(item);
+                    _showAddSheet(
+                      context,
+                      title: 'Edit Tipe',
+                      titleIcon: Icons.edit_outlined,
+                      gradientColors: _grad,
+                      controller: controller,
+                      onSimpan: controller.updateTipe,
+                      formContent: _buildFormFields(),
+                    );
+                  },
                   onDelete: () => _confirmHapus(
                     context,
                     nama: item.nama,
@@ -765,6 +855,9 @@ class _TipeTab extends StatelessWidget {
               );
             },
           ),
+                      ),
+            ),
+          ],
         );
       }),
     );
@@ -778,7 +871,127 @@ class _JenisTab extends StatelessWidget {
   final MasterSampahController controller;
   const _JenisTab({required this.controller});
 
-  static const _grad = [Color(0xFF00695C), Color(0xFF26A69A)];
+  static const _grad = [AppColors.tealDark, AppColors.tealMid];
+
+  Widget _buildFormFields() => SingleChildScrollView(
+        child: Column(children: [
+          Obx(
+            () => DropdownButtonFormField<KategoriModel>(
+              initialValue: controller.selectedKategoriForm.value,
+              decoration: _dropdownDecoration(
+                  'Kategori *', Icons.category_outlined, _grad),
+              items: controller.listKategoriDropdown
+                  .map((k) => DropdownMenuItem(
+                      value: k,
+                      child: Text(k.nama,
+                          style: const TextStyle(
+                              fontFamily: 'PlusJakartaSans',
+                              fontWeight: FontWeight.w600))))
+                  .toList(),
+              onChanged: (v) {
+                controller.selectedKategoriForm.value = v;
+                controller.selectedSubKategoriForm.value = null;
+                controller.selectedTipeForm.value = null;
+              },
+              validator: (v) => v == null ? 'Pilih kategori' : null,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Obx(
+            () => DropdownButtonFormField<SubKategoriModel>(
+              initialValue: controller.selectedSubKategoriForm.value,
+              decoration: _dropdownDecoration(
+                  'Sub Kategori (opsional)', Icons.layers_outlined, _grad),
+              items: [
+                const DropdownMenuItem<SubKategoriModel>(
+                  value: null,
+                  child: Text('— Tidak ada —',
+                      style: TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontWeight: FontWeight.w600)),
+                ),
+                ...controller.listSubKategoriDropdown.map((s) =>
+                    DropdownMenuItem(
+                        value: s,
+                        child: Text(s.nama,
+                            style: const TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontWeight: FontWeight.w600)))),
+              ],
+              onChanged: (v) =>
+                  controller.selectedSubKategoriForm.value = v,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Obx(() {
+            if (controller.listTipeDropdown.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Column(children: [
+              DropdownButtonFormField<TipeSampahModel>(
+                initialValue: controller.selectedTipeForm.value,
+                decoration: _dropdownDecoration(
+                    'Tipe (opsional)', Icons.style_outlined, _grad),
+                items: [
+                  const DropdownMenuItem<TipeSampahModel>(
+                    value: null,
+                    child: Text('— Tidak ada —',
+                        style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  ...controller.listTipeDropdown.map((t) =>
+                      DropdownMenuItem(
+                          value: t,
+                          child: Text(t.nama,
+                              style: const TextStyle(
+                                  fontFamily: 'PlusJakartaSans',
+                                  fontWeight: FontWeight.w600)))),
+                ],
+                onChanged: (v) => controller.selectedTipeForm.value = v,
+              ),
+              const SizedBox(height: 14),
+            ]);
+          }),
+          _ModernTextField(
+            controller: controller.namaController,
+            label: 'Nama Jenis',
+            hint: 'Contoh: Botol Air Mineral, Koran Bekas',
+            icon: Icons.label_outline_rounded,
+            gradientColors: _grad,
+            validator: (v) =>
+                v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+          ),
+          const SizedBox(height: 14),
+          Obx(
+            () => DropdownButtonFormField<SatuanModel>(
+              initialValue: controller.selectedSatuanForm.value,
+              decoration: _dropdownDecoration(
+                  'Satuan Default (opsional)',
+                  Icons.straighten_rounded,
+                  _grad),
+              items: controller.listSatuan
+                  .map((s) => DropdownMenuItem(
+                      value: s,
+                      child: Text('${s.nama} (${s.singkatan})',
+                          style: const TextStyle(
+                              fontFamily: 'PlusJakartaSans',
+                              fontWeight: FontWeight.w600))))
+                  .toList(),
+              onChanged: (v) => controller.selectedSatuanForm.value = v,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _ModernTextField(
+            controller: controller.deskripsiController,
+            label: 'Deskripsi (opsional)',
+            hint: 'Keterangan tambahan',
+            icon: Icons.notes_rounded,
+            gradientColors: _grad,
+            maxLines: 2,
+          ),
+        ]),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -794,144 +1007,35 @@ class _JenisTab extends StatelessWidget {
           gradientColors: _grad,
           controller: controller,
           onSimpan: controller.simpanJenis,
-          formContent: SingleChildScrollView(
-            child: Column(children: [
-              Obx(
-                () => DropdownButtonFormField<KategoriModel>(
-                  initialValue: controller.selectedKategoriForm.value,
-                  decoration: _dropdownDecoration(
-                      'Kategori *', Icons.category_outlined, _grad),
-                  items: controller.listKategoriDropdown
-                      .map((k) => DropdownMenuItem(
-                          value: k,
-                          child: Text(k.nama,
-                              style: const TextStyle(
-                                  fontFamily: 'PlusJakartaSans',
-                                  fontWeight: FontWeight.w600))))
-                      .toList(),
-                  onChanged: (v) {
-                    controller.selectedKategoriForm.value = v;
-                    controller.selectedSubKategoriForm.value = null;
-                    controller.selectedTipeForm.value = null;
-                  },
-                  validator: (v) => v == null ? 'Pilih kategori' : null,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Obx(
-                () => DropdownButtonFormField<SubKategoriModel>(
-                  initialValue: controller.selectedSubKategoriForm.value,
-                  decoration: _dropdownDecoration(
-                      'Sub Kategori (opsional)', Icons.layers_outlined, _grad),
-                  items: [
-                    const DropdownMenuItem<SubKategoriModel>(
-                      value: null,
-                      child: Text('— Tidak ada —',
-                          style: TextStyle(
-                              fontFamily: 'PlusJakartaSans',
-                              fontWeight: FontWeight.w600)),
-                    ),
-                    ...controller.listSubKategoriDropdown.map((s) =>
-                        DropdownMenuItem(
-                            value: s,
-                            child: Text(s.nama,
-                                style: const TextStyle(
-                                    fontFamily: 'PlusJakartaSans',
-                                    fontWeight: FontWeight.w600)))),
-                  ],
-                  onChanged: (v) =>
-                      controller.selectedSubKategoriForm.value = v,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Obx(() {
-                if (controller.listTipeDropdown.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-                return Column(children: [
-                  DropdownButtonFormField<TipeSampahModel>(
-                    initialValue: controller.selectedTipeForm.value,
-                    decoration: _dropdownDecoration(
-                        'Tipe (opsional)', Icons.style_outlined, _grad),
-                    items: [
-                      const DropdownMenuItem<TipeSampahModel>(
-                        value: null,
-                        child: Text('— Tidak ada —',
-                            style: TextStyle(
-                                fontFamily: 'PlusJakartaSans',
-                                fontWeight: FontWeight.w600)),
-                      ),
-                      ...controller.listTipeDropdown.map((t) =>
-                          DropdownMenuItem(
-                              value: t,
-                              child: Text(t.nama,
-                                  style: const TextStyle(
-                                      fontFamily: 'PlusJakartaSans',
-                                      fontWeight: FontWeight.w600)))),
-                    ],
-                    onChanged: (v) => controller.selectedTipeForm.value = v,
-                  ),
-                  const SizedBox(height: 14),
-                ]);
-              }),
-              _ModernTextField(
-                controller: controller.namaController,
-                label: 'Nama Jenis',
-                hint: 'Contoh: Botol Air Mineral, Koran Bekas',
-                icon: Icons.label_outline_rounded,
-                gradientColors: _grad,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Nama wajib diisi' : null,
-              ),
-              const SizedBox(height: 14),
-              Obx(
-                () => DropdownButtonFormField<SatuanModel>(
-                  initialValue: controller.selectedSatuanForm.value,
-                  decoration: _dropdownDecoration(
-                      'Satuan Default (opsional)',
-                      Icons.straighten_rounded,
-                      _grad),
-                  items: controller.listSatuan
-                      .map((s) => DropdownMenuItem(
-                          value: s,
-                          child: Text('${s.nama} (${s.singkatan})',
-                              style: const TextStyle(
-                                  fontFamily: 'PlusJakartaSans',
-                                  fontWeight: FontWeight.w600))))
-                      .toList(),
-                  onChanged: (v) => controller.selectedSatuanForm.value = v,
-                ),
-              ),
-              const SizedBox(height: 14),
-              _ModernTextField(
-                controller: controller.deskripsiController,
-                label: 'Deskripsi (opsional)',
-                hint: 'Keterangan tambahan',
-                icon: Icons.notes_rounded,
-                gradientColors: _grad,
-                maxLines: 2,
-              ),
-            ]),
-          ),
+          formContent: _buildFormFields(),
         ),
       ),
       body: Obx(() {
-        if (controller.listJenis.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.eco_outlined,
-            title: 'Belum Ada Jenis Sampah',
-            subtitle:
-                'Tambahkan jenis sampah yang diterima bank sampah.',
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: controller.fetchAll,
-          color: _grad.first,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-            itemCount: controller.listJenis.length,
-            itemBuilder: (context, i) {
-              final item = controller.listJenis[i];
+        final items = controller.listJenisFiltered;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: _SearchFilterBar(
+                  controller: controller, gradientColors: _grad),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? const AppEmptyState(
+                      icon: Icons.eco_outlined,
+                      title: 'Belum Ada Jenis Sampah',
+                      subtitle:
+                          'Tambahkan jenis sampah yang diterima bank sampah.',
+                    )
+                  : PullToRefresh(
+                      onRefresh: controller.fetchAll,
+                      color: _grad.first,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) {
+              final item = items[i];
               final parts = <String>[];
               if (item.subKategori?.kategori != null) {
                 parts.add(item.subKategori!.kategori!.nama);
@@ -948,7 +1052,8 @@ class _JenisTab extends StatelessWidget {
                 child: _MasterItemCard(
                   nama: item.nama,
                   subtitle: breadcrumb,
-                  icon: Icons.eco_outlined,
+                  kategori: item.subKategori?.kategori?.nama ??
+                      item.kategori?.nama,
                   gradientColors: _grad,
                   index: i,
                   trailing: item.satuanDefault != null
@@ -957,6 +1062,18 @@ class _JenisTab extends StatelessWidget {
                           gradientColors: _grad,
                         )
                       : null,
+                  onEdit: () {
+                    controller.mulaiEditJenis(item);
+                    _showAddSheet(
+                      context,
+                      title: 'Edit Jenis Sampah',
+                      titleIcon: Icons.edit_outlined,
+                      gradientColors: _grad,
+                      controller: controller,
+                      onSimpan: controller.updateJenis,
+                      formContent: _buildFormFields(),
+                    );
+                  },
                   onDelete: () => _confirmHapus(
                     context,
                     nama: item.nama,
@@ -967,6 +1084,9 @@ class _JenisTab extends StatelessWidget {
               );
             },
           ),
+                      ),
+            ),
+          ],
         );
       }),
     );
@@ -980,7 +1100,29 @@ class _SatuanTab extends StatelessWidget {
   final MasterSampahController controller;
   const _SatuanTab({required this.controller});
 
-  static const _grad = [Color(0xFF6A1B9A), Color(0xFFAB47BC)];
+  static const _grad = [AppColors.purple, AppColors.purpleMid];
+
+  Widget _buildFormFields() => Column(children: [
+        _ModernTextField(
+          controller: controller.namaController,
+          label: 'Nama Satuan',
+          hint: 'Contoh: Kilogram, Liter, Buah',
+          icon: Icons.straighten_rounded,
+          gradientColors: _grad,
+          validator: (v) =>
+              v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+        ),
+        const SizedBox(height: 14),
+        _ModernTextField(
+          controller: controller.singkatanController,
+          label: 'Singkatan',
+          hint: 'Contoh: kg, L, bh',
+          icon: Icons.short_text_rounded,
+          gradientColors: _grad,
+          validator: (v) =>
+              v == null || v.isEmpty ? 'Singkatan wajib diisi' : null,
+        ),
+      ]);
 
   @override
   Widget build(BuildContext context) {
@@ -996,57 +1138,58 @@ class _SatuanTab extends StatelessWidget {
           gradientColors: _grad,
           controller: controller,
           onSimpan: controller.simpanSatuan,
-          formContent: Column(children: [
-            _ModernTextField(
-              controller: controller.namaController,
-              label: 'Nama Satuan',
-              hint: 'Contoh: Kilogram, Liter, Buah',
-              icon: Icons.straighten_rounded,
-              gradientColors: _grad,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
-            ),
-            const SizedBox(height: 14),
-            _ModernTextField(
-              controller: controller.singkatanController,
-              label: 'Singkatan',
-              hint: 'Contoh: kg, L, bh',
-              icon: Icons.short_text_rounded,
-              gradientColors: _grad,
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Singkatan wajib diisi' : null,
-            ),
-          ]),
+          formContent: _buildFormFields(),
         ),
       ),
       body: Obx(() {
-        if (controller.listSatuan.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.straighten_outlined,
-            title: 'Belum Ada Satuan',
-            subtitle:
-                'Tambahkan satuan pengukuran seperti kg, liter, dll.',
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: controller.fetchAll,
-          color: _grad.first,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-            itemCount: controller.listSatuan.length,
-            itemBuilder: (context, i) {
-              final item = controller.listSatuan[i];
+        final items = controller.listSatuanFiltered;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: _SearchFilterBar(
+                  controller: controller, gradientColors: _grad),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? const AppEmptyState(
+                      icon: Icons.straighten_outlined,
+                      title: 'Belum Ada Satuan',
+                      subtitle:
+                          'Tambahkan satuan pengukuran seperti kg, liter, dll.',
+                    )
+                  : PullToRefresh(
+                      onRefresh: controller.fetchAll,
+                      color: _grad.first,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) {
+              final item = items[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MasterItemCard(
                   nama: item.nama,
-                  icon: Icons.straighten_rounded,
+                  satuan: item.singkatan,
                   gradientColors: _grad,
                   index: i,
                   trailing: _SatuanBadge(
                     satuan: item.singkatan,
                     gradientColors: _grad,
                   ),
+                  onEdit: () {
+                    controller.mulaiEditSatuan(item);
+                    _showAddSheet(
+                      context,
+                      title: 'Edit Satuan',
+                      titleIcon: Icons.edit_outlined,
+                      gradientColors: _grad,
+                      controller: controller,
+                      onSimpan: controller.updateSatuan,
+                      formContent: _buildFormFields(),
+                    );
+                  },
                   onDelete: () => _confirmHapus(
                     context,
                     nama: item.nama,
@@ -1057,6 +1200,9 @@ class _SatuanTab extends StatelessWidget {
               );
             },
           ),
+                      ),
+            ),
+          ],
         );
       }),
     );
@@ -1081,49 +1227,154 @@ class _ModernFAB extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    // FAB modern bersama: glow bernapas + shimmer + inner highlight glossy.
+    return AddFab(
+      label: label,
+      gradientColors: gradientColors,
       onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    );
+  }
+}
+
+// ── Search + Filter Status Bar ──────────────────────────────────────────────
+// Dipakai bersama oleh kelima tab master sampah.
+class _SearchFilterBar extends StatelessWidget {
+  final MasterSampahController controller;
+  final List<Color> gradientColors;
+
+  const _SearchFilterBar({
+    required this.controller,
+    required this.gradientColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Search bar
+        Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: gradientColors.first.withValues(alpha: 0.35),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          child: Row(
+            children: [
+              const Icon(Icons.search_rounded,
+                  size: 19, color: AppColors.textSecondary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  onChanged: controller.setSearchQuery,
+                  style: const TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Cari nama atau deskripsi...',
+                    hintStyle: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 12.5,
+                      color: AppColors.textSecondary,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+              Obx(() {
+                if (controller.searchQuery.value.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return GestureDetector(
+                  onTap: () => controller.setSearchQuery(''),
+                  child: const Icon(Icons.close_rounded,
+                      size: 16, color: AppColors.textSecondary),
+                );
+              }),
+            ],
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.add_rounded,
-                  color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'PlusJakartaSans',
-                fontSize: 13.5,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-          ],
+        const SizedBox(height: 10),
+        // Chip filter status
+        Obx(() => Row(
+              children: [
+                _StatusChip(
+                  label: 'Semua',
+                  selected: controller.statusFilter.value == 'semua',
+                  gradientColors: gradientColors,
+                  onTap: () => controller.setStatusFilter('semua'),
+                ),
+                const SizedBox(width: 8),
+                _StatusChip(
+                  label: '● Aktif',
+                  selected: controller.statusFilter.value == 'aktif',
+                  gradientColors: gradientColors,
+                  onTap: () => controller.setStatusFilter('aktif'),
+                ),
+                const SizedBox(width: 8),
+                _StatusChip(
+                  label: '○ Nonaktif',
+                  selected: controller.statusFilter.value == 'nonaktif',
+                  gradientColors: gradientColors,
+                  onTap: () => controller.setStatusFilter('nonaktif'),
+                ),
+              ],
+            )),
+      ],
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final List<Color> gradientColors;
+  final VoidCallback onTap;
+
+  const _StatusChip({
+    required this.label,
+    required this.selected,
+    required this.gradientColors,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: selected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? Colors.transparent : AppColors.kelurahanSurface,
+            width: 1.2,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'PlusJakartaSans',
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: selected ? Colors.white : AppColors.kelurahanDark,
+          ),
         ),
       ),
     );
@@ -1135,47 +1386,58 @@ class _MasterItemCard extends StatelessWidget {
   final String nama;
   final String? subtitle;
   final Widget? trailing;
-  final IconData icon;
   final List<Color> gradientColors;
   final int index;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
+
+  /// Nama kategori induk — menentukan ikon visual khusus
+  /// (mis. residu, daur ulang, organik) via [resolveSampahVisual].
+  final String? kategori;
+
+  /// Singkatan satuan (tab Satuan) — menentukan ikon via [resolveSampahVisual].
+  final String? satuan;
+
+  /// Tap card: buka detail ringkas. Long-press: akses cepat hapus.
+  final VoidCallback? onTap;
 
   const _MasterItemCard({
     required this.nama,
     this.subtitle,
     this.trailing,
-    required this.icon,
     required this.gradientColors,
     required this.index,
+    required this.onEdit,
     required this.onDelete,
+    this.kategori,
+    this.satuan,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final resolved = resolveSampahVisual(
+      kategori: kategori,
+      satuan: satuan,
+    );
+
+    final card = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border(
-          left: BorderSide(color: gradientColors.first, width: 3),
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: gradientColors.first.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Icon container
+          // Ikon visual — rounded square gelap ala mockup
           Container(
             width: 48,
             height: 48,
@@ -1183,26 +1445,30 @@ class _MasterItemCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: gradientColors,
+                colors: resolved.gradient,
               ),
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: gradientColors.first.withValues(alpha: 0.25),
-                  blurRadius: 8,
+                  color: resolved.accent.withValues(alpha: 0.25),
+                  blurRadius: 10,
                   offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: Icon(icon, color: Colors.white, size: 22),
+            child: Icon(resolved.icon, color: Colors.white, size: 22),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
-          // Info
+          // Info: chips (opsional) + nama + subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (trailing != null) ...[
+                  trailing!,
+                  const SizedBox(height: 5),
+                ],
                 Text(
                   nama,
                   style: const TextStyle(
@@ -1216,67 +1482,83 @@ class _MasterItemCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle != null && subtitle!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.subdirectory_arrow_right_rounded,
-                        size: 12,
-                        color: gradientColors.last,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          subtitle!,
-                          style: TextStyle(
-                            fontFamily: 'PlusJakartaSans',
-                            fontSize: 11.5,
-                            color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 11.5,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ],
             ),
           ),
-
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
           const SizedBox(width: 8),
 
-          // Delete button
+          // Tombol Edit (abu) + Hapus (merah) ala mockup
+          GestureDetector(
+            onTap: onEdit,
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundKelurahan,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: AppColors.kelurahanSurface, width: 1),
+              ),
+              child: const Icon(
+                Icons.edit_outlined,
+                color: AppColors.kelurahanDark,
+                size: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: onDelete,
             child: Container(
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEBEE),
+                color: AppColors.dangerLight,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: const Color(0xFFFFCDD2), width: 1),
+                    color: AppColors.dangerLighter, width: 1),
               ),
               child: const Icon(
                 Icons.delete_outline_rounded,
-                color: Color(0xFFD32F2F),
-                size: 18,
+                color: AppColors.danger,
+                size: 16,
               ),
             ),
           ),
         ],
       ),
     );
+
+    final interactive = onTap == null
+        ? card
+        : PressableScale(
+            onTap: onTap,
+            pressedScale: 0.965,
+            splashColor: resolved.accent.withValues(alpha: 0.06),
+            borderRadius: 20,
+            glowIntensity: 0.35,
+            glowColor: resolved.accent,
+            onLongPress: onDelete,
+            child: card,
+          );
+
+    return StaggeredEntrance(index: index, child: interactive);
   }
 }
 
-// ── Modern Text Field ────────────────────────────────────────────────────────
 class _ModernTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -1324,7 +1606,7 @@ class _ModernTextField extends StatelessWidget {
         ),
         prefixIcon: Icon(icon, size: 18, color: gradientColors.first),
         filled: true,
-        fillColor: const Color(0xFFF8FBFF),
+        fillColor: AppColors.blueBg,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -1332,7 +1614,7 @@ class _ModernTextField extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide:
-              const BorderSide(color: Color(0xFFEBF2FA), width: 1.2),
+              const BorderSide(color: AppColors.kelurahanSurface, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -1410,7 +1692,8 @@ Future<void> _confirmHapus(
     barrierColor: Colors.black.withValues(alpha: 0.5),
     builder: (ctx) => Dialog(
       backgroundColor: Colors.transparent,
-      child: Container(
+      child: PopIn(
+        child: Container(
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1430,14 +1713,14 @@ Future<void> _confirmHapus(
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEBEE),
+                color: AppColors.dangerLight,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                    color: const Color(0xFFFFCDD2), width: 1.2),
+                    color: AppColors.dangerLighter, width: 1.2),
               ),
               child: const Icon(
                 Icons.warning_amber_rounded,
-                color: Color(0xFFD32F2F),
+                color: AppColors.danger,
                 size: 32,
               ),
             ),
@@ -1481,7 +1764,7 @@ Future<void> _confirmHapus(
             Row(
               children: [
                 Expanded(
-                  child: GestureDetector(
+                  child: PressableScale(
                     onTap: () => Get.back(result: false),
                     child: Container(
                       height: 46,
@@ -1489,7 +1772,7 @@ Future<void> _confirmHapus(
                         color: AppColors.kelurahanLight,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: const Color(0xFFBBDEFB), width: 1),
+                            color: AppColors.blueLight, width: 1),
                       ),
                       child: const Center(
                         child: Text(
@@ -1507,18 +1790,18 @@ Future<void> _confirmHapus(
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: GestureDetector(
+                  child: PressableScale(
                     onTap: () => Get.back(result: true),
                     child: Container(
                       height: 46,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFEF5350), Color(0xFFD32F2F)],
+                          colors: [AppColors.dangerMid, AppColors.danger],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFD32F2F)
+                            color: AppColors.danger
                                 .withValues(alpha: 0.25),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
@@ -1552,73 +1835,10 @@ Future<void> _confirmHapus(
           ],
         ),
       ),
+      ),
     ),
   );
   if (ok == true) onConfirm();
 }
 
 // ── Wave Painter ─────────────────────────────────────────────────────────────
-class _WavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: AppColors.kelurahanGradient,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path1 = Path()
-      ..lineTo(0, size.height * 0.74)
-      ..quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.98,
-        size.width * 0.5,
-        size.height * 0.80,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.62,
-        size.width,
-        size.height * 0.76,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path1, paint1);
-
-    final paint2 = Paint()
-      ..color = const Color(0xFF42A5F5).withValues(alpha: 0.3);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.55)
-      ..quadraticBezierTo(
-        size.width * 0.3,
-        size.height * 0.42,
-        size.width * 0.55,
-        size.height * 0.60,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.78,
-        size.height * 0.74,
-        size.width,
-        size.height * 0.56,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-
-    canvas.drawPath(path2, paint2);
-
-    final paintDot = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06);
-
-    canvas.drawCircle(
-        Offset(size.width * 0.1, size.height * 0.3), 40, paintDot);
-    canvas.drawCircle(
-        Offset(size.width * 0.9, size.height * 0.15), 25, paintDot);
-  }
-
-  @override
-  bool shouldRepaint(_WavePainter oldDelegate) => false;
-}

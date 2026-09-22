@@ -47,6 +47,15 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       fontFamily: 'PlusJakartaSans',
+      // Splash sparkle (Android 12+) supaya sentuhan terasa responsif & modern
+      splashFactory: InkSparkle.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: AppColors.primary,

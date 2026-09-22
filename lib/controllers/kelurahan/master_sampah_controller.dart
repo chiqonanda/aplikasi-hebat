@@ -29,6 +29,65 @@ class MasterSampahController extends GetxController {
   final isLoading = false.obs;
   final isSaving  = false.obs;
 
+  // Mode edit: id item yang sedang diedit (null = mode tambah)
+  final editingId = RxnString();
+  bool get isEditing => editingId.value != null;
+
+  // ── Pencarian & filter status per tab ────────────────────────────────────
+  final searchQuery = ''.obs;
+
+  /// Filter status aktif: 'semua' | 'aktif' | 'nonaktif'
+  final statusFilter = 'semua'.obs;
+
+  void setSearchQuery(String v) => searchQuery.value = v;
+
+  void setStatusFilter(String v) => statusFilter.value = v;
+
+  /// Helper generik: terapkan pencarian (nama/deskripsi) + filter status
+  /// pada daftar item yang punya [nama] & [isActive].
+  List<T> _applyFilter<T>(
+    Iterable<T> source,
+    String Function(T) nama,
+    String? Function(T) deskripsi,
+    bool Function(T) isActive,
+  ) {
+    final q = searchQuery.value.trim().toLowerCase();
+    return source.where((item) {
+      // Filter status
+      switch (statusFilter.value) {
+        case 'aktif':
+          if (!isActive(item)) return false;
+          break;
+        case 'nonaktif':
+          if (isActive(item)) return false;
+          break;
+      }
+      // Pencarian
+      if (q.isEmpty) return true;
+      final n = nama(item).toLowerCase();
+      final d = (deskripsi(item) ?? '').toLowerCase();
+      return n.contains(q) || d.contains(q);
+    }).toList();
+  }
+
+  List<KategoriModel> get listKategoriFiltered => _applyFilter(
+      listKategori, (e) => e.nama, (e) => e.deskripsi, (e) => e.isActive);
+
+  List<SubKategoriModel> get listSubKategoriFiltered => _applyFilter(
+      listSubKategori, (e) => e.nama, (e) => e.deskripsi, (e) => e.isActive);
+
+  List<TipeSampahModel> get listTipeFiltered => _applyFilter(
+      listTipe, (e) => e.nama, (e) => e.deskripsi, (e) => e.isActive);
+
+  List<JenisSampahModel> get listJenisFiltered => _applyFilter(
+      listJenis,
+      (e) => e.nama,
+      (e) => e.deskripsi,
+      (e) => e.isActive);
+
+  List<SatuanModel> get listSatuanFiltered => _applyFilter(
+      listSatuan, (e) => e.nama, (e) => null, (_) => true);
+
   // Form controllers
   final namaController       = TextEditingController();
   final deskripsiController  = TextEditingController();
@@ -113,6 +172,10 @@ class MasterSampahController extends GetxController {
     if (selectedKategoriForm.value == null) {
       listSubKategoriDropdown.clear();
       listTipeDropdown.clear();
+      if (!isEditing) {
+        selectedSubKategoriForm.value = null;
+        selectedTipeForm.value = null;
+      }
       return;
     }
     final data = await SupabaseService.client
@@ -122,15 +185,52 @@ class MasterSampahController extends GetxController {
         .order('urutan');
     listSubKategoriDropdown.value =
         (data as List).map((e) => SubKategoriModel.fromJson(e)).toList();
-    listTipeDropdown.clear();
+    if (!isEditing) {
+      listTipeDropdown.clear();
+      selectedSubKategoriForm.value = null;
+      selectedTipeForm.value = null;
+    } else {
+      _sinkSelSubKategori();
+    }
+  }
+
+  /// Saat mode edit: selaraskan instance sub kategori terpilih dengan item
+  /// dropdown yang baru di-fetch (match by id) agar DropdownButtonFormField
+  /// menampilkan nilai prefill dengan benar.
+  void _sinkSelSubKategori() {
+    final sel = selectedSubKategoriForm.value;
+    if (sel == null) return;
+    for (final s in listSubKategoriDropdown) {
+      if (s.id == sel.id) {
+        selectedSubKategoriForm.value = s;
+        return;
+      }
+    }
+    // Tidak cocok dengan daftar baru (mis. kategori diganti saat edit)
     selectedSubKategoriForm.value = null;
     selectedTipeForm.value = null;
   }
 
-  Future<void> _fetchTipeDropdown() async {
+  void _sinkSelTipe() {
+    final sel = selectedTipeForm.value;
+    if (sel == null) return;
+    for (final t in listTipeDropdown) {
+      if (t.id == sel.id) {
+        selectedTipeForm.value = t;
+        return;
+      }
+    }
     selectedTipeForm.value = null;
-    listTipeDropdown.clear();
-    if (selectedSubKategoriForm.value == null) return;
+  }
+
+  Future<void> _fetchTipeDropdown() async {
+    if (selectedSubKategoriForm.value == null) {
+      listTipeDropdown.clear();
+      if (!isEditing) {
+        selectedTipeForm.value = null;
+      }
+      return;
+    }
     final data = await SupabaseService.client
         .from(SupabaseConstants.tableTipeSampah)
         .select()
@@ -138,6 +238,11 @@ class MasterSampahController extends GetxController {
         .order('urutan');
     listTipeDropdown.value =
         (data as List).map((e) => TipeSampahModel.fromJson(e)).toList();
+    if (!isEditing) {
+      selectedTipeForm.value = null;
+    } else {
+      _sinkSelTipe();
+    }
   }
 
   void resetForm() {
@@ -151,6 +256,209 @@ class MasterSampahController extends GetxController {
     selectedSatuanForm.value      = null;
     listSubKategoriDropdown.clear();
     listTipeDropdown.clear();
+    editingId.value = null;
+  }
+
+  // ── Mulai edit (prefill form) ──────────────────────────────────────────────
+
+  KategoriModel? _kategoriById(String? id) {
+    if (id == null) return null;
+    try {
+      return listKategoriDropdown.firstWhere((k) => k.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void mulaiEditKategori(KategoriModel item) {
+    resetForm();
+    editingId.value = item.id;
+    namaController.text = item.nama;
+    deskripsiController.text = item.deskripsi ?? '';
+  }
+
+  void mulaiEditSubKategori(SubKategoriModel item) {
+    resetForm();
+    editingId.value = item.id;
+    namaController.text = item.nama;
+    deskripsiController.text = item.deskripsi ?? '';
+    selectedKategoriForm.value = _kategoriById(item.kategoriId);
+  }
+
+  void mulaiEditTipe(TipeSampahModel item) {
+    resetForm();
+    editingId.value = item.id;
+    namaController.text = item.nama;
+    deskripsiController.text = item.deskripsi ?? '';
+    final kategori = _kategoriById(item.subKategori?.kategoriId);
+    if (kategori != null) {
+      selectedKategoriForm.value = kategori;
+      selectedSubKategoriForm.value = item.subKategori;
+    }
+  }
+
+  void mulaiEditJenis(JenisSampahModel item) {
+    resetForm();
+    editingId.value = item.id;
+    namaController.text = item.nama;
+    deskripsiController.text = item.deskripsi ?? '';
+    final kategori =
+        _kategoriById(item.kategoriId ?? item.subKategori?.kategoriId);
+    selectedKategoriForm.value = kategori;
+    // Prefill sub/tipe hanya jika relasinya cocok dengan kategori terpilih,
+    // agar nilai awal selalu ada di daftar dropdown (hindari assert).
+    if (item.subKategori != null &&
+        kategori != null &&
+        kategori.id == item.subKategori!.kategoriId) {
+      selectedSubKategoriForm.value = item.subKategori;
+    }
+    if (item.tipe != null &&
+        selectedSubKategoriForm.value != null &&
+        selectedSubKategoriForm.value!.id == item.tipe!.subKategoriId) {
+      selectedTipeForm.value = item.tipe;
+    }
+    selectedSatuanForm.value = item.satuanDefault;
+  }
+
+  void mulaiEditSatuan(SatuanModel item) {
+    resetForm();
+    editingId.value = item.id;
+    namaController.text = item.nama;
+    singkatanController.text = item.singkatan;
+  }
+
+  // ── Update (edit) ─────────────────────────────────────────────────────────
+
+  Future<void> updateKategori() async {
+    if (!formKey.currentState!.validate() || editingId.value == null) return;
+    isSaving.value = true;
+    try {
+      await SupabaseService.client
+          .from(SupabaseConstants.tableKategoriSampah)
+          .update({
+        'nama': namaController.text.trim(),
+        'deskripsi': deskripsiController.text.trim().isEmpty
+            ? null
+            : deskripsiController.text.trim(),
+      }).eq('id', editingId.value!);
+      await _fetchKategori();
+      resetForm();
+      Get.back();
+      Get.snackbar('Berhasil', 'Kategori berhasil diperbarui.');
+    } catch (e) {
+      Get.snackbar('Gagal',
+          'Gagal memperbarui kategori: ${_mapPostgrestError(e)}');
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> updateSubKategori() async {
+    if (!formKey.currentState!.validate() ||
+        editingId.value == null ||
+        selectedKategoriForm.value == null) {
+      return;
+    }
+    isSaving.value = true;
+    try {
+      await SupabaseService.client
+          .from(SupabaseConstants.tableSubKategoriSampah)
+          .update({
+        'kategori_id': selectedKategoriForm.value!.id,
+        'nama': namaController.text.trim(),
+        'deskripsi': deskripsiController.text.trim().isEmpty
+            ? null
+            : deskripsiController.text.trim(),
+      }).eq('id', editingId.value!);
+      await _fetchSubKategori();
+      resetForm();
+      Get.back();
+      Get.snackbar('Berhasil', 'Sub kategori berhasil diperbarui.');
+    } catch (e) {
+      Get.snackbar('Gagal',
+          'Gagal memperbarui sub kategori: ${_mapPostgrestError(e)}');
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> updateTipe() async {
+    if (!formKey.currentState!.validate() ||
+        editingId.value == null ||
+        selectedSubKategoriForm.value == null) {
+      return;
+    }
+    isSaving.value = true;
+    try {
+      await SupabaseService.client
+          .from(SupabaseConstants.tableTipeSampah)
+          .update({
+        'sub_kategori_id': selectedSubKategoriForm.value!.id,
+        'nama': namaController.text.trim(),
+        'deskripsi': deskripsiController.text.trim().isEmpty
+            ? null
+            : deskripsiController.text.trim(),
+      }).eq('id', editingId.value!);
+      await _fetchTipe();
+      resetForm();
+      Get.back();
+      Get.snackbar('Berhasil', 'Tipe berhasil diperbarui.');
+    } catch (e) {
+      Get.snackbar('Gagal',
+          'Gagal memperbarui tipe: ${_mapPostgrestError(e)}');
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> updateJenis() async {
+    if (!formKey.currentState!.validate() || editingId.value == null) return;
+    isSaving.value = true;
+    try {
+      await SupabaseService.client
+          .from(SupabaseConstants.tableJenisSampah)
+          .update({
+        'sub_kategori_id': selectedSubKategoriForm.value?.id,
+        'tipe_id':         selectedTipeForm.value?.id,
+        'kategori_id':     selectedKategoriForm.value?.id,
+        'nama':            namaController.text.trim(),
+        'deskripsi': deskripsiController.text.trim().isEmpty
+            ? null
+            : deskripsiController.text.trim(),
+        'satuan_default_id': selectedSatuanForm.value?.id,
+      }).eq('id', editingId.value!);
+      await _fetchJenis();
+      resetForm();
+      Get.back();
+      Get.snackbar('Berhasil', 'Jenis sampah berhasil diperbarui.');
+    } catch (e) {
+      Get.snackbar('Gagal',
+          'Gagal memperbarui jenis sampah: ${_mapPostgrestError(e)}');
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> updateSatuan() async {
+    if (!formKey.currentState!.validate() || editingId.value == null) return;
+    isSaving.value = true;
+    try {
+      await SupabaseService.client
+          .from(SupabaseConstants.tableSatuan)
+          .update({
+        'nama':      namaController.text.trim(),
+        'singkatan': singkatanController.text.trim(),
+      }).eq('id', editingId.value!);
+      await _fetchSatuan();
+      resetForm();
+      Get.back();
+      Get.snackbar('Berhasil', 'Satuan berhasil diperbarui.');
+    } catch (e) {
+      Get.snackbar('Gagal',
+          'Gagal memperbarui satuan: ${_mapPostgrestError(e)}');
+    } finally {
+      isSaving.value = false;
+    }
   }
 
   // ── Simpan ─────────────────────────────────────────────────────────────────

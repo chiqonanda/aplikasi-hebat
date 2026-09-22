@@ -94,7 +94,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: const Color(0xFFEBF2FA),
+                                    color: AppColors.kelurahanSurface,
                                     width: 1.2,
                                   ),
                                   boxShadow: [
@@ -185,7 +185,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                         () => Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: controller.isAktif.value ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5),
+                            color: controller.isAktif.value ? AppColors.pengelolaLight : const Color(0xFFF5F5F5),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: controller.isAktif.value ? const Color(0xFFA5D6A7) : const Color(0xFFE0E0E0),
@@ -198,7 +198,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: controller.isAktif.value ? const Color(0xFF2E7D32) : const Color(0xFF757575),
+                                  color: controller.isAktif.value ? AppColors.pengelolaMain : AppColors.grey,
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Icon(
@@ -238,7 +238,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                                 value: controller.isAktif.value,
                                 onChanged: (v) => controller.isAktif.value = v,
                                 activeTrackColor: const Color(0xFF81C784),
-                                activeThumbColor: const Color(0xFF2E7D32),
+                                activeThumbColor: AppColors.pengelolaMain,
                               ),
                             ],
                           ),
@@ -321,7 +321,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                         height: 52,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+                            colors: [AppColors.kelurahanMain, AppColors.kelurahanAccent],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -351,7 +351,7 @@ class BankSampahFormView extends GetView<BankSampahController> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0xFFEBF2FA),
+                          color: AppColors.kelurahanSurface,
                           width: 1.2,
                         ),
                       ),
@@ -417,7 +417,7 @@ class _SectionCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFFEBF2FA),
+          color: AppColors.kelurahanSurface,
           width: 1.2,
         ),
         boxShadow: [
@@ -439,7 +439,7 @@ class _SectionCard extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+                      colors: [AppColors.kelurahanMain, AppColors.kelurahanAccent],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -481,7 +481,7 @@ class _SectionCard extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+          const Divider(color: AppColors.dividerLight, height: 1, thickness: 1),
           Padding(
             padding: const EdgeInsets.all(16),
             child: child,
@@ -510,7 +510,7 @@ class _RtChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.kelurahanLight,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFBBDEFB), width: 1),
+        border: Border.all(color: AppColors.blueLight, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -554,10 +554,10 @@ class _PengelolaTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FBFF),
+        color: AppColors.blueBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFEBF2FA),
+          color: AppColors.kelurahanSurface,
           width: 1.2,
         ),
       ),
@@ -568,7 +568,7 @@ class _PengelolaTile extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+                colors: [AppColors.kelurahanMain, AppColors.kelurahanAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -725,7 +725,7 @@ class _RtSelectionSheetState extends State<_RtSelectionSheet> {
                     height: 44,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+                        colors: [AppColors.kelurahanMain, AppColors.kelurahanAccent],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),

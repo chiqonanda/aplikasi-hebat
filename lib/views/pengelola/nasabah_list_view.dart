@@ -5,6 +5,8 @@ import '../../app/themes/app_colors.dart';
 import '../../controllers/kelurahan/nasabah_controller.dart';
 import '../../core/services/session_service.dart';
 import '../../models/nasabah_model.dart';
+import '../../core/widgets/motion.dart';
+import '../../core/widgets/wave_painter.dart';
 
 class NasabahListView extends GetView<NasabahController> {
   const NasabahListView({super.key});
@@ -14,12 +16,12 @@ class NasabahListView extends GetView<NasabahController> {
     final isPengelola = SessionService.to.isPengelola;
     final gradient = isPengelola ? AppColors.pengelolaGradient : AppColors.kelurahanGradient;
     final primaryColor = isPengelola ? AppColors.pengelolaMain : AppColors.kelurahanMain;
-    final secondaryColor = isPengelola ? const Color(0xFF43A047) : const Color(0xFF42A5F5);
-    final scaffoldBg = isPengelola ? const Color(0xFFF5F7FA) : const Color(0xFFF5F8FC);
+    final secondaryColor = isPengelola ? AppColors.secondary : AppColors.kelurahanAccent;
+    final scaffoldBg = isPengelola ? AppColors.background : AppColors.backgroundKelurahan;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      body: RefreshIndicator(
+      body: PullToRefresh(
         onRefresh: () => controller.fetchData(),
         color: primaryColor,
         child: CustomScrollView(
@@ -90,8 +92,8 @@ class NasabahListView extends GetView<NasabahController> {
     return Stack(
       children: [
         CustomPaint(
-          size: Size(MediaQuery.of(context).size.width, 165),
-          painter: _WavePainter(gradient: gradient, secondary: secondary),
+          size: Size(MediaQuery.of(context).size.width, 210),
+          painter: WavePainter(gradient: gradient, overlayColor: const Color(0xFF43A047)),
         ),
         Positioned(
           top: -15,
@@ -301,18 +303,18 @@ class NasabahListView extends GetView<NasabahController> {
   // ── Nasabah Card ───────────────────────────────────────────────────────────
 
   static const _accents = [
-    Color(0xFF1565C0),
-    Color(0xFF00838F),
-    Color(0xFF6A1B9A),
-    Color(0xFF2E7D32),
-    Color(0xFFE65100),
+    AppColors.blueDeep,
+    AppColors.teal,
+    AppColors.purple,
+    AppColors.pengelolaMain,
+    AppColors.orange,
   ];
   static const _accentBgs = [
-    Color(0xFFE3F2FD),
-    Color(0xFFE0F7FA),
-    Color(0xFFF3E5F5),
-    Color(0xFFE8F5E9),
-    Color(0xFFFBE9E7),
+    AppColors.kelurahanLight,
+    AppColors.tealLight,
+    AppColors.purpleLight,
+    AppColors.pengelolaLight,
+    AppColors.orangeLight,
   ];
 
   Widget _buildNasabahCard(
@@ -383,10 +385,10 @@ class NasabahListView extends GetView<NasabahController> {
               height: 36,
               margin: const EdgeInsets.only(right: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD),
+                color: AppColors.kelurahanLight,
                 borderRadius: BorderRadius.circular(11),
               ),
-              child: const Icon(Icons.edit_note_rounded, color: Color(0xFF1565C0), size: 20),
+              child: const Icon(Icons.edit_note_rounded, color: AppColors.blueDeep, size: 20),
             ),
           ),
           GestureDetector(
@@ -395,10 +397,10 @@ class NasabahListView extends GetView<NasabahController> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEBEE),
+                color: AppColors.dangerLight,
                 borderRadius: BorderRadius.circular(11),
               ),
-              child: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFD32F2F), size: 20),
+              child: const Icon(Icons.delete_sweep_rounded, color: AppColors.danger, size: 20),
             ),
           ),
         ],
@@ -466,7 +468,7 @@ class NasabahListView extends GetView<NasabahController> {
   void _showFormDialog(BuildContext context) {
     final isPengelola = SessionService.to.isPengelola;
     final primary = isPengelola ? AppColors.pengelolaMain : AppColors.kelurahanMain;
-    final secondary = isPengelola ? const Color(0xFF43A047) : const Color(0xFF42A5F5);
+    final secondary = isPengelola ? AppColors.secondary : AppColors.kelurahanAccent;
     final dark = isPengelola ? AppColors.pengelolaDark : AppColors.kelurahanDark;
 
     showDialog(
@@ -642,7 +644,7 @@ class NasabahListView extends GetView<NasabahController> {
         fontSize: 13,
         color: Colors.grey.shade400,
       ),
-      fillColor: const Color(0xFFF5F7FA),
+      fillColor: AppColors.background,
       filled: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
@@ -678,10 +680,10 @@ class NasabahListView extends GetView<NasabahController> {
                   width: 54,
                   height: 54,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFFFEBEE),
+                    color: AppColors.dangerLight,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFD32F2F), size: 30),
+                  child: const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 30),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -735,7 +737,7 @@ class NasabahListView extends GetView<NasabahController> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD32F2F),
+                            color: AppColors.danger,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           alignment: Alignment.center,
@@ -764,68 +766,3 @@ class NasabahListView extends GetView<NasabahController> {
 
 // ── Wave Painter ──────────────────────────────────────────────────────────────
 
-class _WavePainter extends CustomPainter {
-  final List<Color> gradient;
-  final Color secondary;
-
-  _WavePainter({required this.gradient, required this.secondary});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: gradient,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path1 = Path()
-      ..lineTo(0, size.height * 0.74)
-      ..quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.98,
-        size.width * 0.5,
-        size.height * 0.80,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.62,
-        size.width,
-        size.height * 0.76,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path1, paint1);
-
-    final paint2 = Paint()..color = secondary.withValues(alpha: 0.3);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.55)
-      ..quadraticBezierTo(
-        size.width * 0.3,
-        size.height * 0.42,
-        size.width * 0.55,
-        size.height * 0.6,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.78,
-        size.height * 0.74,
-        size.width,
-        size.height * 0.56,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-
-    canvas.drawPath(path2, paint2);
-
-    final paintDot = Paint()..color = Colors.white.withValues(alpha: 0.06);
-
-    canvas.drawCircle(Offset(size.width * 0.1, size.height * 0.3), 40, paintDot);
-    canvas.drawCircle(Offset(size.width * 0.9, size.height * 0.15), 25, paintDot);
-  }
-
-  @override
-  bool shouldRepaint(_WavePainter oldDelegate) => false;
-}

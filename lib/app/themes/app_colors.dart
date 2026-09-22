@@ -80,4 +80,41 @@ class AppColors {
   static const Color divider = Color(0xFFE5E7EB);
   static const Color cardBorder = Color(0xFFF0F0F0);
   static const Color scaffoldBg = Color(0xFFF8FAFB);
+
+  // ── Accent palette (kartu statistik, badge, ikon) ──
+  static const Color kelurahanAccent = Color(0xFF42A5F5); // biru terang
+  static const Color blueDeep = Color(0xFF1565C0);
+  static const Color blueLight = Color(0xFFBBDEFB);
+  static const Color blueBg = Color(0xFFF8FBFF);
+  static const Color indigo = Color(0xFF5C6BC0);
+  static const Color indigoDark = Color(0xFF283593);
+  static const Color purple = Color(0xFF6A1B9A);
+  static const Color purpleMid = Color(0xFFAB47BC);
+  static const Color purpleLight = Color(0xFFF3E5F5);
+  static const Color teal = Color(0xFF00838F);
+  static const Color tealMid = Color(0xFF26A69A);
+  static const Color tealDark = Color(0xFF00695C);
+  static const Color tealLight = Color(0xFFE0F7FA);
+  static const Color tealContainer = Color(0xFFE0F2F1);
+  static const Color cyan = Color(0xFF26C6DA);
+  static const Color orange = Color(0xFFE65100);
+  static const Color orangeLight = Color(0xFFFBE9E7);
+  static const Color orangeContainer = Color(0xFFFFF3E0);
+  static const Color amber = Color(0xFFF57F17);
+  static const Color amberLight = Color(0xFFFFD54F);
+  static const Color mintAccent = Color(0xFF69F0AE); // titik status hijau
+  static const Color greenSurface = Color(0xFFEAF5EC);
+  static const Color kelurahanSurface = Color(0xFFEBF2FA);
+  static const Color backgroundKelurahan = Color(0xFFF5F8FC);
+
+  // ── Danger / destruktif ─────────────────────
+  static const Color danger = Color(0xFFD32F2F);
+  static const Color dangerMid = Color(0xFFEF5350);
+  static const Color dangerDeep = Color(0xFFC62828);
+  static const Color dangerLight = Color(0xFFFFEBEE);
+  static const Color dangerLighter = Color(0xFFFFCDD2);
+
+  // ── Netral Material ─────────────────────────
+  static const Color grey = Color(0xFF757575);
+  static const Color dividerLight = Color(0xFFF1F5F9);
 }

@@ -10,6 +10,8 @@ import 'core/constants/supabase_constants.dart';
 import 'core/services/session_service.dart';
 import 'models/profile_model.dart';
 import 'controllers/auth_controller.dart';
+import 'app/themes/app_colors.dart';
+import 'core/widgets/motion.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
@@ -64,14 +66,53 @@ class BisaApp extends StatelessWidget {
   final String initialRoute;
   const BisaApp({super.key, required this.initialRoute});
 
+  /// Observer navigasi global — menggerakkan progress line saat pindah page.
+  static final RouteProgressObserver routeObserver = RouteProgressObserver();
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'BISA - Bank Informasi Sampah',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      defaultTransition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       initialRoute: initialRoute,
       getPages: AppPages.routes,
+      navigatorObservers: [routeObserver],
+      builder: (context, child) => ScrollConfiguration(
+        behavior: const _SmoothScrollBehavior(),
+        child: RouteProgressLine(
+          observer: routeObserver,
+          color: AppColors.primary,
+          child: child ?? const SizedBox.shrink(),
+        ),
+      ),
     );
+  }
+}
+
+/// Scroll physics halus ala iOS di semua platform + menghilangkan
+/// glow scrollbar biru khas Material lama.
+class _SmoothScrollBehavior extends ScrollBehavior {
+  const _SmoothScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    switch (getPlatform(context)) {
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return const BouncingScrollPhysics();
+      default:
+        return const BouncingScrollPhysics(decelerationRate: ScrollDecelerationRate.fast);
+    }
+  }
+
+  @override
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
+    return child; // tanpa glow
+  }  @override
+  Widget buildScrollbar(BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
   }
 }

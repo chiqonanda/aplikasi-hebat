@@ -5,8 +5,10 @@ import '../../app/routes/app_routes.dart';
 import '../../app/themes/app_colors.dart';
 import '../../app/themes/app_text_styles.dart';
 import '../../app/themes/app_theme.dart';
+import 'motion.dart';
 
 // ── AppButton ──────────────────────────────────────────────
+/// Tombol utama aplikasi: gradient + glow saat ditekan + depth + haptic.
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -27,6 +29,8 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final disabled = isLoading || onPressed == null;
+
     final child = isLoading
         ? const SizedBox(
             width: 20,
@@ -53,20 +57,70 @@ class AppButton extends StatelessWidget {
             ],
           );
 
-    if (outlined) {
-      return SizedBox(
-        width: width ?? double.infinity,
-        child: OutlinedButton(
-          onPressed: isLoading ? null : onPressed,
-          child: child,
-        ),
-      );
-    }
     return SizedBox(
       width: width ?? double.infinity,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        child: child,
+      height: 48,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 150),
+        opacity: disabled && !isLoading ? 0.55 : 1,
+        child: PressableScale(
+          onTap: disabled
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onPressed!();
+                },
+          pressedScale: 0.97,
+          pressElevation: outlined ? 0 : 1.4,
+          glowIntensity: outlined ? 0 : 0.5,
+          glowColor: outlined ? null : AppColors.primary,
+          splashColor: outlined
+              ? AppColors.primary.withValues(alpha: 0.06)
+              : Colors.white.withValues(alpha: 0.25),
+          borderRadius: AppTheme.radiusLg,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: outlined
+                  ? null
+                  : const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppColors.primary, AppColors.pengelolaDark],
+                    ),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+              border: outlined
+                  ? Border.all(color: AppColors.outline, width: 1.2)
+                  : null,
+              boxShadow: outlined
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.30),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+            ),
+            child: Center(
+              child: DefaultTextStyle(
+                style: TextStyle(
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: outlined ? AppColors.textPrimary : AppColors.onPrimary,
+                  letterSpacing: 0.1,
+                ),
+                child: IconTheme(
+                  data: IconThemeData(
+                    color:
+                        outlined ? AppColors.textPrimary : AppColors.onPrimary,
+                  ),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -133,6 +187,27 @@ class AppTextField extends StatelessWidget {
             ? Icon(prefixIcon, size: 20, color: isInteractive ? AppColors.outline : AppColors.textTertiary)
             : null,
         suffixIcon: suffixIcon,
+        // Animasi halus saat border & warna berubah (focus, error)
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          borderSide: const BorderSide(color: AppColors.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          borderSide: const BorderSide(color: AppColors.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
       ),
     );
   }
@@ -608,11 +683,16 @@ class StatCard extends StatelessWidget {
   final Color iconBg;
   final double height;
 
+  /// Widget angka alternatif (mis. count-up [AnimatedValue]).
+  /// Jika diisi, menggantikan [value] sebagai teks utama.
+  final Widget? valueWidget;
+
   const StatCard({
     super.key,
     required this.label,
     required this.sublabel,
     required this.value,
+    this.valueWidget,
     required this.satuan,
     required this.icon,
     required this.gradientColors,
@@ -624,18 +704,20 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-      child: Container(
+      child: PressableScale(
+        pressedScale: 0.97,
+        child: Container(
         height: height,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLowest,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.outlineVariant),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: gradientColors.first.withValues(alpha: 0.14),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+              spreadRadius: -6,
             ),
           ],
         ),
@@ -690,15 +772,30 @@ class StatCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.5,
+                    if (valueWidget != null)
+                      // Catatan: JANGAN bungkus dengan Flexible di sini — Row ini
+                      // berada di dalam FittedBox (constraints tak terbatas), dan
+                      // flex child di dalamnya melempar exception render yang
+                      // membuat seluruh card gagal digambar.
+                      DefaultTextStyle(
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                        child: valueWidget!,
+                      )
+                    else
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
                     if (satuan.isNotEmpty) ...[
                       const SizedBox(width: 4),
                       Text(
@@ -728,6 +825,7 @@ class StatCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -884,14 +982,15 @@ class KelurahanBottomNavBar extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () {
                       if (!isSelected) {
+                        HapticFeedback.selectionClick();
                         Get.offNamed(item['route'], preventDuplicates: true);
                       }
                     },
                     behavior: HitTestBehavior.opaque,
                     child: Center(
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeInOut,
+                        duration: const Duration(milliseconds: 320),
+                        curve: Curves.easeOutBack,
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           color: isSelected

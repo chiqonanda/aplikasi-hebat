@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../app/themes/app_colors.dart';
+import '../../controllers/pengelola/dashboard_controller.dart';
 import '../../controllers/pengelola/laporan_pengelola_controller.dart';
 import '../../core/utils/format_helper.dart';
+import '../../core/utils/pdf_preview_helper.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/widgets/motion.dart';
+import '../../core/widgets/wave_painter.dart';
 
 class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
   const LaporanPengelolaView({super.key});
@@ -12,8 +17,8 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: RefreshIndicator(
+      backgroundColor: AppColors.background,
+      body: PullToRefresh(
         onRefresh: () async {
           await controller.fetchNamaNasabah();
           if (controller.hasPreview.value) {
@@ -25,7 +30,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
           physics: const BouncingScrollPhysics(),
           slivers: [
             // ── Header ───────────────────────────────────────
-            SliverToBoxAdapter(child: _buildHeader(context)),
+            SliverToBoxAdapter(child: StaggeredEntrance(index: 0, child: _buildHeader(context))),
 
             // ── Content ──────────────────────────────────────
             SliverToBoxAdapter(
@@ -34,7 +39,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoBanner(),
+                    StaggeredEntrance(index: 1, child: _buildInfoBanner()),
                     const SizedBox(height: 24),
 
                     _buildSectionTitle(
@@ -43,10 +48,10 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                     ),
                     const SizedBox(height: 14),
 
-                    _buildFilterCard(context),
+                    StaggeredEntrance(index: 2, child: _buildFilterCard(context)),
                     const SizedBox(height: 20),
 
-                    _buildActionButtons(),
+                    StaggeredEntrance(index: 3, child: _buildActionButtons()),
 
                     Obx(() {
                       if (!controller.hasPreview.value) {
@@ -79,9 +84,13 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                                   .asMap()
                                   .entries
                                   .map((entry) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: _PreviewCard(item: entry.value, index: entry.key),
+                                return StaggeredEntrance(
+                                  index: (entry.key + 1).clamp(0, 6),
+                                  delayMs: 50,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: _PreviewCard(item: entry.value, index: entry.key),
+                                  ),
                                 );
                               }).toList(),
                             ),
@@ -107,10 +116,16 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
 
   Widget _buildHeader(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
-        CustomPaint(
-          size: Size(MediaQuery.of(context).size.width, 165),
-          painter: _WavePainter(),
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(26)),
+            child: CustomPaint(
+              size: Size(MediaQuery.of(context).size.width, 285),
+              painter: WavePainter.green(waveScale: 1.50),
+            ),
+          ),
         ),
         Positioned(
           top: -15,
@@ -139,51 +154,147 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Laporan',
-                        style: TextStyle(
-                          fontFamily: 'PlusJakartaSans',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                          height: 1.1,
-                        ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Baris info unit — pill semi-transparan (mockup)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.22),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.mintAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 7),
+                                Flexible(
+                                  child: Text(
+                                    controller.bankSampahNama,
+                                    style: const TextStyle(
+                                      fontFamily: 'PlusJakartaSans',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          // Judul besar + badge 'Resmi DLH'
+                          Row(
+                            children: [
+                              const Flexible(
+                                child: Text(
+                                  'Laporan & Ekspor',
+                                  style: TextStyle(
+                                    fontFamily: 'PlusJakartaSans',
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: -0.6,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 9, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.16),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.25),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Resmi DLH',
+                                  style: TextStyle(
+                                    fontFamily: 'PlusJakartaSans',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Rekapitulasi timbulan sampah & pembukuan unit',
+                            style: TextStyle(
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.78),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Export & preview data laporan',
-                        style: TextStyle(
-                          fontFamily: 'PlusJakartaSans',
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.75),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.description_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
+                  ],
                 ),
+                const SizedBox(height: 18),
+                // ── Statistik inline semi-transparan (mockup 2) ──
+                // Data statistik diambil dari DashboardController (shared GetX).
+                Builder(builder: (_) {
+                  final dash = Get.find<DashboardController>();
+                  return Obx(() => Row(
+                      children: [
+                        Expanded(
+                          child: _HeaderStat(
+                            label: 'Bulan Ini',
+                            value: '${dash.totalTransaksiBulanIni.value}',
+                            sublabel: 'Transaksi',
+                            icon: Icons.receipt_long_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _HeaderStat(
+                            label: 'Terkumpul',
+                            value: FormatHelper.number(
+                                dash.totalKgBulanIni.value),
+                            sublabel: 'Kg Sampah',
+                            icon: Icons.recycling_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _HeaderStat(
+                            label: 'Saldo Kas',
+                            value: FormatHelper.compactCurrency(
+                                dash.totalNilaiBulanIni.value),
+                            sublabel: 'Rupiah',
+                            icon: Icons.account_balance_rounded,
+                          ),
+                        ),
+                      ],
+                    ));
+                }),
               ],
             ),
           ),
@@ -249,7 +360,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+              colors: [AppColors.pengelolaMain, AppColors.secondary],
             ),
             borderRadius: BorderRadius.circular(4),
           ),
@@ -265,7 +376,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                   fontFamily: 'PlusJakartaSans',
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A2E),
+                  color: AppColors.textPrimary,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -293,68 +404,210 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: const Border(
-          top: BorderSide(color: AppColors.pengelolaMain, width: 2),
-        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.pengelolaMain.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.07),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+            spreadRadius: -4,
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Nasabah',
+          // ── Judul card + badge Realtime DB ──
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.pengelolaMain, AppColors.secondary],
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Generator Laporan',
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: const Text(
+                  'Realtime DB',
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.success,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Atur parameter & filter data laporan Anda',
             style: TextStyle(
               fontFamily: 'PlusJakartaSans',
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontSize: 11.5,
+              color: Colors.grey.shade500,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Preset cepat (chips pill) ──
+          const Text(
+            'PRESET CEPAT',
+            style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textTertiary,
+              letterSpacing: 1.2,
             ),
           ),
           const SizedBox(height: 10),
           Obx(
-            () => InkWell(
-              onTap: () => _showNasabahSelector(context),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F7FA),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.4),
+            () => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final preset in const [
+                  'Bulan Ini',
+                  'Minggu Ini',
+                  '3 Bulan',
+                  'Tahun 2026',
+                ])
+                  _PresetChip(
+                    label: preset,
+                    selected: controller.presetPeriode.value == preset,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      controller.applyPresetPeriode(preset);
+                    },
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // ── Nasabah / Sumber Sampah ──
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Nasabah / Sumber Sampah',
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.person_rounded,
-                      color: AppColors.pengelolaMain,
-                      size: 20,
+              ),
+              Obx(
+                () => Text(
+                  '${controller.listNamaNasabah.length} Terdata',
+                  style: const TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.pengelolaMain,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Obx(
+            () => Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _showNasabahSelector(context),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.outlineVariant.withValues(alpha: 0.4),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        controller.selectedNasabah.value ?? 'Semua Nasabah',
-                        style: const TextStyle(
-                          fontFamily: 'PlusJakartaSans',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: AppColors.textPrimary,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.pengelolaMain.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(11),
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: AppColors.pengelolaMain,
+                          size: 19,
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: Colors.grey.shade400,
-                    ),
-                  ],
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              controller.selectedNasabah.value ??
+                                  'Semua Nasabah & Komunitas',
+                              style: const TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.5,
+                                color: AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              controller.selectedNasabah.value == null
+                                  ? 'Termasuk perorangan, RT 01-08 & Sekolah'
+                                  : 'Filter nasabah aktif',
+                              style: TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 10.5,
+                                color: Colors.grey.shade500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: Colors.grey.shade400,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -362,14 +615,38 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
 
           const SizedBox(height: 18),
 
-          const Text(
-            'Periode Laporan',
-            style: TextStyle(
-              fontFamily: 'PlusJakartaSans',
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+          // ── Periode Laporan + chip cepat di kanan ──
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Periode Laporan',
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              _MiniPeriodChip(
+                label: 'Bulan Ini',
+                selected: controller.presetPeriode.value == 'Bulan Ini',
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  controller.applyPresetPeriode('Bulan Ini');
+                },
+              ),
+              const SizedBox(width: 6),
+              _MiniPeriodChip(
+                label: 'Tahun ${DateTime.now().year}',
+                selected: controller.presetPeriode.value == 'Tahun 2026',
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  controller.applyPresetPeriode('Tahun 2026');
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 10),
 
@@ -384,7 +661,10 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                       () => _DatePickerField(
                         label: 'Tanggal Mulai',
                         value: controller.selectedTanggalMulai.value,
-                        onPick: (d) => controller.selectedTanggalMulai.value = d,
+                        onPick: (d) {
+                          controller.presetPeriode.value = null;
+                          controller.selectedTanggalMulai.value = d;
+                        },
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -392,7 +672,10 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                       () => _DatePickerField(
                         label: 'Tanggal Akhir',
                         value: controller.selectedTanggalAkhir.value,
-                        onPick: (d) => controller.selectedTanggalAkhir.value = d,
+                        onPick: (d) {
+                          controller.presetPeriode.value = null;
+                          controller.selectedTanggalAkhir.value = d;
+                        },
                       ),
                     ),
                   ],
@@ -406,7 +689,10 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                       () => _DatePickerField(
                         label: 'Tanggal Mulai',
                         value: controller.selectedTanggalMulai.value,
-                        onPick: (d) => controller.selectedTanggalMulai.value = d,
+                        onPick: (d) {
+                          controller.presetPeriode.value = null;
+                          controller.selectedTanggalMulai.value = d;
+                        },
                       ),
                     ),
                   ),
@@ -416,13 +702,39 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                       () => _DatePickerField(
                         label: 'Tanggal Akhir',
                         value: controller.selectedTanggalAkhir.value,
-                        onPick: (d) => controller.selectedTanggalAkhir.value = d,
+                        onPick: (d) {
+                          controller.presetPeriode.value = null;
+                          controller.selectedTanggalAkhir.value = d;
+                        },
                       ),
                     ),
                   ),
                 ],
               );
             },
+          ),
+
+          const SizedBox(height: 18),
+
+          // ── Tingkat Detail Rekapitulasi (segmented) ──
+          const Text(
+            'Tingkat Detail Rekapitulasi',
+            style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Obx(
+            () => _DetailSegment(
+              mode: controller.detailMode.value,
+              onChanged: (m) {
+                HapticFeedback.selectionClick();
+                controller.detailMode.value = m;
+              },
+            ),
           ),
         ],
       ),
@@ -434,16 +746,68 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
   Widget _buildActionButtons() {
     return Column(
       children: [
-        // Preview Button — gradient
+        // Preview PDF in-app — buka dokumen di tab browser (web) / share (mobile)
+        PressableScale(
+          onTap: controller.isGenerating.value
+              ? null
+              : () {
+                  HapticFeedback.mediumImpact();
+                  controller.generateLaporanPdfBytes().then((bytes) {
+                    if (bytes == null) return;
+                    PdfPreviewHelper.open(bytes);
+                  });
+                },
+          pressedScale: 0.97,
+          borderRadius: 14,
+          child: Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.pengelolaMain.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.pengelolaMain.withValues(alpha: 0.35),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.picture_as_pdf_rounded,
+                    size: 17, color: AppColors.pengelolaMain),
+                SizedBox(width: 8),
+                Text(
+                  'Preview PDF',
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.pengelolaMain,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Unduh Button — gradient
         Obx(() {
           final isLoading = controller.isGenerating.value;
-          return GestureDetector(
-            onTap: isLoading ? null : controller.previewLaporan,
+          return PressableScale(
+            onTap: isLoading
+                ? null
+                : () {
+                    HapticFeedback.mediumImpact();
+                    controller.previewLaporan();
+                  },
+            pressedScale: 0.96,
+            borderRadius: 14,
             child: Container(
               height: 50,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                  colors: [AppColors.pengelolaMain, AppColors.secondary],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: isLoading
@@ -472,7 +836,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                         Icon(Icons.visibility_rounded, size: 18, color: Colors.white),
                         SizedBox(width: 8),
                         Text(
-                          'Tampilkan Preview',
+                          'Unduh PDF',
                           style: TextStyle(
                             fontFamily: 'PlusJakartaSans',
                             fontWeight: FontWeight.w700,
@@ -494,7 +858,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
           children: [
             Expanded(
               child: Obx(() => _OutlineActionButton(
-                    label: 'Excel',
+                    label: 'Unduh Excel',
                     icon: Icons.table_chart_rounded,
                     onTap: controller.isGenerating.value ? null : controller.exportExcel,
                   )),
@@ -502,9 +866,9 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
             const SizedBox(width: 12),
             Expanded(
               child: Obx(() => _OutlineActionButton(
-                    label: 'CSV',
-                    icon: Icons.download_rounded,
-                    onTap: controller.isGenerating.value ? null : controller.exportCsv,
+                    label: 'Unduh PDF',
+                    icon: Icons.picture_as_pdf_rounded,
+                    onTap: controller.isGenerating.value ? null : controller.exportPdf,
                   )),
             ),
           ],
@@ -527,7 +891,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+          colors: [AppColors.pengelolaDark, AppColors.pengelolaMain],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -618,7 +982,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F7FA),
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
@@ -677,7 +1041,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                         Get.back();
                       },
                     ),
-                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    const Divider(height: 1, color: AppColors.dividerLight),
                     
                     ...filtered.map((name) {
                       return Column(
@@ -690,7 +1054,7 @@ class LaporanPengelolaView extends GetView<LaporanPengelolaController> {
                               Get.back();
                             },
                           ),
-                          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          const Divider(height: 1, color: AppColors.dividerLight),
                         ],
                       );
                     }),
@@ -774,8 +1138,15 @@ class _OutlineActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return PressableScale(
+      onTap: onTap == null
+          ? null
+          : () {
+              HapticFeedback.lightImpact();
+              onTap!();
+            },
+      pressedScale: 0.94,
+      borderRadius: 14,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: BoxDecoration(
@@ -807,6 +1178,191 @@ class _OutlineActionButton extends StatelessWidget {
 }
 
 // ── Date Picker Field ──────────────────────────────────────────────────────
+
+/// Chip preset cepat gaya mockup Generator Laporan.
+class _PresetChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PresetChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.pengelolaMain : AppColors.background,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected
+                    ? AppColors.pengelolaMain
+                    : AppColors.outlineVariant.withValues(alpha: 0.5),
+              ),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.pengelolaMain.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: selected ? Colors.white : AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Chip periode kecil di samping label "Periode Laporan".
+class _MiniPeriodChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _MiniPeriodChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.pengelolaMain.withValues(alpha: 0.12)
+              : AppColors.background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? AppColors.pengelolaMain.withValues(alpha: 0.4)
+                : AppColors.outlineVariant.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'PlusJakartaSans',
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+            color: selected ? AppColors.pengelolaMain : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Segmented control "Tingkat Detail Rekapitulasi".
+class _DetailSegment extends StatelessWidget {
+  final String mode;
+  final ValueChanged<String> onChanged;
+
+  const _DetailSegment({required this.mode, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          for (final entry in const [
+            ('detail', 'Detail Transaksi', Icons.receipt_long_rounded),
+            ('ringkasan', 'Ringkasan Kategori', Icons.donut_small_rounded),
+          ])
+            Expanded(
+              child: GestureDetector(
+                onTap: () => onChanged(entry.$1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: mode == entry.$1
+                        ? Colors.white
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(11),
+                    boxShadow: mode == entry.$1
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        entry.$3,
+                        size: 15,
+                        color: mode == entry.$1
+                            ? AppColors.pengelolaMain
+                            : AppColors.textTertiary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          entry.$2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: mode == entry.$1
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 class _DatePickerField extends StatelessWidget {
   final String label;
@@ -848,7 +1404,7 @@ class _DatePickerField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: hasValue ? AppColors.pengelolaLight : const Color(0xFFF5F7FA),
+          color: hasValue ? AppColors.pengelolaLight : AppColors.background,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: hasValue
@@ -917,16 +1473,16 @@ class _PreviewCard extends StatelessWidget {
   const _PreviewCard({required this.item, required this.index});
 
   static const _accents = [
-    Color(0xFF2E7D32),
-    Color(0xFF1565C0),
-    Color(0xFFE65100),
-    Color(0xFF6A1B9A),
+    AppColors.pengelolaMain,
+    AppColors.blueDeep,
+    AppColors.orange,
+    AppColors.purple,
   ];
   static const _accentBgs = [
-    Color(0xFFE8F5E9),
-    Color(0xFFE3F2FD),
-    Color(0xFFFBE9E7),
-    Color(0xFFF3E5F5),
+    AppColors.pengelolaLight,
+    AppColors.kelurahanLight,
+    AppColors.orangeLight,
+    AppColors.purpleLight,
   ];
 
   @override
@@ -973,7 +1529,7 @@ class _PreviewCard extends StatelessWidget {
                     fontFamily: 'PlusJakartaSans',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1119,73 +1675,78 @@ class _SummaryItem extends StatelessWidget {
 
 // ── Wave Painter ──────────────────────────────────────────────────────────────
 
-class _WavePainter extends CustomPainter {
+
+// ── Header Stat (mockup: kartu kaca semi-transparan di dalam wave) ───────────
+
+class _HeaderStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final String sublabel;
+  final IconData icon;
+
+  const _HeaderStat({
+    required this.label,
+    required this.value,
+    required this.sublabel,
+    required this.icon,
+  });
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path1 = Path()
-      ..lineTo(0, size.height * 0.74)
-      ..quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.98,
-        size.width * 0.5,
-        size.height * 0.80,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.62,
-        size.width,
-        size.height * 0.76,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path1, paint1);
-
-    final paint2 = Paint()
-      ..color = const Color(0xFF43A047).withValues(alpha: 0.3);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.55)
-      ..quadraticBezierTo(
-        size.width * 0.3,
-        size.height * 0.42,
-        size.width * 0.55,
-        size.height * 0.6,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.78,
-        size.height * 0.74,
-        size.width,
-        size.height * 0.56,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-
-    canvas.drawPath(path2, paint2);
-
-    final paintDot = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06);
-
-    canvas.drawCircle(
-      Offset(size.width * 0.1, size.height * 0.3),
-      40,
-      paintDot,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.9, size.height * 0.15),
-      25,
-      paintDot,
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.7)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'PlusJakartaSans',
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.4,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            sublabel,
+            style: TextStyle(
+              fontFamily: 'PlusJakartaSans',
+              fontSize: 10,
+              color: Colors.white.withValues(alpha: 0.65),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
-
-  @override
-  bool shouldRepaint(_WavePainter oldDelegate) => false;
 }

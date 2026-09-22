@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
@@ -8,6 +9,8 @@ import '../../controllers/kelurahan/monitoring_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/bank_sampah_model.dart';
+import '../../core/widgets/motion.dart';
+import '../../core/widgets/wave_painter.dart';
 
 class MonitoringView extends GetView<MonitoringController> {
   const MonitoringView({super.key});
@@ -15,7 +18,7 @@ class MonitoringView extends GetView<MonitoringController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F8FC),
+      backgroundColor: AppColors.backgroundKelurahan,
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(
@@ -23,7 +26,7 @@ class MonitoringView extends GetView<MonitoringController> {
           );
         }
 
-        return RefreshIndicator(
+        return PullToRefresh(
           onRefresh: controller.fetchMonitoring,
           color: AppColors.kelurahanMain,
           child: CustomScrollView(
@@ -31,14 +34,14 @@ class MonitoringView extends GetView<MonitoringController> {
             slivers: [
               // ── Header + Ringkasan Global ──────────
               SliverToBoxAdapter(
-                child: _buildHeader(context),
+                child: StaggeredEntrance(index: 0, child: _buildHeader(context)),
               ),
 
               // ── Search & Section Label ──────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-                  child: _buildSearchBar(),
+                  child: StaggeredEntrance(index: 1, child: _buildSearchBar()),
                 ),
               ),
               SliverToBoxAdapter(
@@ -53,7 +56,7 @@ class MonitoringView extends GetView<MonitoringController> {
                           gradient: const LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [AppColors.kelurahanMain, Color(0xFF42A5F5)],
+                            colors: [AppColors.kelurahanMain, AppColors.kelurahanAccent],
                           ),
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -87,17 +90,21 @@ class MonitoringView extends GetView<MonitoringController> {
                       (context, index) {
                         final bank = controller.listBankFiltered[index];
                         final stat = controller.statistikPerBank[bank.id];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: _MonitoringCard(
-                            bank: bank,
-                            totalJumlah: stat?['total_jumlah'] ?? 0,
-                            totalTransaksi: stat?['total_transaksi'] ?? 0,
-                            totalNilai: stat?['total_nilai'] ?? 0,
-                            onTap: () {
-                              controller.selectBank(bank);
-                              Get.toNamed(AppRoutes.detailBankSampah);
-                            },
+                        return StaggeredEntrance(
+                          index: index.clamp(0, 6),
+                          delayMs: 60,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: _MonitoringCard(
+                              bank: bank,
+                              totalJumlah: stat?['total_jumlah'] ?? 0,
+                              totalTransaksi: stat?['total_transaksi'] ?? 0,
+                              totalNilai: stat?['total_nilai'] ?? 0,
+                              onTap: () {
+                                controller.selectBank(bank);
+                                Get.toNamed(AppRoutes.detailBankSampah);
+                              },
+                            ),
                           ),
                         );
                       },
@@ -119,9 +126,10 @@ class MonitoringView extends GetView<MonitoringController> {
       clipBehavior: Clip.none,
       children: [
         CustomPaint(
-          size: Size(MediaQuery.of(context).size.width, 200),
-          painter: _WavePainter(),
+          size: Size(MediaQuery.of(context).size.width, 250),
+          painter: WavePainter.blue(),
         ),
+        const AmbientBlob(color: Color(0x14FFFFFF), size: 220),
         Positioned(
           top: -15,
           right: -10,
@@ -155,8 +163,9 @@ class MonitoringView extends GetView<MonitoringController> {
               children: [
                 Row(
                   children: [
-                    GestureDetector(
+                    PressableScale(
                       onTap: () => Get.back(),
+                      pressedScale: 0.88,
                       child: Container(
                         width: 38,
                         height: 38,
@@ -191,20 +200,31 @@ class MonitoringView extends GetView<MonitoringController> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            'Informasi bank sampah kelurahan',
-                            style: TextStyle(
-                              fontFamily: 'PlusJakartaSans',
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.75),
-                            ),
-                          ),
+                          Obx(() => AnimatedValue(
+                                value: controller.listBankSampah.length
+                                    .toDouble(),
+                                builder: (v) => Text(
+                                  '${FormatHelper.number(v)} bank sampah terpantau',
+                                  style: TextStyle(
+                                    fontFamily: 'PlusJakartaSans',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color:
+                                        Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              )),
                         ],
                       ),
                     ),
                     // Filter button
-                    Obx(() => GestureDetector(
-                          onTap: () => _showFilterSheet(context),
+                    Obx(() => PressableScale(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _showFilterSheet(context);
+                          },
+                          pressedScale: 0.88,
+                          borderRadius: 13,
                           child: Stack(
                             children: [
                               Container(
@@ -233,7 +253,7 @@ class MonitoringView extends GetView<MonitoringController> {
                                     width: 8,
                                     height: 8,
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFF69F0AE),
+                                      color: AppColors.mintAccent,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -269,7 +289,7 @@ class MonitoringView extends GetView<MonitoringController> {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF0A2540), Color(0xFF1E88E5)],
+              colors: [AppColors.kelurahanDark, AppColors.kelurahanMain],
             ),
             borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             boxShadow: DesignTokens.kelurahanShadowLg,
@@ -451,7 +471,7 @@ class MonitoringView extends GetView<MonitoringController> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F8FC),
+                  color: AppColors.backgroundKelurahan,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   border: Border.all(
                     color: AppColors.outlineVariant.withValues(alpha: 0.3),
@@ -550,8 +570,14 @@ class _MonitoringCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = bank.isActive ? AppColors.kelurahanMain : Colors.grey.shade400;
 
-    return GestureDetector(
-      onTap: onTap,
+    return PressableScale(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      pressedScale: 0.97,
+      splashColor: accent.withValues(alpha: 0.05),
+      borderRadius: DesignTokens.radiusLg,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -698,8 +724,8 @@ class _MonitoringCard extends StatelessWidget {
                     icon: Icons.receipt_long_outlined,
                     label: 'Transaksi',
                     value: totalTransaksi.toString(),
-                    color: const Color(0xFF00838F),
-                    bgColor: const Color(0xFFE0F7FA),
+                    color: AppColors.teal,
+                    bgColor: AppColors.tealLight,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -708,8 +734,8 @@ class _MonitoringCard extends StatelessWidget {
                     icon: Icons.account_balance_wallet_outlined,
                     label: 'Nilai',
                     value: FormatHelper.currency(totalNilai),
-                    color: const Color(0xFF00695C),
-                    bgColor: const Color(0xFFE0F2F1),
+                    color: AppColors.tealDark,
+                    bgColor: AppColors.tealContainer,
                   ),
                 ),
               ],
@@ -733,7 +759,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5),
+        color: isActive ? AppColors.pengelolaLight : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isActive ? const Color(0xFFA5D6A7) : const Color(0xFFE0E0E0),
@@ -747,7 +773,7 @@ class _StatusBadge extends StatelessWidget {
             width: 6,
             height: 6,
             decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF2E7D32) : const Color(0xFF757575),
+              color: isActive ? AppColors.pengelolaMain : AppColors.grey,
               shape: BoxShape.circle,
             ),
           ),
@@ -758,7 +784,7 @@ class _StatusBadge extends StatelessWidget {
               fontFamily: 'PlusJakartaSans',
               fontSize: 10,
               fontWeight: FontWeight.w800,
-              color: isActive ? const Color(0xFF2E7D32) : const Color(0xFF757575),
+              color: isActive ? AppColors.pengelolaMain : AppColors.grey,
             ),
           ),
         ],
@@ -902,73 +928,3 @@ class _RingkasanItem extends StatelessWidget {
 
 // ── Wave Painter ──────────────────────────────────────────────────────────────
 
-class _WavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: AppColors.kelurahanGradient,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path1 = Path()
-      ..lineTo(0, size.height * 0.74)
-      ..quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.98,
-        size.width * 0.5,
-        size.height * 0.80,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.62,
-        size.width,
-        size.height * 0.76,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path1, paint1);
-
-    final paint2 = Paint()
-      ..color = const Color(0xFF42A5F5).withValues(alpha: 0.3);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.55)
-      ..quadraticBezierTo(
-        size.width * 0.3,
-        size.height * 0.42,
-        size.width * 0.55,
-        size.height * 0.6,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.78,
-        size.height * 0.74,
-        size.width,
-        size.height * 0.56,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-
-    canvas.drawPath(path2, paint2);
-
-    final paintDot = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06);
-
-    canvas.drawCircle(
-      Offset(size.width * 0.1, size.height * 0.3),
-      40,
-      paintDot,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.9, size.height * 0.15),
-      25,
-      paintDot,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_WavePainter oldDelegate) => false;
-}

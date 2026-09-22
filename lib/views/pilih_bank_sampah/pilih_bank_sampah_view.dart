@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../app/themes/app_colors.dart';
@@ -8,6 +9,7 @@ import '../../controllers/auth_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../core/services/session_service.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/widgets/motion.dart';
 import '../../models/bank_sampah_model.dart';
 
 class PilihBankSampahView extends GetView<SessionController> {
@@ -19,7 +21,7 @@ class PilihBankSampahView extends GetView<SessionController> {
       backgroundColor: const Color(0xFFF4F9F4),
       body: Column(
         children: [
-          _buildHeader(context),
+          StaggeredEntrance(index: 0, child: _buildHeader(context)),
           Expanded(
             child: Obx(() {
               final activeBank = SessionService.to.activeBankSampah.value;
@@ -32,7 +34,7 @@ class PilihBankSampahView extends GetView<SessionController> {
                 return _buildEmptyState();
               }
 
-              return RefreshIndicator(
+              return PullToRefresh(
                 onRefresh: controller.fetchBankSampahSaya,
                 color: AppColors.primary,
                 child: Stack(
@@ -43,18 +45,22 @@ class PilihBankSampahView extends GetView<SessionController> {
                     ),
                     ListView.builder(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-                      physics: const BouncingScrollPhysics(),
+                      physics: const AlwaysScrollableScrollPhysics(),
                       itemCount: controller.listBankSampah.length + 1,
                       itemBuilder: (context, index) {
                         if (index == 0) return _buildSectionLabel();
                         final bank = controller.listBankSampah[index - 1];
                         final isSelected = activeBank?.id == bank.id;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _BankSampahCard(
-                            bank: bank,
-                            isSelected: isSelected,
-                            onTap: () => controller.pilihBankSampah(bank),
+                        return StaggeredEntrance(
+                          index: (index - 1).clamp(0, 6),
+                          delayMs: 70,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _BankSampahCard(
+                              bank: bank,
+                              isSelected: isSelected,
+                              onTap: () => controller.pilihBankSampah(bank),
+                            ),
                           ),
                         );
                       },
@@ -166,8 +172,9 @@ class PilihBankSampahView extends GetView<SessionController> {
                       ],
                     ),
                   ),
-                  GestureDetector(
+                  PressableScale(
                     onTap: () => Get.find<AuthController>().logout(),
+                    pressedScale: 0.88,
                     child: Container(
                       width: 38,
                       height: 38,
@@ -277,7 +284,7 @@ class PilihBankSampahView extends GetView<SessionController> {
   // ── Empty state ────────────────────────────────────────────────────────
 
   Widget _buildEmptyState() {
-    return RefreshIndicator(
+    return PullToRefresh(
       onRefresh: controller.fetchBankSampahSaya,
       color: AppColors.primary,
       child: SingleChildScrollView(
@@ -286,11 +293,13 @@ class PilihBankSampahView extends GetView<SessionController> {
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 60),
           child: Column(
             children: [
-              Container(
+              StaggeredEntrance(
+                index: 0,
+                child: Container(
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF5EC),
+                  color: AppColors.greenSurface,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -299,24 +308,41 @@ class PilihBankSampahView extends GetView<SessionController> {
                   size: 44,
                 ),
               ),
+              ),
               const SizedBox(height: 24),
-              Text(
-                'Belum terhubung',
-                style: AppTextStyles.titleLg,
+              StaggeredEntrance(
+                index: 1,
+                child: Text(
+                  'Belum terhubung',
+                  style: AppTextStyles.titleLg,
+                ),
               ),
               const SizedBox(height: 10),
-              Text(
-                'Akun Anda belum terhubung dengan bank sampah manapun. Hubungi pihak kelurahan untuk mendapatkan akses.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMd,
+              StaggeredEntrance(
+                index: 2,
+                child: Text(
+                  'Akun Anda belum terhubung dengan bank sampah manapun. Hubungi pihak kelurahan untuk mendapatkan akses.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMd,
+                ),
               ),
               const SizedBox(height: 28),
-              SizedBox(
-                width: 160,
-                child: ElevatedButton.icon(
-                  onPressed: controller.fetchBankSampahSaya,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Muat Ulang'),
+              StaggeredEntrance(
+                index: 3,
+                child: PressableScale(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    controller.fetchBankSampahSaya();
+                  },
+                  pressedScale: 0.94,
+                  child: SizedBox(
+                    width: 160,
+                    child: ElevatedButton.icon(
+                      onPressed: controller.fetchBankSampahSaya,
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text('Muat Ulang'),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -342,8 +368,14 @@ class _BankSampahCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return PressableScale(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      pressedScale: 0.97,
+      splashColor: AppColors.primary.withValues(alpha: 0.05),
+      borderRadius: 16,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
@@ -391,7 +423,7 @@ class _BankSampahCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary
-                    : const Color(0xFFEAF5EC),
+                    : AppColors.greenSurface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -466,7 +498,7 @@ class _BankSampahCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary
-                        : const Color(0xFFEAF5EC),
+                        : AppColors.greenSurface,
                     borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                   ),
                   child: Text(

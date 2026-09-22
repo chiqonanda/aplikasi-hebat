@@ -29,4 +29,5 @@ class AppRoutes {
   static const String generatorLaporan = '/kelurahan/laporan';
   static const String profilKelurahan = '/kelurahan/profil';
   static const String manajemenNasabah = '/kelurahan/nasabah';
+  static const String rekapBulanan = '/kelurahan/rekap-bulanan';
 }

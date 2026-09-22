@@ -79,51 +79,62 @@ class PengelolaanSampahModel {
   }
 
   factory PengelolaanSampahModel.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
+    DateTime parseDate(dynamic val) {
+      if (val == null) return DateTime.now();
+      return DateTime.tryParse(val.toString()) ?? DateTime.now();
+    }
+
     return PengelolaanSampahModel(
-      id: json['id'] as String,
-      bankSampahId: json['bank_sampah_id'] as String,
-      profileId: json['profile_id'] as String,
-      kategoriId: json['kategori_id'] as String,
+      id: json['id'] as String? ?? '',
+      bankSampahId: json['bank_sampah_id'] as String? ?? '',
+      profileId: json['profile_id'] as String? ?? '',
+      kategoriId: json['kategori_id'] as String? ?? '',
       subKategoriId: json['sub_kategori_id'] as String?,
       tipeId: json['tipe_id'] as String?,
       jenisSampahId: json['jenis_sampah_id'] as String?,
-      jumlah: (json['jumlah'] as num).toDouble(),
-      satuanId: json['satuan_id'] as String,
+      jumlah: parseDouble(json['jumlah']),
+      satuanId: json['satuan_id'] as String? ?? '',
       hargaPerSatuan: json['harga_per_satuan'] != null
-          ? (json['harga_per_satuan'] as num).toDouble()
+          ? parseDouble(json['harga_per_satuan'])
           : null,
       totalHarga: json['total_harga'] != null
-          ? (json['total_harga'] as num).toDouble()
+          ? parseDouble(json['total_harga'])
           : null,
-      tanggalPengelolaan:
-          DateTime.parse(json['tanggal_pengelolaan'] as String),
+      tanggalPengelolaan: parseDate(json['tanggal_pengelolaan']),
       catatan: json['catatan'] as String?,
       namaNasabah: json['nama_nasabah'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-      kategori: json['kategori_sampah'] != null
+      createdAt: parseDate(json['created_at']),
+      updatedAt: parseDate(json['updated_at']),
+      kategori: json['kategori_sampah'] != null && json['kategori_sampah'] is Map<String, dynamic>
           ? KategoriModel.fromJson(
               json['kategori_sampah'] as Map<String, dynamic>)
           : null,
-      subKategori: json['sub_kategori_sampah'] != null
+      subKategori: json['sub_kategori_sampah'] != null && json['sub_kategori_sampah'] is Map<String, dynamic>
           ? SubKategoriModel.fromJson(
               json['sub_kategori_sampah'] as Map<String, dynamic>)
           : null,
-      tipe: json['tipe_sampah'] != null
+      tipe: json['tipe_sampah'] != null && json['tipe_sampah'] is Map<String, dynamic>
           ? TipeSampahModel.fromJson(
               json['tipe_sampah'] as Map<String, dynamic>)
           : null,
-      jenisSampah: json['jenis_sampah'] != null
+      jenisSampah: json['jenis_sampah'] != null && json['jenis_sampah'] is Map<String, dynamic>
           ? JenisSampahModel.fromJson(
               json['jenis_sampah'] as Map<String, dynamic>)
           : null,
-      satuan: json['satuan'] != null
+      satuan: json['satuan'] != null && json['satuan'] is Map<String, dynamic>
           ? SatuanModel.fromJson(json['satuan'] as Map<String, dynamic>)
           : null,
-      profile: json['profiles'] != null
+      profile: json['profiles'] != null && json['profiles'] is Map<String, dynamic>
           ? ProfileModel.fromJson(json['profiles'] as Map<String, dynamic>)
           : null,
-      bankSampah: json['bank_sampah'] != null
+      bankSampah: json['bank_sampah'] != null && json['bank_sampah'] is Map<String, dynamic>
           ? BankSampahModel.fromJson(
               json['bank_sampah'] as Map<String, dynamic>)
           : null,

@@ -24,6 +24,13 @@ class HistoriController extends GetxController {
   final isLoading = false.obs;
   final isExporting = false.obs;
 
+  /// Periode cepat dari chip header: 'all' | 'week' | 'month'.
+  final periode = 'all'.obs;
+
+  /// Statistik bulan berjalan — untuk heading "hidup" di header.
+  final transaksiBulanIni = 0.obs;
+  final beratBulanIni = 0.0.obs;
+
   // Filter
   final filterKategoriId = ''.obs;
   final filterTanggalMulai = Rx<DateTime?>(null);
@@ -62,18 +69,54 @@ class HistoriController extends GetxController {
     });
   }
 
-  // Filter lokal dari _rawHistori berdasarkan searchQuery
+  // Filter lokal dari _rawHistori berdasarkan searchQuery + periode
   void _applySearchFilter() {
-    if (searchQuery.value.isEmpty) {
-      listHistori.value = List.from(_rawHistori);
-    } else {
-      final q = searchQuery.value.toLowerCase();
-      listHistori.value = _rawHistori.where((item) {
+    Iterable<PengelolaanSampahModel> items = _rawHistori;
+
+    final now = DateTime.now();
+    switch (periode.value) {
+      case 'week':
+        final start = now.subtract(Duration(days: now.weekday - 1));
+        final startDay = DateTime(start.year, start.month, start.day);
+        items = items.where((e) => !e.tanggalPengelolaan.isBefore(startDay));
+      case 'month':
+        final startDay = DateTime(now.year, now.month, 1);
+        items = items.where((e) => !e.tanggalPengelolaan.isBefore(startDay));
+    }
+
+    final q = searchQuery.value.toLowerCase();
+    if (q.isNotEmpty) {
+      items = items.where((item) {
         return item.namaItem.toLowerCase().contains(q) ||
             item.breadcrumb.toLowerCase().contains(q) ||
             (item.catatan?.toLowerCase().contains(q) ?? false);
-      }).toList();
+      });
     }
+
+    listHistori.value = items.toList();
+  }
+
+  /// Ganti periode chip (Semua / Minggu Ini / Bulan Ini) — filter lokal.
+  void setPeriode(String p) {
+    periode.value = p;
+    _applySearchFilter();
+  }
+
+  /// Hitung statistik bulan berjalan dari data mentah.
+  void _hitungStatistikBulan() {
+    final now = DateTime.now();
+    final startDay = DateTime(now.year, now.month, 1);
+    final bulanIni = _rawHistori
+        .where((e) => !e.tanggalPengelolaan.isBefore(startDay))
+        .toList();
+    transaksiBulanIni.value = bulanIni.length;
+    beratBulanIni.value = bulanIni.fold(
+        0.0,
+        (sum, e) =>
+            sum +
+            ((e.satuan?.singkatan.toLowerCase() == 'kg')
+                ? e.jumlah
+                : 0.0));
   }
 
   void onSearch(String value) => searchQuery.value = value;
@@ -136,6 +179,7 @@ class HistoriController extends GetxController {
       _rawHistori
         ..clear()
         ..addAll(list);
+      _hitungStatistikBulan();
       _applySearchFilter();
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat histori.');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../app/themes/app_colors.dart';
@@ -7,6 +8,8 @@ import '../../app/themes/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/utils/validator.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/widgets/motion.dart';
+import '../../core/widgets/wave_painter.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -38,9 +41,10 @@ class _RegisterViewState extends State<RegisterView> {
             right: 0,
             child: CustomPaint(
               size: Size(MediaQuery.of(context).size.width, 200),
-              painter: _WavePainter(),
+              painter: WavePainter.green(),
             ),
           ),
+        const AmbientBlob(color: Color(0x14FFFFFF), size: 220),
 
           // ── Decorative circles ──────────────────────────────
           Positioned(
@@ -77,8 +81,11 @@ class _RegisterViewState extends State<RegisterView> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: Row(
                     children: [
-                      GestureDetector(
+                      PopInEntrance(
+                        index: 0,
+                        child: PressableScale(
                         onTap: () => Get.back(),
+                        pressedScale: 0.9,
                         child: Container(
                           width: 40,
                           height: 40,
@@ -96,14 +103,18 @@ class _RegisterViewState extends State<RegisterView> {
                           ),
                         ),
                       ),
+                      ),
                       const SizedBox(width: 14),
-                      Text(
+                      PopIn(
+                        delay: const Duration(milliseconds: 120),
+                        child: Text(
                         'Daftar Akun',
                         style: AppTextStyles.titleLg.copyWith(
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                           letterSpacing: -0.3,
                         ),
+                      ),
                       ),
                     ],
                   ),
@@ -113,10 +124,13 @@ class _RegisterViewState extends State<RegisterView> {
 
                 // ── Scrollable form ────────────────────────────
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                    child: ConstrainedBox(
+                  child: PullToRefresh(
+                    onRefresh: () => controller.fetchBankSampahUntukRegister(force: true),
+                    color: AppColors.primary,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                      child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 480),
                       child: Form(
                         key: controller.registerFormKey,
@@ -124,7 +138,9 @@ class _RegisterViewState extends State<RegisterView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // ── Info card ────────────────────
-                            Container(
+                            StaggeredEntrance(
+                              index: 0,
+                              child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
@@ -165,10 +181,13 @@ class _RegisterViewState extends State<RegisterView> {
                               ),
                             ),
 
+                            ),
                             const SizedBox(height: 20),
 
                             // ── Section: Data Diri & Akun ────
-                            _SectionCard(
+                            StaggeredEntrance(
+                              index: 1,
+                              child: _SectionCard(
                               icon: Icons.person_add_rounded,
                               title: 'Data Diri & Akun',
                               child: Column(
@@ -282,10 +301,13 @@ class _RegisterViewState extends State<RegisterView> {
                               ),
                             ),
 
+                            ),
                             const SizedBox(height: 16),
 
                             // ── Section: Bank Sampah ─────────
-                            _SectionCard(
+                            StaggeredEntrance(
+                              index: 2,
+                              child: _SectionCard(
                               icon: Icons.store_rounded,
                               title: 'Bank Sampah',
                               subtitle:
@@ -342,8 +364,9 @@ class _RegisterViewState extends State<RegisterView> {
                                       final isSelected = controller
                                           .selectedBankSampahRegister
                                           .contains(bank.id);
-                                      return GestureDetector(
+                                      return PressableScale(
                                         onTap: () {
+                                          HapticFeedback.selectionClick();
                                           if (isSelected) {
                                             controller
                                                 .selectedBankSampahRegister
@@ -354,6 +377,7 @@ class _RegisterViewState extends State<RegisterView> {
                                                 .add(bank.id);
                                           }
                                         },
+                                        pressedScale: 0.97,
                                         child: AnimatedContainer(
                                           duration: const Duration(
                                               milliseconds: 200),
@@ -466,15 +490,19 @@ class _RegisterViewState extends State<RegisterView> {
                               }),
                             ),
 
+                            ),
                             const SizedBox(height: 28),
 
                             // ── Tombol Daftar ────────────────
-                            Obx(
+                            StaggeredEntrance(
+                              index: 3,
+                              child: Obx(
                               () => _GradientButton(
                                 label: 'Daftar Sekarang',
                                 isLoading: controller.isLoading.value,
                                 onPressed: controller.register,
                               ),
+                            ),
                             ),
 
                             const SizedBox(height: 20),
@@ -491,7 +519,9 @@ class _RegisterViewState extends State<RegisterView> {
                                       color: AppColors.textSecondary,
                                     ),
                                   ),
-                                  GestureDetector(
+                                  PopInEntrance(
+                                    index: 120,
+                                    child: GestureDetector(
                                     onTap: () => Get.back(),
                                     child: Text(
                                       'Masuk',
@@ -500,6 +530,7 @@ class _RegisterViewState extends State<RegisterView> {
                                         color: AppColors.primary,
                                       ),
                                     ),
+                                  ),
                                   ),
                                 ],
                               ),
@@ -525,6 +556,7 @@ class _RegisterViewState extends State<RegisterView> {
                         ),
                       ),
                     ),
+                  ),
                   ),
                 ),
               ],
@@ -664,7 +696,16 @@ class _GradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return PressableScale(
+      onTap: isLoading ? null : onPressed == null ? null : () {
+        HapticFeedback.mediumImpact();
+        onPressed!();
+      },
+      pressedScale: 0.955,
+      pressElevation: 1.6,
+      glowIntensity: 0.55,
+      glowColor: AppColors.primary,
+      child: Container(
       width: double.infinity,
       height: 54,
       decoration: BoxDecoration(
@@ -749,73 +790,10 @@ class _GradientButton extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
 
 // ── Wave Painter (sama dengan LoginView) ──────────────────────────────────────
 
-class _WavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.pengelolaDark, AppColors.primary],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path1 = Path()
-      ..lineTo(0, size.height * 0.78)
-      ..quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.95,
-        size.width * 0.5,
-        size.height * 0.82,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.68,
-        size.width,
-        size.height * 0.80,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path1, paint1);
-
-    final paint2 = Paint()
-      ..color = AppColors.secondary.withValues(alpha: 0.35);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.65)
-      ..quadraticBezierTo(
-        size.width * 0.3,
-        size.height * 0.55,
-        size.width * 0.55,
-        size.height * 0.70,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.78,
-        size.height * 0.82,
-        size.width,
-        size.height * 0.68,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-
-    canvas.drawPath(path2, paint2);
-
-    final paintDot = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08);
-
-    canvas.drawCircle(
-        Offset(size.width * 0.15, size.height * 0.3), 40, paintDot);
-    canvas.drawCircle(
-        Offset(size.width * 0.85, size.height * 0.2), 25, paintDot);
-  }
-
-  @override
-  bool shouldRepaint(_WavePainter oldDelegate) => false;
-}

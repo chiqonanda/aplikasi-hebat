@@ -1,9 +1,15 @@
 import 'package:get/get.dart';
 
-class PengelolaMainController extends GetxController {
-  final currentIndex = 0.obs;
+/// Tab-tab di shell utama pengelola.
+/// Urutan enum harus sama dengan urutan halaman di [PengelolaMainView].
+enum PengelolaTab { dashboard, histori, laporan, profil }
 
-  void changePage(int index) {
-    currentIndex.value = index;
+class PengelolaMainController extends GetxController {
+  final currentTab = PengelolaTab.dashboard.obs;
+
+  PengelolaTab get currentIndex => currentTab.value;
+
+  void changePage(PengelolaTab tab) {
+    currentTab.value = tab;
   }
 }

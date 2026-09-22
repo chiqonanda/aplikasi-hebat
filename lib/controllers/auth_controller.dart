@@ -55,8 +55,8 @@ class AuthController extends GetxController {
   // Dipanggil saat halaman register dibuka (onInit RegisterView tidak ada,
   // jadi panggil dari initState atau didChangeDependencies via StatefulWidget,
   // atau bisa juga dipanggil langsung dari build pertama kali).
-  Future<void> fetchBankSampahUntukRegister() async {
-    if (listBankSampahRegister.isNotEmpty) return; // sudah dimuat
+  Future<void> fetchBankSampahUntukRegister({bool force = false}) async {
+    if (!force && listBankSampahRegister.isNotEmpty) return; // sudah dimuat
     isLoadingBankSampah.value = true;
     try {
       final data = await SupabaseService.client

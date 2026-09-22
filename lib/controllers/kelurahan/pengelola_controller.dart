@@ -28,6 +28,51 @@ class PengelolaController extends GetxController {
   final isApprovingId = ''.obs;
   final isPasswordVisible = false.obs;
 
+  // ── Pencarian & relasi ────────────────────────────────────────────────
+  final searchQuery = ''.obs;
+
+  void setSearchQuery(String v) => searchQuery.value = v;
+
+  /// Pengelola aktif setelah difilter pencarian (nama / no HP / BSU).
+  List<ProfileModel> get listPengelolaFiltered {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return listPengelola;
+    return listPengelola.where((p) {
+      final nama = p.namaLengkap.toLowerCase();
+      final hp = (p.noHp ?? '').toLowerCase();
+      final bsu = relasiPengelola
+          .where((r) => r['profile_id'] == p.id)
+          .map((r) => (r['nama'] as String?) ?? '')
+          .join(' ')
+          .toLowerCase();
+      return nama.contains(q) || hp.contains(q) || bsu.contains(q);
+    }).toList();
+  }
+
+  /// Map relasi pengelola → bank sampah: {profile_id, nama, rw, rt}.
+  final relasiPengelola = <Map<String, dynamic>>[].obs;
+
+  /// Map tonase total (kg) per profile_id pengelola (dari transaksi BSU yang dikelola).
+  final tonasePerPengelola = <String, double>{}.obs;
+
+  /// Nama BSU yang dikelola seorang pengelola, digabung "BSU A (RW 02), BSU B".
+  String namaBsuPengelola(String profileId) {
+    final rows = relasiPengelola.where((r) => r['profile_id'] == profileId).toList();
+    if (rows.isEmpty) return '';
+    return rows.map((r) {
+      final nama = (r['nama'] as String?) ?? '-';
+      final rw = (r['rw'] as String?) ?? '';
+      return rw.isNotEmpty ? '$nama (RW $rw)' : nama;
+    }).join(', ');
+  }
+
+  /// Total ton yang diinput pengelola (kg → ton, 1 desimal).
+  String tonaseLabel(String profileId) {
+    final kg = tonasePerPengelola[profileId] ?? 0.0;
+    final ton = kg / 1000.0;
+    return '${ton.toStringAsFixed(ton < 10 ? 1 : 0)} Ton';
+  }
+
   // ── State untuk sheet approve ────────────────────────────────────────────────
   // Menyimpan pilihan bank sampah sementara saat sheet approve dibuka.
   // Dipakai oleh sheet agar Obx bisa reaktif dengan benar.
@@ -70,9 +115,75 @@ class PengelolaController extends GetxController {
   Future<void> fetchAll() async {
     isLoading.value = true;
     try {
-      await Future.wait([_fetchPengelola(), _fetchBankSampah()]);
+      await Future.wait([
+        _fetchPengelola(),
+        _fetchBankSampah(),
+        _fetchRelasi(),
+        _fetchTonase(),
+      ]);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Ambil relasi profile ↔ bank_sampah (dengan nama BSU) untuk semua pengelola.
+  Future<void> _fetchRelasi() async {
+    try {
+      final data = await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaBankSampah)
+          .select('profile_id, bank_sampah_id, bank_sampah(nama, rw, rt)');
+      relasiPengelola.value = (data as List)
+          .map((e) => {
+                'profile_id': e['profile_id'],
+                'bank_sampah_id': e['bank_sampah_id'],
+                'nama':
+                    ((e['bank_sampah'] as Map?)?['nama'] as String?) ?? '-',
+                'rw': ((e['bank_sampah'] as Map?)?['rw'] as String?) ?? '',
+                'rt': ((e['bank_sampah'] as Map?)?['rt'] as String?) ?? '',
+              })
+          .toList();
+    } catch (e) {
+      debugPrint('Pengelola relasi warning: $e');
+    }
+  }
+
+  /// Total tonase (kg) per pengelola: gabungkan transaksi dari semua BSU yang dia kelola.
+  Future<void> _fetchTonase() async {
+    try {
+      if (relasiPengelola.isEmpty) return;
+      final bsuIds = relasiPengelola
+          .map((r) => r['bank_sampah_id'])
+          .whereType<String>()
+          .toSet();
+      if (bsuIds.isEmpty) return;
+
+      final data = await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaanSampah)
+          .select('bank_sampah_id, jumlah, satuan(singkatan)')
+          .inFilter('bank_sampah_id', bsuIds.toList());
+
+      final kgPerBsu = <String, double>{};
+      for (final row in (data as List)) {
+        final singkatan =
+            ((row['satuan'] as Map?)?['singkatan'] as String?)?.toLowerCase() ?? '';
+        if (singkatan != 'kg') continue;
+        final jml = row['jumlah'];
+        final kg = jml is num ? jml.toDouble() : double.tryParse('$jml') ?? 0.0;
+        final bsuId = row['bank_sampah_id'] as String?;
+        if (bsuId == null) continue;
+        kgPerBsu[bsuId] = (kgPerBsu[bsuId] ?? 0.0) + kg;
+      }
+
+      final tonase = <String, double>{};
+      for (final r in relasiPengelola) {
+        final bsuId = r['bank_sampah_id'];
+        final kg = kgPerBsu[bsuId] ?? 0.0;
+        final pid = r['profile_id'] as String;
+        tonase[pid] = (tonase[pid] ?? 0.0) + kg;
+      }
+      tonasePerPengelola.value = tonase;
+    } catch (e) {
+      debugPrint('Pengelola tonase warning: $e');
     }
   }
 
@@ -98,12 +209,11 @@ class PengelolaController extends GetxController {
         (data as List).map((e) => BankSampahModel.fromJson(e)).toList();
   }
 
-  Future<List<String>> getBankSampahPengelola(String profileId) async {
-    final data = await SupabaseService.client
-        .from(SupabaseConstants.tablePengelolaBankSampah)
-        .select('bank_sampah_id')
-        .eq('profile_id', profileId);
-    return (data as List).map((e) => e['bank_sampah_id'] as String).toList();
+  Future<List<String>> getBankSampahPengelola(String profileId) async {      final data = await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaBankSampah)
+          .select('profile_id, bank_sampah_id')
+          .eq('profile_id', profileId);
+      return (data as List).map((e) => e['bank_sampah_id'] as String).toList();
   }
 
   void goToForm() => Get.toNamed(AppRoutes.formPengelola);

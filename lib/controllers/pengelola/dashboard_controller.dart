@@ -9,6 +9,10 @@ import '../../app/routes/app_routes.dart';
 
 class DashboardController extends GetxController {
   final isLoading = false.obs;
+  // True hanya saat fetch pertama kali (untuk menampilkan skeleton)
+  final isFirstLoad = true.obs;
+  // True jika fetch terakhir gagal (untuk menampilkan error state + retry)
+  final hasError = false.obs;
   final aktivitasTerbaru = <PengelolaanSampahModel>[].obs;
 
   // Statistik
@@ -38,6 +42,13 @@ class DashboardController extends GetxController {
     });
   }
 
+  double _toDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0;
+  }
+
   Future<void> fetchDashboardData() async {
     final bankSampahId = SessionService.to.activeBankSampahIdOrNull;
     if (bankSampahId == null) {
@@ -47,18 +58,32 @@ class DashboardController extends GetxController {
       return;
     }
 
+    if (isFirstLoad.value) hasError.value = false;
     isLoading.value = true;
     try {
       await Future.wait([
-        _fetchAktivitasTerbaru(bankSampahId),
-        _fetchStatistikBulanIni(bankSampahId),
-        _fetchStatistikHariIni(bankSampahId),
+        _safeRun(() => _fetchAktivitasTerbaru(bankSampahId), 'AktivitasTerbaru'),
+        _safeRun(() => _fetchStatistikBulanIni(bankSampahId), 'StatistikBulanIni'),
+        _safeRun(() => _fetchStatistikHariIni(bankSampahId), 'StatistikHariIni'),
       ]);
+      hasError.value = false;
     } catch (e) {
       debugPrint('ERROR FETCH DASHBOARD: $e');
-      Get.snackbar('Error', 'Gagal memuat data dashboard: $e');
+      hasError.value = true;
+      if (!isFirstLoad.value) {
+        Get.snackbar('Error', 'Gagal memuat data dashboard');
+      }
     } finally {
       isLoading.value = false;
+      isFirstLoad.value = false;
+    }
+  }
+
+  Future<void> _safeRun(Future<void> Function() action, String name) async {
+    try {
+      await action();
+    } catch (e) {
+      debugPrint('DashboardPengelola Warning ($name): $e');
     }
   }
 
@@ -105,8 +130,8 @@ class DashboardController extends GetxController {
     double nilaiSum = 0.0;
 
     for (final e in list) {
-      final jumlah = (e['jumlah'] as num).toDouble();
-      final totalHarga = (e['total_harga'] as num?)?.toDouble() ?? 0.0;
+      final jumlah = _toDouble(e['jumlah']);
+      final totalHarga = _toDouble(e['total_harga']);
       nilaiSum += totalHarga;
 
       final satuanMap = e['satuan'] as Map?;
@@ -140,7 +165,7 @@ class DashboardController extends GetxController {
     totalTransaksiHariIni.value = list.length;
     totalJumlahHariIni.value = list.fold(
       0.0,
-      (sum, e) => sum + (e['jumlah'] as num).toDouble(),
+      (sum, e) => sum + _toDouble(e['jumlah']),
     );
   }
 

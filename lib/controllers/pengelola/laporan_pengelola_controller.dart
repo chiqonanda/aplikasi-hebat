@@ -1,7 +1,13 @@
+import 'dart:typed_data';
+
+import 'package:flutter/services.dart' show rootBundle;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:csv/csv.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import '../../core/utils/file_saver_helper.dart';
 
@@ -31,6 +37,11 @@ class LaporanPengelolaController extends GetxController {
   final selectedTanggalMulai = Rx<DateTime?>(null);
   final selectedTanggalAkhir = Rx<DateTime?>(null);
 
+  // Preset periode cepat (mockup: 'Bulan Unit' dll) & tingkat detail rekap.
+  // null = kustom (user mengubah tanggal manual).
+  final presetPeriode = Rx<String?>(null);
+  final detailMode = 'detail'.obs; // 'detail' | 'ringkasan'
+
   final isLoading = false.obs;
   final isGenerating = false.obs;
 
@@ -39,6 +50,8 @@ class LaporanPengelolaController extends GetxController {
   final hasPreview = false.obs;
 
   String? get _bankSampahId => SessionService.to.activeBankSampahIdOrNull;
+
+  String get bankSampahNama => SessionService.to.activeBankSampahNama;
 
   @override
   void onInit() {
@@ -97,6 +110,37 @@ class LaporanPengelolaController extends GetxController {
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat master data: $e');
     }
+  }
+
+  /// Terapkan preset periode cepat (mockup Generator Laporan).
+  void applyPresetPeriode(String preset) {
+    presetPeriode.value = preset;
+    final now = DateTime.now();
+    switch (preset) {
+      case 'Bulan Ini':
+        selectedTanggalMulai.value = DateTime(now.year, now.month, 1);
+        selectedTanggalAkhir.value = DateTime(now.year, now.month + 1, 0);
+      case 'Minggu Ini':
+        final weekday = now.weekday; // Senin = 1
+        selectedTanggalMulai.value = DateTime(now.year, now.month, now.day)
+            .subtract(Duration(days: weekday - 1));
+        selectedTanggalAkhir.value = DateTime(now.year, now.month, now.day);
+      case 'Tahun 2026':
+        final year = now.year;
+        selectedTanggalMulai.value = DateTime(year, 1, 1);
+        selectedTanggalAkhir.value = DateTime(year, 12, 31);
+      case '3 Bulan':
+        selectedTanggalMulai.value = DateTime(now.year, now.month - 2, 1);
+        selectedTanggalAkhir.value = DateTime(now.year, now.month + 1, 0);
+    }
+    // Preset berubah → preview lama tidak lagi valid.
+    hasPreview.value = false;
+  }
+
+  /// Pilih/bersihkan filter nasabah dari dropdown Generator.
+  void pilihNasabah(String? nama) {
+    selectedNasabah.value = (nama != null && nama.isEmpty) ? null : nama;
+    hasPreview.value = false;
   }
 
   Future<void> fetchNamaNasabah() async {
@@ -711,6 +755,381 @@ class LaporanPengelolaController extends GetxController {
     return bulanList[bulan];
   }  
 
+  /// Export laporan ke PDF asli dari data transaksi — tabel pivot
+  /// (jenis sampah × nasabah) + ringkasan total per kategori & pendapatan.
+  Future<void> exportPdf() async {
+    if (!isValid) {
+      Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');
+      return;
+    }
+    isGenerating.value = true;
+    try {
+      if (listAllKategori.isEmpty) await _fetchMasterData();
+
+      List<PengelolaanSampahModel> data = previewData;
+      if (data.isEmpty) data = await _fetchDataLaporan();
+
+      if (data.isEmpty) {
+        Get.snackbar('Info', 'Tidak ada data transaksi untuk diexport.');
+        return;
+      }
+
+      final mulai = selectedTanggalMulai.value!;
+      final akhir = selectedTanggalAkhir.value!;
+
+      final Set<String> activeNasabahs = data
+          .map((e) => e.namaNasabah)
+          .where((name) => name != null && name.trim().isNotEmpty)
+          .map((name) => name!.trim())
+          .toSet();
+      final List<String> nasabahKolom =
+          selectedNasabah.value != null && selectedNasabah.value!.isNotEmpty
+              ? [selectedNasabah.value!]
+              : activeNasabahs.toList()
+            ..sort((a, b) => a.compareTo(b));
+
+      // Pivot: jenis_sampah_id → nasabah → jumlah
+      final Map<String, Map<String, double>> pivot = {};
+      for (final item in data) {
+        final jId = item.jenisSampah?.id;
+        if (jId == null) continue;
+        final nasName = item.namaNasabah ?? '';
+        pivot.putIfAbsent(jId, () => {});
+        pivot[jId]![nasName] = (pivot[jId]![nasName] ?? 0) + item.jumlah;
+      }
+
+      final doc = pw.Document();
+      final bsuName = SessionService.to.activeBankSampahNama;
+
+      // Logo aplikasi untuk kop resmi (gagal load → kop tanpa logo).
+      pw.ImageProvider? logoImage;
+      try {
+        final bd = await rootBundle.load('assets/images/logo.png');
+        logoImage = pw.MemoryImage(bd.buffer.asUint8List());
+      } catch (_) {
+        logoImage = null;
+      }
+
+      // Kumpulkan baris tabel dari hierarki kategori → sub → tipe → jenis
+      final rows = <List<String>>[];
+      final totalKategori = <String, double>{};
+      int noUrut = 1;
+
+      void addJenisRow(String jenisId, String jenisNama, String indent) {
+        double rowTotal = 0;
+        final cells = <String>[
+          '$noUrut',
+          '$indent$jenisNama',
+          for (final n in nasabahKolom)
+            () {
+              final v = pivot[jenisId]?[n] ?? 0.0;
+              rowTotal += v;
+              return v > 0 ? FormatHelper.number(v) : '-';
+            }(),
+          rowTotal > 0 ? FormatHelper.number(rowTotal) : '-',
+        ];
+        rows.add(cells);
+        noUrut++;
+      }
+
+      for (final kat in listAllKategori) {
+        rows.add(['', kat.nama.toUpperCase(), ...List.filled(nasabahKolom.length + 1, '')]);
+        final subList = listAllSubKategori.where((s) => s.kategoriId == kat.id).toList();
+        if (subList.isNotEmpty) {
+          for (final sub in subList) {
+            rows.add(['', '  ${sub.nama.toUpperCase()}', ...List.filled(nasabahKolom.length + 1, '')]);
+            final tipeList = listAllTipeSampah.where((t) => t.subKategoriId == sub.id).toList();
+            if (tipeList.isNotEmpty) {
+              for (final tipe in tipeList) {
+                rows.add(['', '    ${tipe.nama}', ...List.filled(nasabahKolom.length + 1, '')]);
+                for (final jenis in listAllJenisSampah
+                    .where((j) => j.subKategoriId == sub.id && j.tipeId == tipe.id)) {
+                  addJenisRow(jenis.id, jenis.nama, '      ');
+                }
+              }
+            } else {
+              for (final jenis in listAllJenisSampah.where((j) => j.subKategoriId == sub.id)) {
+                addJenisRow(jenis.id, jenis.nama, '    ');
+              }
+            }
+          }
+        } else {
+          for (final jenis in listAllJenisSampah.where((j) => j.kategoriId == kat.id)) {
+            addJenisRow(jenis.id, jenis.nama, '  ');
+          }
+        }
+      }
+
+      // Hitung total kategori dari baris jenis (dari pivot langsung agar akurat)
+      for (final kat in listAllKategori) {
+        final jenisIds = listAllJenisSampah
+            .where((j) =>
+                j.kategoriId == kat.id ||
+                listAllSubKategori.any((s) => s.kategoriId == kat.id && j.subKategoriId == s.id))
+            .map((j) => j.id)
+            .toSet();
+        double katTotal = 0;
+        for (final jId in jenisIds) {
+          for (final v in pivot[jId]?.values ?? const <double>[]) {
+            katTotal += v;
+          }
+        }
+        totalKategori[kat.id] = katTotal;
+      }
+      final grandTotal = totalKategori.values.fold(0.0, (s, v) => s + v);
+
+      // Total pendapatan uang per nasabah
+      final Map<String, double> totalUangNasabah = {};
+      for (final item in data) {
+        final nasName = item.namaNasabah ?? '';
+        totalUangNasabah[nasName] =
+            (totalUangNasabah[nasName] ?? 0.0) + (item.totalHarga ?? 0.0);
+      }
+      final grandTotalUang = totalUangNasabah.values.fold(0.0, (s, v) => s + v);
+
+      final headerCells = <String>['NO', 'JENIS SAMPAH', ...nasabahKolom, 'TOTAL'];
+
+      pw.Widget buildTable(pw.Context _) => pw.TableHelper.fromTextArray(
+            headers: headerCells,
+            data: rows,
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 8,
+              color: PdfColors.white,
+            ),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.green800),
+            cellStyle: const pw.TextStyle(fontSize: 7.5),
+            cellAlignment: pw.Alignment.centerLeft,
+            columnWidths: {
+              0: const pw.FixedColumnWidth(26),
+              1: const pw.FlexColumnWidth(3.2),
+              for (var i = 0; i < nasabahKolom.length; i++)
+                i + 2: const pw.FlexColumnWidth(1.4),
+              nasabahKolom.length + 2: const pw.FixedColumnWidth(52),
+            },
+            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+          );
+
+      doc.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4.landscape,
+          margin: const pw.EdgeInsets.all(28),
+          header: (context) => _buildPdfKop(logoImage, bsuName, mulai, akhir),
+          build: (context) => [buildTable(context)],
+          footer: (context) => pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Text(
+              'Halaman ${context.pageNumber} dari ${context.pagesCount}',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            ),
+          ),
+        ),
+      );
+
+      // Halaman ringkasan: total per kategori + pendapatan per nasabah
+      doc.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(36),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('RINGKASAN LAPORAN',
+                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                '${bsuName.toUpperCase()} · ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}',
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Text('Volume per Kategori',
+                  style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 6),
+              pw.TableHelper.fromTextArray(
+                headers: ['KATEGORI', 'TOTAL VOLUME'],
+                data: [
+                  for (final kat in listAllKategori)
+                    [kat.nama, FormatHelper.number(totalKategori[kat.id] ?? 0)],
+                  ['GRAND TOTAL', FormatHelper.number(grandTotal)],
+                ],
+                headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.green800),
+                cellStyle: const pw.TextStyle(fontSize: 9),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(3),
+                  1: const pw.FlexColumnWidth(1.4),
+                },
+                border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Total Pendapatan per Nasabah',
+                  style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 6),
+              pw.TableHelper.fromTextArray(
+                headers: ['NASABAH', 'PENDAPATAN'],
+                data: [
+                  for (final n in nasabahKolom)
+                    [
+                      n,
+                      FormatHelper.currency(totalUangNasabah[n] ?? 0.0),
+                    ],
+                  ['TOTAL', FormatHelper.currency(grandTotalUang)],
+                ],
+                headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.green800),
+                cellStyle: const pw.TextStyle(fontSize: 9),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(3),
+                  1: const pw.FlexColumnWidth(1.6),
+                },
+                border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+              ),
+              pw.SizedBox(height: 48),
+              // ── Tanda tangan pengelola ──
+              pw.Align(
+                alignment: pw.Alignment.centerRight,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Text(
+                      'Kelayu $_kotaSamarinda, ${FormatHelper.date(DateTime.now())}',
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                    pw.SizedBox(height: 52),
+                    pw.Text(
+                      SessionService.to.profile.value?.namaLengkap ?? 'Pengelola',
+                      style: pw.TextStyle(
+                          fontSize: 10, fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text(
+                      'Pengelola Bank Sampah',
+                      style: const pw.TextStyle(
+                          fontSize: 9, color: PdfColors.grey700),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final startStr = FormatHelper.dateToInput(mulai).replaceAll('-', '');
+      final endStr = FormatHelper.dateToInput(akhir).replaceAll('-', '');
+      final bsuSlug = bsuName
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '_')
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+      final fileName = 'laporan_sampah_${bsuSlug}_$startStr-$endStr.pdf';
+
+      final bytes = await doc.save();
+      _lastPdfBytes = bytes;
+
+      await FileSaverHelper.saveBytes(
+        bytes,
+        fileName,
+        shareText:
+            'Laporan Bank Sampah $bsuName ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}',
+      );
+      Get.snackbar('Sukses', 'Laporan PDF berhasil diexport.');
+    } catch (e) {
+      Get.snackbar('Gagal', 'Export PDF gagal: $e');
+    } finally {
+      isGenerating.value = false;
+    }
+  }
+
+
+
+  // ═══ PDF: kop resmi & preview in-app ═══
+
+  static const String _kotaSamarinda = 'Samarinda';
+
+  /// Byte PDF terakhir yang dibuat — dipakai preview in-app.
+  Uint8List? _lastPdfBytes;
+
+  /// Kop resmi di halaman pertama: logo + identitas + periode.
+  pw.Widget _buildPdfKop(
+    pw.ImageProvider? logo,
+    String bsuName,
+    DateTime mulai,
+    DateTime akhir,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // ── Baris kop: logo + identitas ──
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            if (logo != null) ...[
+              pw.Container(
+                width: 42,
+                height: 42,
+                child: pw.Image(logo),
+              ),
+              pw.SizedBox(width: 10),
+            ],
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'BASIS INFORMASI SAMPAH (BISA)',
+                    style: pw.TextStyle(
+                        fontSize: 8.5, color: PdfColors.grey600),
+                  ),
+                  pw.Text(
+                    'LAPORAN SAMPAH BANK SAMPAH ${bsuName.toUpperCase()}',
+                    style: pw.TextStyle(
+                        fontSize: 14, fontWeight: pw.FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            pw.Container(
+              padding:
+                  const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.green800, width: 1),
+                borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(6)),
+              ),
+              child: pw.Text(
+                'RESMI DLH',
+                style: pw.TextStyle(
+                  fontSize: 8,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.green800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          'Periode: ${FormatHelper.date(mulai)} - ${FormatHelper.date(akhir)}',
+          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+        ),
+        pw.Divider(color: PdfColors.green800, thickness: 1.2),
+        pw.SizedBox(height: 8),
+      ],
+    );
+  }
+
+  /// Buat byte PDF dari filter aktif tanpa mengunduh — untuk preview in-app.
+  Future<Uint8List?> generateLaporanPdfBytes() async {
+    if (!isValid) {
+      Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');
+      return null;
+    }
+    await exportPdf();
+    return _lastPdfBytes;
+  }
+
+  /// Export laporan ke CSV.
   Future<void> exportCsv() async {
     if (!isValid) {
       Get.snackbar('Validasi', 'Tentukan periode laporan terlebih dahulu.');

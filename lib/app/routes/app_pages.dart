@@ -14,6 +14,7 @@ import '../../controllers/kelurahan/master_sampah_controller.dart';
 import '../../controllers/kelurahan/pengelola_controller.dart';
 import '../../controllers/kelurahan/laporan_controller.dart';
 import '../../controllers/kelurahan/nasabah_controller.dart';
+import '../../controllers/kelurahan/rekap_bulanan_controller.dart';
 
 import '../../views/auth/login_view.dart';
 import '../../views/auth/register_view.dart';
@@ -35,6 +36,7 @@ import '../../views/kelurahan/pengelola_list_view.dart';
 import '../../views/kelurahan/pengelola_form_view.dart';
 import '../../views/kelurahan/laporan_view.dart';
 import '../../views/kelurahan/profil_kelurahan_view.dart';
+import '../../views/kelurahan/rekap_bulanan_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -43,14 +45,22 @@ class AppPages {
   static final routes = [
     // ── Auth ──────────────────────────────────────────
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.login,
       page: () => const LoginView(),
       binding: BindingsBuilder(() {
         Get.lazyPut(() => AuthController());
       }),
     ),
-    GetPage(name: AppRoutes.register, page: () => const RegisterView()),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      name: AppRoutes.register, page: () => const RegisterView(),
+    ),
+    GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.menungguVerifikasi,
       page: () => const MenungguVerifikasiView(),
       // AuthController dibutuhkan untuk fungsi logout
@@ -61,6 +71,8 @@ class AppPages {
 
     // ── Pilih Bank Sampah ──────────────────────────────
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.pilihBankSampah,
       page: () => const PilihBankSampahView(),
       binding: BindingsBuilder(() {
@@ -70,6 +82,8 @@ class AppPages {
 
     // ── Pengelola ──────────────────────────────────────
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.dashboardPengelola,
       page: () => const PengelolaMainView(),
       binding: BindingsBuilder(() {
@@ -80,6 +94,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.inputSampah,
       page: () => const InputSampahView(),
       binding: BindingsBuilder(() {
@@ -87,6 +103,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.historiSampah,
       page: () => const HistoriView(),
       binding: BindingsBuilder(() {
@@ -94,6 +112,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.laporanPengelola,
       page: () => const LaporanPengelolaView(),
       binding: BindingsBuilder(() {
@@ -101,12 +121,16 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.profilBankSampah,
       page: () => const ProfilBankSampahView(),
     ),
 
     // ── Kelurahan ──────────────────────────────────────
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.dashboardKelurahan,
       page: () => const DashboardKelurahanView(),
       binding: BindingsBuilder(() {
@@ -114,6 +138,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.monitoringBankSampah,
       page: () => const MonitoringView(),
       binding: BindingsBuilder(() {
@@ -121,6 +147,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.detailBankSampah,
       page: () => const DetailBankSampahView(),
       binding: BindingsBuilder(() {
@@ -128,6 +156,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.manajemenBankSampah,
       page: () => const BankSampahListView(),
       binding: BindingsBuilder(() {
@@ -135,6 +165,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.formBankSampah,
       page: () => const BankSampahFormView(),
       binding: BindingsBuilder(() {
@@ -142,6 +174,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.masterSampah,
       page: () => const MasterSampahView(),
       binding: BindingsBuilder(() {
@@ -149,6 +183,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.manajemenPengelola,
       page: () => const PengelolaListView(),
       binding: BindingsBuilder(() {
@@ -156,6 +192,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.formPengelola,
       page: () => const PengelolaFormView(),
       binding: BindingsBuilder(() {
@@ -163,6 +201,8 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.generatorLaporan,
       page: () => const LaporanView(),
       binding: BindingsBuilder(() {
@@ -170,14 +210,27 @@ class AppPages {
       }),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.profilKelurahan,
       page: () => const ProfilKelurahanView(),
     ),
     GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       name: AppRoutes.manajemenNasabah,
       page: () => const NasabahListView(),
       binding: BindingsBuilder(() {
         Get.lazyPut(() => NasabahController());
+      }),
+    ),
+    GetPage(
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      name: AppRoutes.rekapBulanan,
+      page: () => const RekapBulananView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => RekapBulananController());
       }),
     ),
   ];

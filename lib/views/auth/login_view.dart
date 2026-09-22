@@ -4,19 +4,26 @@ import '../../app/routes/app_routes.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/utils/validator.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/widgets/motion.dart';
+import '../../core/widgets/wave_painter.dart';
+import '../../app/themes/app_colors.dart';
 
 class LoginView extends GetView<AuthController> {
+  /// Deteksi keyboard via MediaQuery — sumber kebenaran tunggal untuk spacing.
+  static const _keyboardThreshold = 120.0;
   const LoginView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final keyboardVisible =
+        mediaQuery.viewInsets.bottom > _keyboardThreshold;
     final screenWidth = mediaQuery.size.width;
     // Gunakan tinggi total layar (termasuk keyboard bottom inset) agar layout tidak mengkerut saat keyboard muncul
     final screenHeight = mediaQuery.size.height + mediaQuery.viewInsets.bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // ── Background wave decoration ──────────────────────
@@ -24,11 +31,11 @@ class LoginView extends GetView<AuthController> {
             top: 0,
             left: 0,
             right: 0,
-            child: CustomPaint(
+            child: AnimatedWave.green(
               size: Size(screenWidth, screenHeight * 0.42),
-              painter: _WavePainter(),
             ),
           ),
+        const AmbientBlob(color: Color(0x14FFFFFF), size: 220),
 
           // ── Decorative circles ──────────────────────────────
           Positioned(
@@ -72,38 +79,50 @@ class LoginView extends GetView<AuthController> {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Tentukan tinggi minimum konten agar pas tanpa scroll pada screen standard
-                const double minContentHeight = 710.0;
-                final double availableHeight = constraints.maxHeight;
-                
-                double topSpacer = 16.0;
-                double middleSpacer = 12.0;
-                double bottomSpacer = 16.0;
-                double footerSpacer = 16.0;
-                
-                if (availableHeight > minContentHeight) {
-                  final double extra = availableHeight - minContentHeight;
-                  topSpacer += extra * 0.25;
-                  middleSpacer += extra * 0.20;
-                  bottomSpacer += extra * 0.40;
-                  footerSpacer += extra * 0.15;
-                }
+                // Tinggi konten = tinggi LAYAR + inset keyboard.
+                // Saat keyboard terbuka, MediaQuery.of(...).size.height
+                // menyusut otomatis — jadi konten selalu diratakan pada
+                // area yang terlihat (tidak pernah ada bagian yang
+                // "hilang di bawah" / overflow bawah).
+                final double availableHeight =
+                    mediaQuery.size.height + mediaQuery.viewInsets.bottom -
+                        mediaQuery.padding.vertical;
 
-                return SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: availableHeight,
-                    ),
-                    child: IntrinsicHeight(
-                      child: SizedBox(
+                // Spacer adaptif: membesar mengikuti ruang tersisa di
+                // atas baseline 710px, DIBATASI MAKSIMUM sehingga konten
+                // tak pernah dipaksa lebih tinggi dari layar.
+                final double extra =
+                    (availableHeight - 710).clamp(0.0, double.infinity);
+
+                // Keyboard terbuka → kompres semua spacer agar form tetap
+                // terlihat penuh di area yang tersisa.
+                double topSpacer = keyboardVisible
+                    ? 8.0
+                    : (16.0 + extra * 0.30).clamp(16.0, 64.0);
+                double middleSpacer = keyboardVisible
+                    ? 8.0
+                    : (12.0 + extra * 0.22).clamp(12.0, 44.0);
+                double bottomSpacer = keyboardVisible
+                    ? 10.0
+                    : (16.0 + extra * 0.18).clamp(16.0, 40.0);
+                double footerSpacer = keyboardVisible ? 6.0 : 16.0;
+
+                return PullToRefresh(
+                  onRefresh: () async {},
+                  color: AppColors.pengelolaMain,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
                         width: screenWidth,
                         child: Column(
                           children: [
                             SizedBox(height: topSpacer),
                             
                             // ── Top section (logo + title) ──
-                            Column(
+                            StaggeredEntrance(
+                              index: 0,
+                              hapticOnEnter: false,
+                              child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 // Double ring logo
@@ -128,12 +147,12 @@ class LoginView extends GetView<AuthController> {
                                         width: 58,
                                         height: 58,
                                         decoration: const BoxDecoration(
-                                          color: Color(0xFFE8F5E9),
+                                          color: AppColors.pengelolaLight,
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(
                                           Icons.eco_rounded,
-                                          color: Color(0xFF2E7D32),
+                                          color: AppColors.pengelolaMain,
                                           size: 32,
                                         ),
                                       ),
@@ -166,11 +185,14 @@ class LoginView extends GetView<AuthController> {
                                 ),
                               ],
                             ),
+                            ),
 
                             SizedBox(height: middleSpacer),
 
                             // ── Login card ───────────────────────────────
-                            Padding(
+                            StaggeredEntrance(
+                              index: 1,
+                              child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 24),
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(maxWidth: 420),
@@ -182,13 +204,13 @@ class LoginView extends GetView<AuthController> {
                                     // Accent line hijau di atas card
                                     border: const Border(
                                       top: BorderSide(
-                                        color: Color(0xFF2E7D32),
+                                        color: AppColors.pengelolaMain,
                                         width: 3,
                                       ),
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF2E7D32)
+                                        color: AppColors.pengelolaMain
                                             .withValues(alpha: 0.08),
                                         blurRadius: 30,
                                         offset: const Offset(0, 10),
@@ -212,7 +234,7 @@ class LoginView extends GetView<AuthController> {
                                             fontFamily: 'PlusJakartaSans',
                                             fontSize: 22,
                                             fontWeight: FontWeight.w800,
-                                            color: Color(0xFF1A1A2E),
+                                            color: AppColors.textPrimary,
                                             letterSpacing: -0.5,
                                           ),
                                         ),
@@ -285,7 +307,7 @@ class LoginView extends GetView<AuthController> {
                                                 fontFamily: 'PlusJakartaSans',
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w700,
-                                                color: Color(0xFF2E7D32),
+                                                color: AppColors.pengelolaMain,
                                               ),
                                             ),
                                           ),
@@ -356,7 +378,7 @@ class LoginView extends GetView<AuthController> {
                                                     fontFamily: 'PlusJakartaSans',
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w800,
-                                                    color: Color(0xFF2E7D32),
+                                                    color: AppColors.pengelolaMain,
                                                   ),
                                                 ),
                                               ),
@@ -369,11 +391,14 @@ class LoginView extends GetView<AuthController> {
                                 ),
                               ),
                             ),
+                            ),
 
                             SizedBox(height: bottomSpacer),
 
                             // ── Tagline bawah ────────────────────────────
-                            Padding(
+                            StaggeredEntrance(
+                              index: 2,
+                              child: Padding(
                               padding: EdgeInsets.only(bottom: footerSpacer),
                               child: Text(
                                 'Kelola sampah, jaga lingkungan 🌿',
@@ -384,11 +409,11 @@ class LoginView extends GetView<AuthController> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ),
                   ),
                 );
               },
@@ -414,7 +439,7 @@ class _FieldLabel extends StatelessWidget {
         fontFamily: 'PlusJakartaSans',
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF1A1A2E),
+        color: AppColors.textPrimary,
       ),
     );
   }
@@ -442,17 +467,17 @@ class _GradientButton extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF43A047), Color(0xFF1B5E20)],
+          colors: [AppColors.secondary, AppColors.pengelolaDark],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2E7D32).withValues(alpha: 0.35),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
           BoxShadow(
-            color: const Color(0xFF2E7D32).withValues(alpha: 0.15),
+            color: AppColors.pengelolaMain.withValues(alpha: 0.15),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -535,70 +560,3 @@ class _GradientButton extends StatelessWidget {
 
 // ── Wave Painter ──────────────────────────────────────────────────────────────
 
-class _WavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Layer 1 — dark green base
-    final paint1 = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path1 = Path()
-      ..lineTo(0, size.height * 0.78)
-      ..quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.95,
-        size.width * 0.5,
-        size.height * 0.82,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.68,
-        size.width,
-        size.height * 0.80,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path1, paint1);
-
-    // Layer 2 — lighter green wave overlay
-    final paint2 = Paint()
-      ..color = const Color(0xFF43A047).withValues(alpha: 0.35);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.65)
-      ..quadraticBezierTo(
-        size.width * 0.3,
-        size.height * 0.55,
-        size.width * 0.55,
-        size.height * 0.70,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.78,
-        size.height * 0.82,
-        size.width,
-        size.height * 0.68,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-
-    canvas.drawPath(path2, paint2);
-
-    // Layer 3 — subtle accent dots
-    final paintDot = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08);
-
-    canvas.drawCircle(
-        Offset(size.width * 0.15, size.height * 0.3), 40, paintDot);
-    canvas.drawCircle(
-        Offset(size.width * 0.85, size.height * 0.2), 25, paintDot);
-  }
-
-  @override
-  bool shouldRepaint(_WavePainter oldDelegate) => false;
-}

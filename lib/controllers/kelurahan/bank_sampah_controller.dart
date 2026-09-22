@@ -19,6 +19,9 @@ class BankSampahController extends GetxController {
   final listPengelolaTerhubung = <ProfileModel>[].obs;
   final searchQuery = ''.obs;
 
+  // Filter chip: 0 = Semua, 1 = Aktif, 2 = Nonaktif / Perlu Pendampingan
+  final selectedFilter = 0.obs;
+
   final isLoading = false.obs;
   final isSaving = false.obs;
   final isAktif = true.obs;
@@ -29,11 +32,31 @@ class BankSampahController extends GetxController {
   final editData = Rx<BankSampahModel?>(null);
   bool get isEditMode => editData.value != null;
 
+  // ── Statistik nyata per bank sampah (dari pengelolaan_sampah) ──
+  // key: bank_sampah id
+  final statKgTerekelola = <String, double>{}.obs; // total kg (semua waktu)
+  final statJumlahNasabah = <String, int>{}.obs; // nasabah unik
+
   // Getter list yang sudah difilter berdasarkan search
+  int get totalAktif => listBankSampah.where((b) => b.isActive).length;
+  int get totalNonaktif => listBankSampah.length - totalAktif;
+
+  /// Jumlah RW unik yang terdata (untuk chip wilayah di header).
+  int get jumlahRw => listBankSampah
+      .map((b) => b.rw?.trim() ?? '')
+      .where((e) => e.isNotEmpty)
+      .toSet()
+      .length;
+
   List<BankSampahModel> get listBankFiltered {
-    if (searchQuery.value.isEmpty) return listBankSampah;
+    var list = switch (selectedFilter.value) {
+      1 => listBankSampah.where((b) => b.isActive),
+      2 => listBankSampah.where((b) => !b.isActive),
+      _ => listBankSampah,
+    }.toList();
+    if (searchQuery.value.isEmpty) return list;
     final q = searchQuery.value.toLowerCase();
-    return listBankSampah.where((b) {
+    return list.where((b) {
       return b.nama.toLowerCase().contains(q) ||
           (b.alamat?.toLowerCase().contains(q) ?? false) ||
           (b.rt?.contains(q) ?? false) ||
@@ -45,6 +68,15 @@ class BankSampahController extends GetxController {
   void onInit() {
     super.onInit();
     fetchBankSampah();
+  }
+
+  /// Tonase terekelola (ton, dibulatkan 1 desimal) untuk kartu BSU.
+  String tonTerekelola(String bankId) {
+    final kg = statKgTerekelola[bankId] ?? 0.0;
+    final ton = kg / 1000.0;
+    return ton >= 1000
+        ? ton.toStringAsFixed(0)
+        : ton.toStringAsFixed(1);
   }
 
   void onSearch(String value) {
@@ -66,10 +98,49 @@ class BankSampahController extends GetxController {
       listBankSampah.value = (data as List)
           .map((e) => BankSampahModel.fromJson(e))
           .toList();
+      await _fetchStatistikPerBank();
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat daftar bank sampah.');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _fetchStatistikPerBank() async {
+    try {
+      final data = await SupabaseService.client
+          .from(SupabaseConstants.tablePengelolaanSampah)
+          .select('bank_sampah_id, jumlah, nama_nasabah, satuan(singkatan)');
+
+      final kgMap = <String, double>{};
+      final nasabahMap = <String, Set<String>>{};
+
+      for (final row in (data as List)) {
+        final bankId = row['bank_sampah_id'] as String?;
+        if (bankId == null) continue;
+
+        final singkatan =
+            ((row['satuan'] as Map?)?['singkatan'] as String?)?.toLowerCase() ?? '';
+        if (singkatan == 'kg') {
+          final jml = row['jumlah'];
+          final v = jml is num
+              ? jml.toDouble()
+              : double.tryParse('$jml') ?? 0.0;
+          kgMap[bankId] = (kgMap[bankId] ?? 0.0) + v;
+        }
+
+        final nasabah = row['nama_nasabah'] as String?;
+        if (nasabah != null && nasabah.trim().isNotEmpty) {
+          nasabahMap.putIfAbsent(bankId, () => {}).add(nasabah.trim());
+        }
+      }
+
+      statKgTerekelola.value = kgMap;
+      statJumlahNasabah.value =
+          nasabahMap.map((key, value) => MapEntry(key, value.length));
+    } catch (e) {
+      // Statistik opsional — biarkan kosong, jangan ganggu list utama.
+      debugPrint('BankSampah stat warning: $e');
     }
   }
 

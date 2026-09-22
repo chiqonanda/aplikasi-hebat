@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
@@ -11,6 +12,8 @@ import '../../controllers/pengelola/pengelola_main_controller.dart';
 import '../../core/utils/format_helper.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/pengelolaan_sampah_model.dart';
+import '../../core/widgets/motion.dart';
+import '../../core/widgets/wave_painter.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -19,28 +22,44 @@ class DashboardView extends GetView<DashboardController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: RefreshIndicator(
+      body: PullToRefresh(
         onRefresh: controller.fetchDashboardData,
         color: AppColors.pengelolaMain,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
             // ── Header ─────────────────────────────────────────
-            SliverToBoxAdapter(child: _buildHeader(context)),
+            SliverToBoxAdapter(child: StaggeredEntrance(index: 0, child: _buildHeader(context))),
 
-            // ── Statistik ──────────────────────────────────────
+            // ── Statistik — ditarik naik menimpa wave ──────────
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: Obx(() => _buildStatistikRow()),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Transform.translate(
+                  offset: const Offset(0, -34),
+                  child: StaggeredEntrance(
+                    index: 1,
+                    child: Obx(
+                      () => controller.isFirstLoad.value
+                          ? const _StatistikSkeleton()
+                          : _buildStatistikRow(),
+                    ),
+                  ),
+                ),
               ),
             ),
 
             // ── Menu Utama ─────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: _buildQuickActionMenu(),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Transform.translate(
+                  offset: const Offset(0, -18),
+                  child: StaggeredEntrance(
+                    index: 2,
+                    child: _buildQuickActionMenu(),
+                  ),
+                ),
               ),
             ),
 
@@ -57,28 +76,34 @@ class DashboardView extends GetView<DashboardController> {
                         const Text(
                           'Aktivitas Terbaru',
                           style: TextStyle(
-                            fontFamily: 'Inter',
+                            fontFamily: 'PlusJakartaSans',
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1A2E),
+                            color: AppColors.textPrimary,
                             letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          'Riwayat pencatatan sampah',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
+                        Obx(() => AnimatedValue(
+                              value: controller.totalTransaksiHariIni.value
+                                  .toDouble(),
+                              builder: (v) => Text(
+                                '${FormatHelper.number(v)} transaksi hari ini',
+                                style: TextStyle(
+                                  fontFamily: 'PlusJakartaSans',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            )),
                       ],
                     ),
                     GestureDetector(
                       onTap: () {
                         if (Get.isRegistered<PengelolaMainController>()) {
-                          Get.find<PengelolaMainController>().changePage(1);
+                          Get.find<PengelolaMainController>()
+                              .changePage(PengelolaTab.histori);
                         } else {
                           Get.toNamed(AppRoutes.historiSampah);
                         }
@@ -90,12 +115,12 @@ class DashboardView extends GetView<DashboardController> {
                         ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                            colors: [AppColors.pengelolaMain, AppColors.secondary],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF2E7D32)
+                              color: AppColors.pengelolaMain
                                   .withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
@@ -107,7 +132,7 @@ class DashboardView extends GetView<DashboardController> {
                             Text(
                               'Lihat Semua',
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: 'PlusJakartaSans',
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -130,12 +155,25 @@ class DashboardView extends GetView<DashboardController> {
 
             // ── Aktivitas List ─────────────────────────────────
             Obx(() {
-              if (controller.isLoading.value) {
-                return const SliverToBoxAdapter(
+              if (controller.isFirstLoad.value) {
+                return const SliverToBoxAdapter(child: _AktivitasSkeleton());
+              }
+              if (controller.hasError.value) {
+                return SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: LoadingWidget(
-                        message: 'Memuat aktivitas terbaru...'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    child: EmptyState(
+                      message: 'Gagal Memuat Data',
+                      subtitle:
+                          'Terjadi kesalahan saat mengambil data dashboard. '
+                          'Periksa koneksi internet Anda lalu coba lagi.',
+                      icon: Icons.cloud_off_rounded,
+                      actionLabel: 'Coba Lagi',
+                      onAction: controller.fetchDashboardData,
+                    ),
                   ),
                 );
               }
@@ -184,9 +222,10 @@ class DashboardView extends GetView<DashboardController> {
       children: [
         // ── Background wave ──────────────────────────────────
         CustomPaint(
-          size: Size(MediaQuery.of(context).size.width, 240),
-          painter: _WavePainter(),
+          size: Size(MediaQuery.of(context).size.width, 290),
+          painter: WavePainter.green(),
         ),
+        const AmbientBlob(color: Color(0x14FFFFFF), size: 220),
 
         // ── Decorative circles ───────────────────────────────
         Positioned(
@@ -249,7 +288,7 @@ class DashboardView extends GetView<DashboardController> {
                           const Text(
                             'BISA',
                             style: TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: 'PlusJakartaSans',
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
@@ -259,7 +298,7 @@ class DashboardView extends GetView<DashboardController> {
                           Text(
                             'Dashboard Pengelola',
                             style: TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: 'PlusJakartaSans',
                               fontSize: 10,
                               color: Colors.white.withValues(alpha: 0.75),
                             ),
@@ -272,7 +311,8 @@ class DashboardView extends GetView<DashboardController> {
                       icon: Icons.store_outlined,
                       onTap: () {
                         if (Get.isRegistered<PengelolaMainController>()) {
-                          Get.find<PengelolaMainController>().changePage(3);
+                          Get.find<PengelolaMainController>()
+                              .changePage(PengelolaTab.profil);
                         } else {
                           Get.toNamed(AppRoutes.profilBankSampah);
                         }
@@ -310,7 +350,7 @@ class DashboardView extends GetView<DashboardController> {
                   () => Text(
                     controller.penggunaNama,
                     style: const TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: 'PlusJakartaSans',
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -342,7 +382,7 @@ class DashboardView extends GetView<DashboardController> {
                           width: 6,
                           height: 6,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF69F0AE),
+                            color: AppColors.mintAccent,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -357,7 +397,7 @@ class DashboardView extends GetView<DashboardController> {
                           child: Text(
                             controller.bankSampahNama,
                             style: const TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: 'PlusJakartaSans',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -394,7 +434,7 @@ class DashboardView extends GetView<DashboardController> {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                  colors: [AppColors.pengelolaMain, AppColors.secondary],
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -403,10 +443,10 @@ class DashboardView extends GetView<DashboardController> {
             const Text(
               'Ringkasan Bulan Ini',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: 'PlusJakartaSans',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF1A1A2E),
+                color: AppColors.textPrimary,
                 letterSpacing: -0.3,
               ),
             ),
@@ -421,11 +461,10 @@ class DashboardView extends GetView<DashboardController> {
               child: StatCard(
                 label: 'Transaksi',
                 sublabel: 'Bulan Ini',
-                value:
-                    controller.totalTransaksiBulanIni.value.toString(),
+                value: '', valueWidget: _animInt(controller.totalTransaksiBulanIni.value),
                 satuan: 'entri',
                 icon: Icons.receipt_long_outlined,
-                gradientColors: const [Color(0xFF1565C0), Color(0xFF42A5F5)],
+                gradientColors: const [AppColors.blueDeep, AppColors.kelurahanAccent],
                 iconBg: const Color(0xFF0D47A1),
                 height: 115,
               ),
@@ -435,11 +474,14 @@ class DashboardView extends GetView<DashboardController> {
               child: StatCard(
                 label: 'Total Nilai',
                 sublabel: 'Bulan Ini',
-                value: FormatHelper.currency(
-                    controller.totalNilaiBulanIni.value),
+                value: '',
+                valueWidget: _animDouble(
+                  controller.totalNilaiBulanIni.value,
+                  format: FormatHelper.currency,
+                ),
                 satuan: '',
                 icon: Icons.payments_outlined,
-                gradientColors: const [Color(0xFFE65100), Color(0xFFFF7043)],
+                gradientColors: const [AppColors.orange, Color(0xFFFF7043)],
                 iconBg: const Color(0xFFBF360C),
                 height: 115,
               ),
@@ -455,12 +497,15 @@ class DashboardView extends GetView<DashboardController> {
               child: StatCard(
                 label: 'Sampah Padat',
                 sublabel: 'Bulan Ini',
-                value: FormatHelper.number(
-                    controller.totalKgBulanIni.value),
+                value: '',
+                valueWidget: _animDouble(
+                  controller.totalKgBulanIni.value,
+                  format: FormatHelper.number,
+                ),
                 satuan: 'kg',
                 icon: Icons.scale_outlined,
-                gradientColors: const [Color(0xFF2E7D32), Color(0xFF43A047)],
-                iconBg: const Color(0xFF1B5E20),
+                gradientColors: const [AppColors.pengelolaMain, AppColors.secondary],
+                iconBg: AppColors.pengelolaDark,
                 height: 115,
               ),
             ),
@@ -469,8 +514,11 @@ class DashboardView extends GetView<DashboardController> {
               child: StatCard(
                 label: 'Sampah Cair',
                 sublabel: 'Bulan Ini',
-                value: FormatHelper.number(
-                    controller.totalLiterBulanIni.value),
+                value: '',
+                valueWidget: _animDouble(
+                  controller.totalLiterBulanIni.value,
+                  format: FormatHelper.number,
+                ),
                 satuan: 'liter',
                 icon: Icons.water_drop_rounded,
                 gradientColors: const [Color(0xFF0277BD), Color(0xFF00ACC1)],
@@ -483,11 +531,14 @@ class DashboardView extends GetView<DashboardController> {
               child: StatCard(
                 label: 'Satuan',
                 sublabel: 'Bulan Ini',
-                value: FormatHelper.number(
-                    controller.totalSatuanBulanIni.value),
+                value: '',
+                valueWidget: _animDouble(
+                  controller.totalSatuanBulanIni.value,
+                  format: FormatHelper.number,
+                ),
                 satuan: 'satuan',
                 icon: Icons.category_outlined,
-                gradientColors: const [Color(0xFF6A1B9A), Color(0xFF8E24AA)],
+                gradientColors: const [AppColors.purple, Color(0xFF8E24AA)],
                 iconBg: const Color(0xFF4A148C),
                 height: 115,
               ),
@@ -496,6 +547,21 @@ class DashboardView extends GetView<DashboardController> {
         ),
       ],
     );
+  }
+
+  // ── Count-up helpers (angka statistik beranimasi) ──────────────────────────
+
+  /// Animasi count-up untuk nilai int (jumlah transaksi).
+  Widget _animInt(int target) {
+    return AnimatedValue.formatted(
+      value: target.toDouble(),
+      format: (v) => v.round().toString(),
+    );
+  }
+
+  /// Animasi count-up untuk nilai double (kg, liter, rupiah).
+  Widget _animDouble(double target, {required String Function(num) format}) {
+    return AnimatedValue.formatted(value: target, format: format);
   }
 
   // ── Quick Action Menu ─────────────────────────────────────────────────────
@@ -512,11 +578,11 @@ class DashboardView extends GetView<DashboardController> {
       {
         'icon': Icons.assignment_outlined,
         'label': 'Histori',
-        'color': const Color(0xFF1565C0),
-        'bgColor': const Color(0xFFE3F2FD),
+        'color': AppColors.blueDeep,
+        'bgColor': AppColors.kelurahanLight,
         'onTap': () {
           if (Get.isRegistered<PengelolaMainController>()) {
-            Get.find<PengelolaMainController>().changePage(1);
+            Get.find<PengelolaMainController>().changePage(PengelolaTab.histori);
           } else {
             Get.toNamed(AppRoutes.historiSampah);
           }
@@ -525,22 +591,24 @@ class DashboardView extends GetView<DashboardController> {
       {
         'icon': Icons.description_outlined,
         'label': 'Laporan',
-        'color': const Color(0xFFE65100),
-        'bgColor': const Color(0xFFFFF3E0),
+        'color': AppColors.orange,
+        'bgColor': AppColors.orangeContainer,
         'onTap': () {
           if (Get.isRegistered<PengelolaMainController>()) {
-            Get.find<PengelolaMainController>().changePage(2);
+            Get.find<PengelolaMainController>()
+                .changePage(PengelolaTab.laporan);
           }
         },
       },
       {
         'icon': Icons.storefront_rounded,
         'label': 'Profil',
-        'color': const Color(0xFF6A1B9A),
-        'bgColor': const Color(0xFFF3E5F5),
+        'color': AppColors.purple,
+        'bgColor': AppColors.purpleLight,
         'onTap': () {
           if (Get.isRegistered<PengelolaMainController>()) {
-            Get.find<PengelolaMainController>().changePage(3);
+            Get.find<PengelolaMainController>()
+                .changePage(PengelolaTab.profil);
           } else {
             Get.toNamed(AppRoutes.profilBankSampah);
           }
@@ -561,7 +629,7 @@ class DashboardView extends GetView<DashboardController> {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                  colors: [AppColors.pengelolaMain, AppColors.secondary],
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -570,10 +638,10 @@ class DashboardView extends GetView<DashboardController> {
             const Text(
               'Menu Utama',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: 'PlusJakartaSans',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF1A1A2E),
+                color: AppColors.textPrimary,
                 letterSpacing: -0.3,
               ),
             ),
@@ -586,8 +654,14 @@ class DashboardView extends GetView<DashboardController> {
             final index = entry.key;
             final item = entry.value;
             return Expanded(
-              child: GestureDetector(
-                onTap: item['onTap'] as VoidCallback,
+              child: PressableScale(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  (item['onTap'] as VoidCallback)();
+                },
+                pressedScale: 0.93,
+                splashColor: (item['color'] as Color).withValues(alpha: 0.06),
+                borderRadius: 18,
                 child: Container(
                   margin: EdgeInsets.only(
                     right: index == menuItems.length - 1 ? 0 : 10,
@@ -632,10 +706,10 @@ class DashboardView extends GetView<DashboardController> {
                       Text(
                         item['label'] as String,
                         style: const TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: 'PlusJakartaSans',
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A2E),
+                          color: AppColors.textPrimary,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -706,16 +780,16 @@ class _AktivitasCard extends StatelessWidget {
   const _AktivitasCard({required this.item, required this.index});
 
   static const _accents = [
-    Color(0xFF2E7D32),
-    Color(0xFF1565C0),
-    Color(0xFFE65100),
-    Color(0xFF6A1B9A),
+    AppColors.pengelolaMain,
+    AppColors.blueDeep,
+    AppColors.orange,
+    AppColors.purple,
   ];
   static const _accentBgs = [
-    Color(0xFFE8F5E9),
-    Color(0xFFE3F2FD),
-    Color(0xFFFBE9E7),
-    Color(0xFFF3E5F5),
+    AppColors.pengelolaLight,
+    AppColors.kelurahanLight,
+    AppColors.orangeLight,
+    AppColors.purpleLight,
   ];
 
   @override
@@ -765,10 +839,10 @@ class _AktivitasCard extends StatelessWidget {
                 Text(
                   item.namaItem,
                   style: const TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: 'PlusJakartaSans',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -778,7 +852,7 @@ class _AktivitasCard extends StatelessWidget {
                   Text(
                     'Nasabah: ${item.namaNasabah}',
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: 'PlusJakartaSans',
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Colors.grey.shade600,
@@ -801,7 +875,7 @@ class _AktivitasCard extends StatelessWidget {
                         item.tanggalPengelolaan.toIso8601String(),
                       ),
                       style: TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: 'PlusJakartaSans',
                         fontSize: 12,
                         color: Colors.grey.shade500,
                       ),
@@ -827,7 +901,7 @@ class _AktivitasCard extends StatelessWidget {
                 item.satuan?.singkatan,
               ),
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: 'PlusJakartaSans',
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 color: accent,
@@ -838,71 +912,161 @@ class _AktivitasCard extends StatelessWidget {
       ),
     );
   }
-}
+}// ── Skeleton: Statistik ───────────────────────────────────────────────────────
 
-// ── Wave Painter ──────────────────────────────────────────────────────────────
+class _StatistikSkeleton extends StatelessWidget {
+  const _StatistikSkeleton();
 
-class _WavePainter extends CustomPainter {
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+  Widget build(BuildContext context) {
+    Widget bar({double? width, double height = 16}) => Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
 
-    final path1 = Path()
-      ..lineTo(0, size.height * 0.78)
-      ..quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.95,
-        size.width * 0.5,
-        size.height * 0.82,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.68,
-        size.width,
-        size.height * 0.80,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
+    Widget statCard() => Container(
+          height: 115,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              const Spacer(),
+              bar(width: 60, height: 10),
+              const SizedBox(height: 8),
+              bar(width: 90, height: 14),
+            ],
+          ),
+        );
 
-    canvas.drawPath(path1, paint1);
-
-    final paint2 = Paint()
-      ..color = const Color(0xFF43A047).withValues(alpha: 0.3);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.6)
-      ..quadraticBezierTo(
-        size.width * 0.3,
-        size.height * 0.5,
-        size.width * 0.55,
-        size.height * 0.65,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.78,
-        size.height * 0.78,
-        size.width,
-        size.height * 0.62,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-
-    canvas.drawPath(path2, paint2);
-
-    final paintDot = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06);
-
-    canvas.drawCircle(
-        Offset(size.width * 0.12, size.height * 0.35), 45, paintDot);
-    canvas.drawCircle(
-        Offset(size.width * 0.88, size.height * 0.18), 28, paintDot);
+    return ShimmerLoading(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          bar(width: 160, height: 18),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: statCard()),
+              const SizedBox(width: 10),
+              Expanded(child: statCard()),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: statCard()),
+              const SizedBox(width: 10),
+              Expanded(child: statCard()),
+              const SizedBox(width: 10),
+              Expanded(child: statCard()),
+            ],
+          ),
+        ],
+      ),
+    );
   }
+}
+
+// ── Skeleton: Aktivitas ──────────────────────────────────────────────────────
+
+class _AktivitasSkeleton extends StatelessWidget {
+  const _AktivitasSkeleton();
 
   @override
-  bool shouldRepaint(_WavePainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    return ShimmerLoading(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: List.generate(3, (index) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 13,
+                          width: 150,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 10,
+                          width: 100,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 56,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
 }
+
